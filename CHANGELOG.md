@@ -6,17 +6,33 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+## [0.1.0-alpha.2] - 2026-08-17
+
+### Added
+
+- Product-first English and Simplified Chinese README paths with a pinned GHCR
+  quick start, early-tester feedback links, and fully synthetic interface
+  screenshots.
+
+### Fixed
+
+- Cover delivery for freshly scanned public-core databases now follows the
+  actual `cover_assets` schema instead of querying a removed private-only
+  relative-path column.
+
 ## [0.1.0-alpha.1] - 2026-08-17
 
 ### Added
 
-- Isolated publication-candidate source tree with no private runtime database or media.
+- Isolated publication-candidate source tree with no private runtime database
+  or media.
 - V2-only clean-checkout web build.
 - Go-only multi-stage container and read-only Compose deployment skeleton.
 - Explicit tools-only Compose scanner profile; source libraries stay read-only.
 - Isolated Linux-container preflight for authenticated service startup, V2 asset
   serving, and an empty-library scan through Compose.
-- Initial contribution, security, conduct, governance, support, and dependency-notice policies.
+- Initial contribution, security, conduct, governance, support, and
+  dependency-notice policies.
 - Apache License 2.0 project licensing and the final
   `github.com/zzzcws/bmanga-core` repository/module identity.
 - A hash-verified third-party license-text bundle for the current
@@ -34,8 +50,10 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ### Security
 
-- Publication CI rejects tracked secrets, private path markers, and runtime artifacts.
-- Provider/network adapters are absent; the candidate container also excludes document/archive helper runtimes.
+- Publication CI rejects tracked secrets, private path markers, and runtime
+  artifacts.
+- Provider/network adapters are absent; the candidate container also excludes
+  document/archive helper runtimes.
 - Login failures return a generic response and no longer persist client,
   username-match, or password-length diagnostics.
 - Go was raised to 1.26.6 and `golang.org/x/image` to 0.45.0; source and binary

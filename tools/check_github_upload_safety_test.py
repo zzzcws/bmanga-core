@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
+import struct
 import subprocess
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 from unittest import mock
 
@@ -19,10 +22,10 @@ SPEC.loader.exec_module(CHECKER)
 class PublicationSafetyTest(unittest.TestCase):
     def scan(
         self,
-        files: dict[str, str],
+        files: dict[str, str | bytes],
         *,
         strict: bool = True,
-        worktree_updates: dict[str, str] | None = None,
+        worktree_updates: dict[str, str | bytes] | None = None,
         privacy_terms=(),
     ):
         with tempfile.TemporaryDirectory() as directory:
@@ -35,12 +38,18 @@ class PublicationSafetyTest(unittest.TestCase):
             for relative, content in files.items():
                 target = root / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(content, encoding="utf-8")
+                if isinstance(content, bytes):
+                    target.write_bytes(content)
+                else:
+                    target.write_text(content, encoding="utf-8")
             subprocess.run(["git", "add", "."], cwd=root, check=True)
             for relative, content in (worktree_updates or {}).items():
                 target = root / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(content, encoding="utf-8")
+                if isinstance(content, bytes):
+                    target.write_bytes(content)
+                else:
+                    target.write_text(content, encoding="utf-8")
             previous = CHECKER.ROOT
             CHECKER.ROOT = root
             try:
@@ -58,6 +67,46 @@ class PublicationSafetyTest(unittest.TestCase):
     def privacy_dictionary_text(categories: dict[str, list[str]]) -> str:
         return json.dumps({"schemaVersion": 1, "categories": categories})
 
+    @staticmethod
+    def png_bytes(width: int = 4, height: int = 3) -> bytes:
+        def chunk(kind: bytes, data: bytes) -> bytes:
+            return (
+                struct.pack(">I", len(data))
+                + kind
+                + data
+                + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+            )
+
+        ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+        scanlines = b"".join(
+            b"\0" + bytes((32, 64, 96, 255)) * width for _ in range(height)
+        )
+        return (
+            CHECKER.PNG_SIGNATURE
+            + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(scanlines))
+            + chunk(b"IEND", b"")
+        )
+
+    @staticmethod
+    def doc_asset_manifest(
+        records: list[tuple[str, bytes, int, int]],
+    ) -> str:
+        return json.dumps(
+            {
+                "schemaVersion": CHECKER.DOC_ASSET_SCHEMA_VERSION,
+                "assets": [
+                    {
+                        "path": path,
+                        "size": len(raw),
+                        "sha256": hashlib.sha256(raw).hexdigest(),
+                        "dimensions": {"width": width, "height": height},
+                    }
+                    for path, raw, width, height in sorted(records)
+                ],
+            }
+        )
+
     def test_safe_source_and_placeholders_pass(self):
         blockers, warnings = self.scan(
             {
@@ -69,6 +118,146 @@ class PublicationSafetyTest(unittest.TestCase):
         )
         self.assertEqual(blockers, [])
         self.assertEqual(warnings, [])
+
+    def test_staged_reviewed_document_png_passes(self):
+        path = "docs/assets/home-desktop.png"
+        raw = self.png_bytes(1440, 960)
+        blockers, warnings = self.scan(
+            {
+                path: raw,
+                CHECKER.DOC_ASSET_MANIFEST: self.doc_asset_manifest(
+                    [(path, raw, 1440, 960)]
+                ),
+            }
+        )
+
+        self.assertEqual(blockers, [])
+        self.assertEqual(warnings, [])
+
+    def test_untracked_reviewed_document_png_passes(self):
+        path = "docs/assets/library-mobile.png"
+        raw = self.png_bytes(390, 844)
+        blockers, warnings = self.scan(
+            {"README.md": "safe staged content\n"},
+            worktree_updates={
+                path: raw,
+                CHECKER.DOC_ASSET_MANIFEST: self.doc_asset_manifest(
+                    [(path, raw, 390, 844)]
+                ),
+            },
+        )
+
+        self.assertEqual(blockers, [])
+        self.assertEqual(warnings, [])
+
+    def test_extra_and_missing_document_pngs_are_blocked(self):
+        reviewed_path = "docs/assets/home-desktop.png"
+        extra_path = "docs/assets/unlisted.png"
+        missing_path = "docs/assets/missing.png"
+        reviewed = self.png_bytes(12, 8)
+        extra = self.png_bytes(8, 12)
+        missing = self.png_bytes(5, 5)
+        blockers, _ = self.scan(
+            {
+                reviewed_path: reviewed,
+                extra_path: extra,
+                CHECKER.DOC_ASSET_MANIFEST: self.doc_asset_manifest(
+                    [
+                        (reviewed_path, reviewed, 12, 8),
+                        (missing_path, missing, 5, 5),
+                    ]
+                ),
+            }
+        )
+
+        keys_by_path = {(row["key"], row["path"]) for row in blockers}
+        self.assertIn(("doc_asset_unreviewed", extra_path), keys_by_path)
+        self.assertIn(("doc_asset_missing", missing_path), keys_by_path)
+
+    def test_untracked_document_png_hash_change_is_blocked(self):
+        path = "docs/assets/library-desktop.png"
+        reviewed = self.png_bytes(16, 9)
+        changed = self.png_bytes(16, 10)
+        blockers, _ = self.scan(
+            {"README.md": "safe staged content\n"},
+            worktree_updates={
+                path: changed,
+                CHECKER.DOC_ASSET_MANIFEST: self.doc_asset_manifest(
+                    [(path, reviewed, 16, 9)]
+                ),
+            },
+        )
+
+        keys = {row["key"] for row in blockers}
+        self.assertIn("doc_asset_hash_mismatch", keys)
+        self.assertIn("doc_asset_dimensions_mismatch", keys)
+
+    def test_document_png_size_hash_and_dimensions_are_exact(self):
+        path = "docs/assets/home-desktop.png"
+        raw = self.png_bytes(24, 16)
+        base_record = {
+            "path": path,
+            "size": len(raw),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "dimensions": {"width": 24, "height": 16},
+        }
+        mutations = {
+            "doc_asset_size_mismatch": {**base_record, "size": len(raw) + 1},
+            "doc_asset_hash_mismatch": {**base_record, "sha256": "0" * 64},
+            "doc_asset_dimensions_mismatch": {
+                **base_record,
+                "dimensions": {"width": 25, "height": 16},
+            },
+        }
+        for expected_key, record in mutations.items():
+            with self.subTest(expected_key=expected_key):
+                manifest = json.dumps(
+                    {"schemaVersion": CHECKER.DOC_ASSET_SCHEMA_VERSION, "assets": [record]}
+                )
+                blockers, _ = self.scan(
+                    {path: raw, CHECKER.DOC_ASSET_MANIFEST: manifest}
+                )
+                self.assertIn(expected_key, {row["key"] for row in blockers})
+
+    def test_invalid_png_framing_is_blocked_even_when_hash_matches(self):
+        path = "docs/assets/home-desktop.png"
+        raw = b"not-a-png-but-long-enough-for-a-manifest-record"
+        blockers, _ = self.scan(
+            {
+                path: raw,
+                CHECKER.DOC_ASSET_MANIFEST: self.doc_asset_manifest(
+                    [(path, raw, 10, 10)]
+                ),
+            }
+        )
+
+        self.assertIn("doc_asset_invalid_png", {row["key"] for row in blockers})
+
+    def test_manifest_rejects_path_escape_and_unsupported_format(self):
+        raw = self.png_bytes()
+        invalid_paths = (
+            "docs/assets/../private.png",
+            "docs/assets/reviewed.jpg",
+            "docs/assets/nested/reviewed.png",
+        )
+        for invalid_path in invalid_paths:
+            with self.subTest(invalid_path=invalid_path):
+                manifest = self.doc_asset_manifest([(invalid_path, raw, 4, 3)])
+                blockers, _ = self.scan(
+                    {
+                        "README.md": "safe\n",
+                        CHECKER.DOC_ASSET_MANIFEST: manifest,
+                    }
+                )
+                self.assertIn(
+                    "doc_asset_manifest_invalid",
+                    {row["key"] for row in blockers},
+                )
+
+    def test_binary_outside_reviewed_document_assets_remains_blocked(self):
+        blockers, _ = self.scan({"docs/archive.bin": b"\0opaque-binary"})
+
+        self.assertIn("binary_or_unknown_file", {row["key"] for row in blockers})
 
     def test_secret_shape_is_blocked(self):
         token = "sk" + "-" + "a" * 32
@@ -134,6 +323,17 @@ class PublicationSafetyTest(unittest.TestCase):
                 "LICENSE": (
                     "Apache License, Version 2.0\n"
                     "http://www.apache.org/licenses/\n"
+                )
+            }
+        )
+        self.assertEqual(blockers, [])
+
+    def test_reviewed_badge_host_is_allowed(self):
+        blockers, _ = self.scan(
+            {
+                "README.md": (
+                    "[![release](https://img.shields.io/badge/release-alpha-blue)]"
+                    "(https://github.com/example/project)\n"
                 )
             }
         )

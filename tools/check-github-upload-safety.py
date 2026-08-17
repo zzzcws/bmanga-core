@@ -19,10 +19,13 @@ import ipaddress
 import json
 import os
 import re
+import struct
 import subprocess
 import unicodedata
+import zlib
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
+from typing import AbstractSet
 from urllib.parse import urlsplit
 
 
@@ -32,6 +35,14 @@ MAX_PRIVACY_TERMS_FILE_BYTES = 1024 * 1024
 MAX_PRIVACY_TERMS = 4096
 PRIVACY_TERMS_ENV = "BMANGA_PRIVACY_TERMS_FILE"
 PRIVACY_CATEGORY_PATTERN = re.compile(r"[a-z][a-z0-9_-]{0,63}")
+DOC_ASSET_DIRECTORY = "docs/assets"
+DOC_ASSET_MANIFEST = f"{DOC_ASSET_DIRECTORY}/manifest.json"
+DOC_ASSET_SCHEMA_VERSION = 1
+DOC_ASSET_FILENAME_PATTERN = re.compile(r"[a-z0-9][a-z0-9-]{0,95}\.png")
+DOC_ASSET_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+MAX_DOC_ASSET_DIMENSION = 8192
+MAX_DOC_ASSET_PIXELS = 32 * 1024 * 1024
 
 FindingValue = str | int
 Finding = dict[str, FindingValue]
@@ -40,6 +51,10 @@ PrivacyRule = tuple[str, str, str]
 
 class PrivacyTermsError(ValueError):
     """A non-sensitive description of an unusable external privacy dictionary."""
+
+
+class DocAssetManifestError(ValueError):
+    """A reviewed-document-asset manifest is malformed or outside policy."""
 
 
 RUNTIME_DIRECTORY_NAMES = {
@@ -121,6 +136,7 @@ ALLOWED_URL_HOSTS = {
     "127.0.0.1",
     "git-lfs.github.com",
     "github.com",
+    "img.shields.io",
     "keepachangelog.com",
     "localhost",
     "opencollective.com",
@@ -324,6 +340,182 @@ def has_privacy_dictionary_schema(text: str) -> bool:
     )
 
 
+def reject_duplicate_doc_asset_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise DocAssetManifestError(
+                "document asset manifest contains a duplicate JSON key"
+            )
+        result[key] = value
+    return result
+
+
+def load_doc_asset_manifest(raw: bytes) -> dict[str, dict[str, object]]:
+    """Parse the exact, narrow allowlist for reviewed documentation PNGs."""
+
+    try:
+        payload = json.loads(
+            raw.decode("utf-8", errors="strict"),
+            object_pairs_hook=reject_duplicate_doc_asset_keys,
+        )
+    except DocAssetManifestError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise DocAssetManifestError(
+            "document asset manifest is not valid UTF-8 JSON"
+        ) from None
+
+    if not isinstance(payload, dict) or set(payload) != {"schemaVersion", "assets"}:
+        raise DocAssetManifestError("document asset manifest has an invalid schema")
+    if (
+        type(payload["schemaVersion"]) is not int
+        or payload["schemaVersion"] != DOC_ASSET_SCHEMA_VERSION
+    ):
+        raise DocAssetManifestError(
+            "document asset manifest has an unsupported schema version"
+        )
+
+    assets = payload["assets"]
+    if not isinstance(assets, list) or not assets:
+        raise DocAssetManifestError("document asset manifest has no reviewed assets")
+
+    reviewed: dict[str, dict[str, object]] = {}
+    for record in assets:
+        if not isinstance(record, dict) or set(record) != {
+            "path",
+            "size",
+            "sha256",
+            "dimensions",
+        }:
+            raise DocAssetManifestError(
+                "document asset manifest contains an invalid asset record"
+            )
+
+        relative = record["path"]
+        if not isinstance(relative, str):
+            raise DocAssetManifestError(
+                "document asset manifest contains a non-string path"
+            )
+        posix = PurePosixPath(relative)
+        if (
+            not relative
+            or "\\" in relative
+            or posix.is_absolute()
+            or posix.as_posix() != relative
+            or posix.parent != PurePosixPath(DOC_ASSET_DIRECTORY)
+            or not DOC_ASSET_FILENAME_PATTERN.fullmatch(posix.name)
+        ):
+            raise DocAssetManifestError(
+                "document asset manifest path escapes the reviewed PNG directory "
+                "or uses an unsupported format"
+            )
+        if relative in reviewed:
+            raise DocAssetManifestError(
+                "document asset manifest contains a duplicate asset path"
+            )
+
+        size = record["size"]
+        if (
+            type(size) is not int
+            or size < 33
+            or size > MAX_TRACKED_FILE_BYTES
+        ):
+            raise DocAssetManifestError(
+                "document asset manifest contains an invalid asset size"
+            )
+
+        digest = record["sha256"]
+        if (
+            not isinstance(digest, str)
+            or not DOC_ASSET_SHA256_PATTERN.fullmatch(digest)
+        ):
+            raise DocAssetManifestError(
+                "document asset manifest contains an invalid SHA-256"
+            )
+
+        dimensions = record["dimensions"]
+        if not isinstance(dimensions, dict) or set(dimensions) != {
+            "width",
+            "height",
+        }:
+            raise DocAssetManifestError(
+                "document asset manifest contains invalid dimensions"
+            )
+        width = dimensions["width"]
+        height = dimensions["height"]
+        if (
+            type(width) is not int
+            or type(height) is not int
+            or not 1 <= width <= MAX_DOC_ASSET_DIMENSION
+            or not 1 <= height <= MAX_DOC_ASSET_DIMENSION
+            or width * height > MAX_DOC_ASSET_PIXELS
+        ):
+            raise DocAssetManifestError(
+                "document asset manifest dimensions exceed the reviewed limits"
+            )
+
+        reviewed[relative] = record
+
+    if list(reviewed) != sorted(reviewed):
+        raise DocAssetManifestError(
+            "document asset manifest records must be sorted by path"
+        )
+    return reviewed
+
+
+def png_dimensions(raw: bytes) -> tuple[int, int]:
+    """Validate PNG framing/CRCs and return the IHDR dimensions.
+
+    Chunk payloads are intentionally not interpreted or OCR-scanned. Exact-byte
+    review is represented by the manifest hash, while visible and metadata
+    privacy review remains a human release responsibility.
+    """
+
+    if not raw.startswith(PNG_SIGNATURE):
+        raise ValueError("missing PNG signature")
+
+    offset = len(PNG_SIGNATURE)
+    dimensions: tuple[int, int] | None = None
+    saw_iend = False
+    while offset < len(raw):
+        if len(raw) - offset < 12:
+            raise ValueError("truncated PNG chunk")
+        chunk_length = struct.unpack(">I", raw[offset : offset + 4])[0]
+        chunk_type = raw[offset + 4 : offset + 8]
+        chunk_end = offset + 12 + chunk_length
+        if chunk_end > len(raw):
+            raise ValueError("truncated PNG chunk data")
+        chunk_data = raw[offset + 8 : offset + 8 + chunk_length]
+        recorded_crc = struct.unpack(">I", raw[offset + 8 + chunk_length : chunk_end])[0]
+        calculated_crc = zlib.crc32(chunk_type + chunk_data) & 0xFFFFFFFF
+        if recorded_crc != calculated_crc:
+            raise ValueError("invalid PNG chunk CRC")
+
+        if offset == len(PNG_SIGNATURE):
+            if chunk_type != b"IHDR" or chunk_length != 13:
+                raise ValueError("PNG does not start with a 13-byte IHDR")
+            width, height = struct.unpack(">II", chunk_data[:8])
+            if width == 0 or height == 0:
+                raise ValueError("PNG has empty IHDR dimensions")
+            dimensions = (width, height)
+        elif chunk_type == b"IHDR":
+            raise ValueError("PNG contains multiple IHDR chunks")
+
+        offset = chunk_end
+        if chunk_type == b"IEND":
+            if chunk_length != 0 or offset != len(raw):
+                raise ValueError("PNG has an invalid IEND or trailing bytes")
+            saw_iend = True
+            break
+
+    if dimensions is None or not saw_iend:
+        raise ValueError("PNG is missing required framing chunks")
+    return dimensions
+
+
 SECRET_PATTERNS = {
     "private_key": re.compile(
         joined("-----BEGIN ", "(?:RSA |EC |OPENSSH |DSA )?", "PRIVATE KEY-----")
@@ -477,6 +669,227 @@ def indexed_blob(object_id: str) -> tuple[int, bytes]:
     return size, git_bytes(["cat-file", "blob", object_id])
 
 
+def is_doc_asset_surface_file(relative: str) -> bool:
+    return relative == DOC_ASSET_MANIFEST or (
+        relative.startswith(f"{DOC_ASSET_DIRECTORY}/")
+        and PurePosixPath(relative).suffix.casefold() == ".png"
+    )
+
+
+def indexed_doc_asset_files(
+    entries: Sequence[tuple[str, str, str]],
+    blockers: list[Finding],
+) -> dict[str, tuple[int, bytes]]:
+    files: dict[str, tuple[int, bytes]] = {}
+    for relative, mode, object_id in entries:
+        if not is_doc_asset_surface_file(relative) or mode not in {"100644", "100755"}:
+            continue
+        try:
+            files[relative] = indexed_blob(object_id)
+        except (OSError, subprocess.SubprocessError, ValueError) as exc:
+            add(
+                blockers,
+                "blocker",
+                "read_error",
+                relative,
+                f"cannot read staged document asset ({type(exc).__name__})",
+            )
+    return files
+
+
+def worktree_doc_asset_paths() -> list[str]:
+    output = git_bytes(
+        [
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "-z",
+            "--",
+            DOC_ASSET_DIRECTORY,
+        ]
+    )
+    return sorted(
+        relative.replace("\\", "/")
+        for relative in output.decode("utf-8", errors="strict").split("\0")
+        if relative and is_doc_asset_surface_file(relative.replace("\\", "/"))
+    )
+
+
+def worktree_doc_asset_files(blockers: list[Finding]) -> dict[str, tuple[int, bytes]]:
+    files: dict[str, tuple[int, bytes]] = {}
+    try:
+        paths = worktree_doc_asset_paths()
+    except (OSError, subprocess.SubprocessError, UnicodeError) as exc:
+        add(
+            blockers,
+            "blocker",
+            "read_error",
+            DOC_ASSET_DIRECTORY,
+            f"cannot enumerate worktree document assets ({type(exc).__name__})",
+        )
+        return files
+
+    for relative in paths:
+        path = ROOT / Path(relative)
+        if not path.exists():
+            continue
+        if path.is_symlink() or not path.is_file():
+            add(
+                blockers,
+                "blocker",
+                "unsafe_worktree_type",
+                relative,
+                "document assets must be regular, non-symlink files",
+            )
+            continue
+        try:
+            size = path.stat().st_size
+            raw = b"" if size > MAX_TRACKED_FILE_BYTES else path.read_bytes()
+        except OSError as exc:
+            add(
+                blockers,
+                "blocker",
+                "read_error",
+                relative,
+                f"cannot read worktree document asset ({type(exc).__name__})",
+            )
+            continue
+        files[relative] = (size, raw)
+    return files
+
+
+def verify_doc_asset_surface(
+    files: Mapping[str, tuple[int, bytes]],
+    blockers: list[Finding],
+) -> set[str]:
+    """Return exact PNG paths whose bytes match the reviewed manifest."""
+
+    actual_pngs = {
+        relative
+        for relative in files
+        if relative != DOC_ASSET_MANIFEST
+        and PurePosixPath(relative).suffix.casefold() == ".png"
+    }
+    manifest_file = files.get(DOC_ASSET_MANIFEST)
+    if manifest_file is None:
+        if actual_pngs:
+            add(
+                blockers,
+                "blocker",
+                "doc_asset_manifest_missing",
+                DOC_ASSET_MANIFEST,
+                "reviewed PNG files require an exact document asset manifest",
+            )
+            for relative in actual_pngs:
+                add(
+                    blockers,
+                    "blocker",
+                    "doc_asset_unreviewed",
+                    relative,
+                    "PNG is not bound to a reviewed document asset manifest",
+                )
+        return set()
+
+    manifest_size, manifest_raw = manifest_file
+    if manifest_size > MAX_TRACKED_FILE_BYTES:
+        add(
+            blockers,
+            "blocker",
+            "doc_asset_manifest_invalid",
+            DOC_ASSET_MANIFEST,
+            "document asset manifest exceeds the reviewed size limit",
+        )
+        return set()
+    try:
+        reviewed = load_doc_asset_manifest(manifest_raw)
+    except DocAssetManifestError as exc:
+        add(
+            blockers,
+            "blocker",
+            "doc_asset_manifest_invalid",
+            DOC_ASSET_MANIFEST,
+            str(exc),
+        )
+        for relative in actual_pngs:
+            add(
+                blockers,
+                "blocker",
+                "doc_asset_unreviewed",
+                relative,
+                "PNG cannot be trusted because its manifest is invalid",
+            )
+        return set()
+
+    reviewed_paths = set(reviewed)
+    for relative in sorted(actual_pngs - reviewed_paths):
+        add(
+            blockers,
+            "blocker",
+            "doc_asset_unreviewed",
+            relative,
+            "PNG is absent from the exact reviewed asset manifest",
+        )
+    for relative in sorted(reviewed_paths - actual_pngs):
+        add(
+            blockers,
+            "blocker",
+            "doc_asset_missing",
+            relative,
+            "manifested PNG is absent from the prospective public surface",
+        )
+
+    allowed: set[str] = set()
+    for relative in sorted(actual_pngs & reviewed_paths):
+        size, raw = files[relative]
+        record = reviewed[relative]
+        valid = True
+        if size != record["size"]:
+            add(
+                blockers,
+                "blocker",
+                "doc_asset_size_mismatch",
+                relative,
+                "PNG byte length differs from the reviewed manifest",
+            )
+            valid = False
+        if len(raw) != size or hashlib.sha256(raw).hexdigest() != record["sha256"]:
+            add(
+                blockers,
+                "blocker",
+                "doc_asset_hash_mismatch",
+                relative,
+                "PNG bytes differ from the reviewed SHA-256",
+            )
+            valid = False
+        try:
+            actual_dimensions = png_dimensions(raw)
+        except ValueError:
+            add(
+                blockers,
+                "blocker",
+                "doc_asset_invalid_png",
+                relative,
+                "file does not have valid PNG framing, IHDR, and chunk CRCs",
+            )
+            valid = False
+        else:
+            dimensions = record["dimensions"]
+            expected_dimensions = (dimensions["width"], dimensions["height"])
+            if actual_dimensions != expected_dimensions:
+                add(
+                    blockers,
+                    "blocker",
+                    "doc_asset_dimensions_mismatch",
+                    relative,
+                    "PNG IHDR dimensions differ from the reviewed manifest",
+                )
+                valid = False
+        if valid:
+            allowed.add(relative)
+    return allowed
+
+
 def add(
     rows: list[Finding],
     level: str,
@@ -582,6 +995,7 @@ def scan_content(
     blockers: list[Finding],
     warnings: list[Finding],
     privacy_terms: Sequence[PrivacyRule] = (),
+    reviewed_doc_assets: AbstractSet[str] = frozenset(),
 ) -> None:
     is_text = validate_path(relative, blockers)
     if size > MAX_TRACKED_FILE_BYTES:
@@ -592,6 +1006,8 @@ def scan_content(
             relative,
             "tracked file exceeds the reviewed size limit",
         )
+        return
+    if relative in reviewed_doc_assets:
         return
     if not is_text or b"\0" in raw:
         add(
@@ -792,7 +1208,13 @@ def scan(
     blockers: list[Finding] = []
     warnings: list[Finding] = []
 
-    for relative, mode, object_id in indexed_entries():
+    entries = indexed_entries()
+    indexed_assets = indexed_doc_asset_files(entries, blockers)
+    reviewed_indexed_assets = verify_doc_asset_surface(indexed_assets, blockers)
+    worktree_assets = worktree_doc_asset_files(blockers)
+    reviewed_worktree_assets = verify_doc_asset_surface(worktree_assets, blockers)
+
+    for relative, mode, object_id in entries:
         if mode not in {"100644", "100755"}:
             add(
                 blockers,
@@ -821,6 +1243,7 @@ def scan(
             blockers,
             warnings,
             privacy_terms,
+            reviewed_indexed_assets,
         )
 
     for relative in changed_worktree_paths():
@@ -856,6 +1279,7 @@ def scan(
             blockers,
             warnings,
             privacy_terms,
+            reviewed_worktree_assets,
         )
 
     return deduplicate(blockers), deduplicate(warnings)
