@@ -24,9 +24,9 @@ func (s *Server) readyCoverCandidate(candidateID string) (map[string]any, error)
 	return nil, nil
 }
 
-func (s *Server) coverAssetForCandidate(candidateID string, libraryKey string) (map[string]any, error) {
+func (s *Server) coverAssetForCandidate(candidateID string, libraryKey string, sourceRelativePath string) (map[string]any, error) {
 	rows, err := s.query(`
-		SELECT cache_path, mime_type, source_path, source_relative_path, source_inner_path
+		SELECT cache_path, mime_type, source_path, source_inner_path
 		FROM cover_assets
 		WHERE candidate_id = ?
 		  AND asset_kind = 'extracted_cover'
@@ -40,6 +40,7 @@ func (s *Server) coverAssetForCandidate(candidateID string, libraryKey string) (
 		return nil, nil
 	}
 	rows[0]["library_key"] = libraryKey
+	rows[0]["source_relative_path"] = sourceRelativePath
 	return rows[0], nil
 }
 

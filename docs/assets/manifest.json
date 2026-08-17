@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "path": "docs/assets/home-desktop.png",
+      "size": 620906,
+      "sha256": "8ff50c33af0ed44f8ce0a1483ffbd39daa2f01c0054a4a280a15889240583ea9",
+      "dimensions": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "path": "docs/assets/library-desktop.png",
+      "size": 1074957,
+      "sha256": "7f7318f9573f9940d98a784bcbd4b68ca65b015f03a6044d5ad108f8252daccd",
+      "dimensions": {
+        "width": 1600,
+        "height": 1000
+      }
+    },
+    {
+      "path": "docs/assets/library-mobile.png",
+      "size": 190340,
+      "sha256": "259c033b4e1fcdd5cd28cbd3e6984e38c23aedbed9898080123235a779dcfc2f",
+      "dimensions": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ]
+}

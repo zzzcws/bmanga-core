@@ -173,7 +173,11 @@ func (s *Server) handleCover(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if coverCandidate != nil {
-		asset, err := s.coverAssetForCandidate(candidateID, stringValue(coverCandidate["library_key"]))
+		asset, err := s.coverAssetForCandidate(
+			candidateID,
+			stringValue(coverCandidate["library_key"]),
+			stringValue(coverCandidate["cover_source_relative_path"]),
+		)
 		if err != nil {
 			writeJSONError(w, http.StatusInternalServerError, err.Error())
 			return

@@ -1778,7 +1778,6 @@ func TestCoverFallbackThumbnailCacheSkipsRepeatedZipRead(t *testing.T) {
 			cache_path TEXT NOT NULL,
 			mime_type TEXT NOT NULL,
 			source_path TEXT NOT NULL,
-			source_relative_path TEXT NOT NULL,
 			source_inner_path TEXT NOT NULL,
 			updated_at TEXT NOT NULL,
 			stable_key TEXT NOT NULL
@@ -1810,11 +1809,11 @@ func TestCoverFallbackThumbnailCacheSkipsRepeatedZipRead(t *testing.T) {
 	if _, err := s.db.Exec(`
 		INSERT INTO cover_assets (
 			candidate_id, asset_kind, cache_path, mime_type,
-			source_path, source_relative_path, source_inner_path,
+			source_path, source_inner_path,
 			updated_at, stable_key
 		) VALUES (
 			'candidate-zip', 'extracted_cover', ?, 'image/jpeg',
-			?, 'book.zip', 'cover.jpg',
+			?, 'cover.jpg',
 			'2026-05-23T00:00:00Z', 'cover-test'
 		)
 	`, missingCachePath, archivePath); err != nil {
