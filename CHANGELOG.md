@@ -1,10 +1,12 @@
 # Changelog
 
 All notable changes will be documented in this file. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning policy will
-be finalized before the first release.
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Public tags use
+Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
+
+## [0.1.0-alpha.1] - 2026-08-17
 
 ### Added
 
@@ -44,10 +46,9 @@ be finalized before the first release.
   Startup now fails closed before migration when an existing database contains
   active legacy visibility decisions, without deleting or rewriting those rows.
 
-### Known blockers
+### Release boundary
 
-- Container SBOM, human review of the current Linux/amd64 license mapping, and
-  signed provenance are not yet release-complete. Additional platform bundles
-  are required only if support for those artifact targets is proposed.
-- Independent clean-Linux-host Compose validation remains open; the local
-  Docker Desktop Linux preflight is complete.
+- The first container is a Linux/amd64, CGO-disabled pre-release. It carries
+  the reviewed license bundle and is published only from an immutable tag with
+  an image SBOM, build attestation, keyless signature, and synthetic smoke
+  evidence. Other platforms remain fail-closed until separately inventoried.

@@ -17,8 +17,8 @@ To the maintainer's knowledge:
   deployment artifact is included as first-party project content.
 
 Third-party components retain their own terms. Their artifact roles, original
-license texts, and pending human review are recorded separately under
-`LICENSES/` and `THIRD_PARTY_NOTICES.md`.
+license texts, obligations, and maintainer-authorized Codex technical review
+are recorded separately under `LICENSES/` and `THIRD_PARTY_NOTICES.md`.
 
 This is the maintainer's project-origin attestation, not legal advice and not a
 substitute for reviewing future contributions or release artifacts.
