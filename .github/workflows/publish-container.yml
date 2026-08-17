@@ -276,26 +276,30 @@ jobs:
             --read-only \
             --cap-drop ALL \
             --security-opt no-new-privileges \
-            --tmpfs /tmp:rw,noexec,nosuid,nodev \
-            --tmpfs /app/data:rw,noexec,nosuid,nodev \
-            --tmpfs /app/cache:rw,noexec,nosuid,nodev \
-            --tmpfs /app/.cache:rw,noexec,nosuid,nodev \
-            --tmpfs /app/runs:rw,noexec,nosuid,nodev \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,mode=1777 \
+            --tmpfs /app/data:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            --tmpfs /app/cache:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            --tmpfs /app/.cache:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            --tmpfs /app/runs:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
             -e "BMANGA_AUTH_""USER=${identity}" \
             -e "BMANGA_AUTH_""PASSWORD=${proof}" \
             -p 127.0.0.1:18765:8765 \
             "${ref}"
           for attempt in $(seq 1 60); do
-            if curl --fail --silent --show-error --user "${identity}:${proof}" \
+            if curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+              --user "${identity}:${proof}" \
               http://127.0.0.1:18765/api/health > artifacts/health.json; then
               break
             fi
             sleep 1
           done
-          curl --fail --silent --show-error --user "${identity}:${proof}" \
+          curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+            --user "${identity}:${proof}" \
             http://127.0.0.1:18765/api/runtime-diagnostics > artifacts/runtime-diagnostics.json
-          curl --fail --silent --show-error --user "${identity}:${proof}" \
+          curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+            --user "${identity}:${proof}" \
             http://127.0.0.1:18765/v2/ > artifacts/v2-index.html
+          grep -qi '<!doctype html>' artifacts/v2-index.html
           python - "${VERSION}" <<'PY'
           import json, sys
           health = json.load(open("artifacts/health.json", encoding="utf-8"))
