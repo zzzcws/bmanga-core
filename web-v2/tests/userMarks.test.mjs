@@ -7,7 +7,11 @@ import {
   createUserMarkPatch,
   currentPersonalMarkValue,
   parseScoreControlValue,
+  personalRatingOptions,
   personalMarkFieldsForTarget,
+  qualityRatingOptions,
+  readStatusOptions,
+  rereadPriorityOptions,
   scoreControlValue,
 } from "../src/lib/userMarks.ts";
 
@@ -95,4 +99,37 @@ test("非法阅读状态、区间和空目标会在发请求前被拒绝", () =>
   assert.throws(() => createUserMarkPatch("work", "work-1", "reread_priority", 4), RangeError);
   assert.throws(() => createUserMarkPatch("work", "work-1", "image_quality", 0), RangeError);
   assert.throws(() => createUserMarkPatch("work", " ", "personal_rating", 8), /缺少目标 ID/);
+});
+
+test("个人标记选项和本地校验错误支持中英日三语", () => {
+  assert.deepEqual(readStatusOptions("en").map((option) => option.label), [
+    "Unread",
+    "Reading",
+    "Completed",
+    "On hold",
+  ]);
+  assert.deepEqual(readStatusOptions("ja").map((option) => option.label), ["未読", "読書中", "読了", "保留"]);
+  assert.equal(personalRatingOptions("en")[0].accessibleLabel, "Clear the personal rating and return to unrated");
+  assert.equal(personalRatingOptions("ja")[10].accessibleLabel, "個人評価：9点");
+  assert.equal(rereadPriorityOptions("en")[2].accessibleLabel, "Medium reread priority");
+  assert.equal(rereadPriorityOptions("ja")[3].accessibleLabel, "再読優先度：高");
+  assert.equal(qualityRatingOptions("en")[5].accessibleLabel, "Quality rating: 5");
+  assert.equal(qualityRatingOptions("ja")[0].label, "クリア");
+
+  assert.throws(
+    () => parseScoreControlValue("", 0, 10, "en"),
+    /explicit integer or the clear value/,
+  );
+  assert.throws(
+    () => parseScoreControlValue("11", 0, 10, "ja"),
+    /0 から 10 の範囲/,
+  );
+  assert.throws(
+    () => createUserMarkPatch("work", " ", "personal_rating", 8, "", "en"),
+    /missing a target ID/,
+  );
+  assert.throws(
+    () => createUserMarkPatch("series", "series-1", "translation_quality", 4, "", "ja"),
+    /シリーズマーク/,
+  );
 });

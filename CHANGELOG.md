@@ -6,6 +6,19 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+## [0.1.0-alpha.3] - 2026-08-17
+
+### Added
+
+- Explicit English, Simplified Chinese, and Japanese interface selection across
+  the main web application and sign-in page. Simplified Chinese remains the
+  default; the selected locale persists locally and synchronizes across tabs.
+- Localized navigation, actions, validation, status messages, document titles,
+  metadata descriptions, and accessibility labels without translating user
+  book content or catalog metadata.
+- A complete Japanese README and consistent English / 简体中文 / 日本語
+  navigation across all three project introductions.
+
 ## [0.1.0-alpha.2] - 2026-08-17
 
 ### Added

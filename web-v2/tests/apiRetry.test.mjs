@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ApiError, apiGet, pageUrl } from "../src/lib/api.ts";
+import { ApiError, apiErrorText, apiGet, pageUrl } from "../src/lib/api.ts";
 
 test("reader page URLs cap at 3200 and opt into source quality only when requested", () => {
   assert.equal(
@@ -78,4 +78,57 @@ test("GET retry delay obeys cancellation", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("known API errors are synthesized in the requested locale", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: "work not found" }), {
+    status: 404,
+    headers: { "content-type": "application/json" },
+  });
+  try {
+    await assert.rejects(
+      apiGet("/api/work", { locale: "en", params: { id: "missing" } }),
+      (error) => error instanceof ApiError && error.message === "This work could not be found.",
+    );
+    await assert.rejects(
+      apiGet("/api/work", { locale: "ja", params: { id: "missing" } }),
+      (error) => error instanceof ApiError && error.message === "この作品が見つかりません。",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("unknown server details are preserved behind a localized prefix", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: "storage paused" }), {
+    status: 400,
+    headers: { "content-type": "application/json" },
+  });
+  try {
+    await assert.rejects(
+      apiGet("/api/work", { locale: "en", params: { id: "work-1" } }),
+      (error) => error instanceof ApiError && error.message === "Server message: storage paused",
+    );
+    await assert.rejects(
+      apiGet("/api/work", { locale: "ja", params: { id: "work-1" } }),
+      (error) => error instanceof ApiError && error.message === "サーバーからのメッセージ：storage paused",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("local API failures preserve sanitized local errors and expose locale-aware cancellation and same-origin text", async () => {
+  assert.equal(apiErrorText({ name: "AbortError" }, "en"), "The request was cancelled.");
+  assert.equal(apiErrorText({ name: "AbortError" }, "ja"), "リクエストはキャンセルされました。");
+  assert.equal(apiErrorText(new Error("No readable pages"), "en"), "No readable pages");
+  const localFailure = ["C:", "private", "library", "failure"].join("\\");
+  assert.equal(apiErrorText(new Error(localFailure), "en"), "Local path");
+  await assert.rejects(
+    apiGet("https://example.invalid/api", { locale: "ja" }),
+    (error) => error instanceof ApiError
+      && apiErrorText(error, "ja") === "bmanga と同一オリジンの API のみにアクセスできます。",
+  );
 });

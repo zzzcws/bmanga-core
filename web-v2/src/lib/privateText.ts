@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE, localizeMessage, type Locale } from "./locale.ts";
+
 const EXTERNAL_SCHEME = /\bhttps?:\/\/[^\s，。；、,;!?！？"'“”‘’<>]+/giu;
 const LOCAL_SCHEME = /\b(?:file|smb):\/\/[^\r\n\t，。；、,;!?！？"'“”‘’<>|·]+/giu;
 const WINDOWS_PATH = /(?:[a-z]:[\\/]|\\\\)[^\r\n\t，。；、,;!?！？"'“”‘’<>|·]+/giu;
@@ -29,18 +31,31 @@ function localPathLength(value: string): number {
   return value.length;
 }
 
-function redactLocalPath(value: string): string {
+function redactLocalPath(value: string, locale: Locale): string {
   const length = localPathLength(value);
-  return `本地路径${value.slice(length)}`;
+  return `${localizeMessage({
+    "zh-CN": "本地路径",
+    en: "Local path",
+    ja: "ローカルパス",
+  }, locale)}${value.slice(length)}`;
 }
 
-export function sanitizePrivateText(value: unknown, fallback = "", maxLength = 420): string {
+export function sanitizePrivateText(
+  value: unknown,
+  fallback = "",
+  maxLength = 420,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   const text = String(value || fallback).trim();
   if (!text) return fallback;
   return text
-    .replace(EXTERNAL_SCHEME, "外部地址")
-    .replace(LOCAL_SCHEME, redactLocalPath)
-    .replace(WINDOWS_PATH, redactLocalPath)
-    .replace(POSIX_PATH, (match, prefix: string) => `${prefix}${redactLocalPath(match.slice(prefix.length))}`)
+    .replace(EXTERNAL_SCHEME, localizeMessage({
+      "zh-CN": "外部地址",
+      en: "External address",
+      ja: "外部アドレス",
+    }, locale))
+    .replace(LOCAL_SCHEME, (match) => redactLocalPath(match, locale))
+    .replace(WINDOWS_PATH, (match) => redactLocalPath(match, locale))
+    .replace(POSIX_PATH, (match, prefix: string) => `${prefix}${redactLocalPath(match.slice(prefix.length), locale)}`)
     .slice(0, maxLength);
 }
