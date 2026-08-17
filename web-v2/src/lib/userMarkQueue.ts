@@ -1,4 +1,5 @@
 import type { UserMarkSavePayload, UserMarkSaveResponse } from "../types";
+import { DEFAULT_LOCALE, localizeMessage, type Locale } from "./locale.ts";
 
 export const USER_MARK_PENDING_KEY = "bmanga.userMarkPending.v1";
 
@@ -106,6 +107,7 @@ let flushing = false;
 
 export async function flushPendingUserMarks(
   send: (payload: UserMarkSavePayload) => Promise<UserMarkSaveResponse>,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<UserMarkFlushResult> {
   if (flushing) return { sent: [], remaining: pendingUserMarks().length };
   const initial = pendingUserMarks();
@@ -122,7 +124,11 @@ export async function flushPendingUserMarks(
         failed.push({
           ...item,
           attempts: Number(item.attempts || 0) + 1,
-          last_error: reason instanceof Error ? reason.message : "保存失败",
+          last_error: reason instanceof Error ? reason.message : localizeMessage({
+            "zh-CN": "保存失败",
+            en: "Save failed",
+            ja: "保存に失敗しました",
+          }, locale),
           last_attempt_at: new Date().toISOString(),
         });
       }

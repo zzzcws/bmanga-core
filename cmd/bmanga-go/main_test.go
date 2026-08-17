@@ -171,7 +171,7 @@ func TestLoginPageV2ResponsiveAndAccessibleContract(t *testing.T) {
 		`@media (max-width: 760px)`,
 		`env(safe-area-inset-bottom)`,
 		`@media (prefers-reduced-motion: reduce)`,
-		`Array.from(passwordField.value || "").length + " 位"`,
+		`translate(count === 1 ? "accessCountOne" : "accessCount").replace("{count}", String(count))`,
 		`new URLSearchParams(new FormData(form))`,
 		`application/x-www-form-urlencoded;charset=UTF-8`,
 		`clearLoginError();`,

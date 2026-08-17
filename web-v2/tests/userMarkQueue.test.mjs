@@ -65,3 +65,15 @@ test("重试保留失败事件，同时不覆盖重试期间产生的新事件",
   assert.equal(result.remaining, 1);
   assert.equal(queue.pendingUserMarks()[0].payload.personal_rating, 9);
 });
+
+test("非 Error 失败原因使用当前界面语言的安全回退文案", async () => {
+  window.localStorage.values.clear();
+  queue.queuePendingUserMark({ target_type: "work", target_id: "en", personal_rating: 4 });
+  await queue.flushPendingUserMarks(async () => { throw "offline"; }, "en");
+  assert.equal(queue.pendingUserMarks()[0].last_error, "Save failed");
+
+  window.localStorage.values.clear();
+  queue.queuePendingUserMark({ target_type: "work", target_id: "ja", personal_rating: 4 });
+  await queue.flushPendingUserMarks(async () => { throw "offline"; }, "ja");
+  assert.equal(queue.pendingUserMarks()[0].last_error, "保存に失敗しました");
+});

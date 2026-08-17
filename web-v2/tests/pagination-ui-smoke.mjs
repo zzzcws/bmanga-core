@@ -7,7 +7,10 @@ import { setTimeout as delay } from "node:timers/promises";
 
 const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECT_ROOT = resolve(WEB_ROOT, "..");
-const requireFromTool = createRequire(join(PROJECT_ROOT, ".tools", "ui-smoke", "package.json"));
+const uiSmokeToolRoot = process.env.BMANGA_UI_SMOKE_TOOL_ROOT
+  ? resolve(process.env.BMANGA_UI_SMOKE_TOOL_ROOT)
+  : join(PROJECT_ROOT, ".tools", "ui-smoke");
+const requireFromTool = createRequire(join(uiSmokeToolRoot, "package.json"));
 const { chromium } = requireFromTool("playwright-core");
 const port = 18921;
 const base = `http://127.0.0.1:${port}`;
@@ -1145,8 +1148,37 @@ try {
   await page.getByRole("navigation", { name: "手机导航" }).getByRole("button", { name: /首页/u }).click();
   await page.waitForFunction(() => document.activeElement?.id === "main-content");
   assert.equal(await page.title(), "首页 · bmanga", "view change did not update the document title");
+
+  await page.getByRole("navigation", { name: "手机导航" }).getByRole("button", { name: /我的/u }).click();
+  await page.getByRole("button", { name: /阅读设置/u }).click();
+  const languageGroup = page.getByRole("group", { name: "界面语言" });
+  await languageGroup.waitFor({ state: "visible" });
+  await languageGroup.getByRole("button", { name: /English/u }).click();
+  await page.waitForFunction(() => document.documentElement.lang === "en" && document.title === "Settings · bmanga");
+  assert.equal(await page.evaluate(() => localStorage.getItem("bmanga.uiLocale.v1")), "en", "English locale was not persisted");
+  assert.equal(await page.locator('meta[name="description"]').getAttribute("content"), "A local-first, self-hosted catalog and reader for comics and page-oriented image archives.", "English metadata was not applied");
+  assert(await page.getByRole("button", { name: /Back to My shelf/u }).isVisible(), "English settings copy did not render");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => document.documentElement.lang === "en" && document.title === "Settings · bmanga");
+  assert.equal(await page.getByRole("group", { name: "Interface language" }).getByRole("button", { name: /English/u }).getAttribute("aria-pressed"), "true", "English locale did not survive reload");
+
+  const synchronizedPage = await context.newPage();
+  await synchronizedPage.goto(`${base}/v2/`, { waitUntil: "domcontentloaded" });
+  await synchronizedPage.waitForFunction(() => document.documentElement.lang === "en" && document.title === "Home · bmanga");
+  await page.getByRole("group", { name: "Interface language" }).getByRole("button", { name: /日本語/u }).click();
+  await page.waitForFunction(() => document.documentElement.lang === "ja" && document.title === "設定 · bmanga");
+  await synchronizedPage.waitForFunction(() => document.documentElement.lang === "ja" && document.title === "ホーム · bmanga");
+  assert.equal(await page.evaluate(() => localStorage.getItem("bmanga.uiLocale.v1")), "ja", "Japanese locale was not persisted");
+  assert.equal(await page.locator('meta[name="description"]').getAttribute("content"), "漫画やページ画像アーカイブ向けの、ローカルファーストでセルフホスト可能なカタログ兼リーダーです。", "Japanese metadata was not applied");
+  assert(await page.getByRole("button", { name: /マイページへ戻る/u }).isVisible(), "Japanese settings copy did not render");
+  await synchronizedPage.evaluate(() => localStorage.clear());
+  await page.waitForFunction(() => document.documentElement.lang === "zh-CN" && document.title === "设置 · bmanga");
+  await synchronizedPage.reload({ waitUntil: "domcontentloaded" });
+  await synchronizedPage.waitForFunction(() => document.documentElement.lang === "zh-CN" && document.title === "首页 · bmanga");
+  await synchronizedPage.close();
   await context.close();
-  process.stdout.write("pagination UI smoke passed at desktop and 320px\n");
+  process.stdout.write("pagination and locale UI smoke passed at desktop and 320px\n");
 } finally {
   if (browser) await browser.close();
   vite.kill();

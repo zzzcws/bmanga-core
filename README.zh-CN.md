@@ -1,12 +1,14 @@
 # bmanga-core
 
+[English](README.md) · **简体中文** · [日本語](README.ja.md)
+
 **把你有权使用的本地漫画或图像归档目录，变成一个本地优先、自托管的网页书库，提供可搜索书架、
 阅读器和阅读进度。随附 Compose 配置以只读方式挂载源漫画目录。**
 
-[English](README.md) · [5 分钟体验](#5-分钟体验ghcr) ·
+[5 分钟体验](#5-分钟体验ghcr) ·
 [报告问题][bug-report] · [参与讨论][discussions]
 
-[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.2)
+[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)
 [![CI](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml)
 [![Container](https://img.shields.io/badge/GHCR-linux%2Famd64-2496ED?logo=docker&logoColor=white)](https://github.com/zzzcws/bmanga-core/pkgs/container/bmanga-core)
 [![License](https://img.shields.io/github/license/zzzcws/bmanga-core)](LICENSE)
@@ -14,6 +16,11 @@
 > [!WARNING]
 > bmanga-core 目前是 **alpha 预览版**。已发布容器目前仅支持
 > **Linux/amd64**，请勿将服务直接暴露到公网。
+
+> [!NOTE]
+> 当前发布的 `v0.1.0-alpha.3` 镜像提供 English / 简体中文 / 日本語 界面选择。
+> 该选择只切换界面文字，不会自动翻译书籍内容或书库元数据；在用户明确选择前，
+> 简体中文仍是安全默认语言。
 
 ![桌面首页](docs/assets/home-desktop.png)
 
@@ -23,7 +30,8 @@
 
 ![手机书库](docs/assets/library-mobile.png)
 
-_截图中的元数据和封面均为合成演示内容；bmanga-core 不附带可导入书籍、独立封面或示例归档。_
+_截图中的元数据和封面均为合成演示内容；bmanga-core 不附带可导入书籍、独立封面或示例归档。
+截图展示简体中文界面，可在“设置”中切换语言。_
 
 ## 公开核心能做什么
 
@@ -64,7 +72,7 @@ cp config/libraries.example.json config/libraries.json
 编辑未跟踪的 `.env`，至少设置以下项目：
 
 ```dotenv
-BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.2
+BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.3
 BMANGA_AUTH_USER=bmanga
 BMANGA_AUTH_PASSWORD=<足够长的随机密码>
 BMANGA_SESSION_SECRET=<另一个足够长的随机值>
@@ -87,7 +95,7 @@ docker compose --env-file .env down
 ```
 
 Alpha 阶段不会发布 `latest` 标签。更新固定版本前，请先阅读
-[发布说明](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.2)。
+[发布说明](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)。
 
 ## 邀请早期测试者
 
@@ -124,7 +132,7 @@ CGO_ENABLED=0 go build -buildvcs=false -mod=readonly -trimpath \
 docker build -t bmanga:local .
 ```
 
-前端构建使用已提交的 npm 锁文件，并将忽略跟踪的输出写入 `web/v2`。最终容器只包含两个静态
+前端构建使用已提交的 npm 锁文件，并将 Git 忽略的输出写入 `web/v2`。最终容器只包含两个静态
 Go 二进制文件、生成的网页资源和已审查的许可材料，不包含 Python 运行时或文档/归档辅助包。
 
 ## 仅限本地的工作流

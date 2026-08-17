@@ -38,6 +38,12 @@ import { type DetailState } from "./lib/detailProgress";
 import type { PersonalMarkField } from "./lib/userMarks";
 import { cleanTitle, pageMeta, progressFor } from "./lib/catalogPresentation";
 import { selectSeriesContinueItem } from "./lib/seriesResume";
+import {
+  DEFAULT_LOCALE,
+  intlLocale,
+  localizeMessage,
+  type Locale,
+} from "./lib/locale";
 import type {
   CatalogItem,
   PagesResponse,
@@ -496,6 +502,42 @@ export const discoverModes: Array<{ id: DiscoverMode; label: string; title: stri
   { id: "any", label: "随缘", title: "不设条件，让整座书库替你做决定。", copy: "从所有可读作品中随机抽取，适合完全不知道想看什么的夜晚。" },
 ];
 
+export function discoverModesForLocale(locale: Locale = DEFAULT_LOCALE): Array<{ id: DiscoverMode; label: string; title: string; copy: string }> {
+  const messages: Record<DiscoverMode, { label: Record<Locale, string>; title: Record<Locale, string>; copy: Record<Locale, string> }> = {
+    unread: {
+      label: { "zh-CN": "未读", en: "Unread", ja: "未読" },
+      title: { "zh-CN": "从没翻开过的书里，挑一册今晚认识。", en: "Meet a book you have never opened.", ja: "まだ開いたことのない一冊と、今夜出会いましょう。" },
+      copy: { "zh-CN": "只从未读作品中抽取，让书架里安静太久的封面重新被看见。", en: "Pick only from unread works and bring a quiet cover back into view.", ja: "未読作品だけから選び、長く眠っていた表紙をもう一度見つけます。" },
+    },
+    reading: {
+      label: { "zh-CN": "在读", en: "In progress", ja: "読書中" },
+      title: { "zh-CN": "把一段已经开始的阅读，接着读下去。", en: "Continue a story you already started.", ja: "読みかけの一冊を、続きを開いてみましょう。" },
+      copy: { "zh-CN": "从尚未读完的作品里换一组，适合找回最近搁下的章节。", en: "Choose from unfinished works and return to a recently paused chapter.", ja: "未読了の作品から選び、最近止めた章へ戻ります。" },
+    },
+    liked: {
+      label: { "zh-CN": "喜欢", en: "Liked", ja: "お気に入り" },
+      title: { "zh-CN": "从你喜欢过的作品里，找一本久别重逢。", en: "Rediscover something you once liked.", ja: "以前好きだった作品と、もう一度出会いましょう。" },
+      copy: { "zh-CN": "依据收藏与评分留下的偏好，随机抽取值得再翻一次的作品。", en: "Use your saved preferences to find something worth opening again.", ja: "保存した好みをもとに、もう一度読みたい作品を選びます。" },
+    },
+    reread: {
+      label: { "zh-CN": "重读", en: "Reread", ja: "再読" },
+      title: { "zh-CN": "今晚不追新书，只重温一本旧爱。", en: "Skip the new arrivals and revisit an old favorite.", ja: "今夜は新刊ではなく、懐かしい一冊を読み返しましょう。" },
+      copy: { "zh-CN": "从标记过重读优先级的作品中抽取，保留有意选择的偶然。", en: "Pick from works you marked for rereading, with a little room for chance.", ja: "再読候補にした作品から、偶然を少し残して選びます。" },
+    },
+    any: {
+      label: { "zh-CN": "随缘", en: "Surprise me", ja: "おまかせ" },
+      title: { "zh-CN": "不设条件，让整座书库替你做决定。", en: "Let the whole library decide for you.", ja: "条件を決めず、ライブラリ全体に選んでもらいましょう。" },
+      copy: { "zh-CN": "从所有可读作品中随机抽取，适合完全不知道想看什么的夜晚。", en: "Pick from every readable work when you have no idea what to read.", ja: "何を読みたいか決まらない夜に、読める全作品から選びます。" },
+    },
+  };
+  return (["unread", "reading", "liked", "reread", "any"] as const).map((id) => ({
+    id,
+    label: messages[id].label[locale],
+    title: messages[id].title[locale],
+    copy: messages[id].copy[locale],
+  }));
+}
+
 export const navItems: Array<{ id: View; index: string; label: string }> = [
   { id: "home", index: "01", label: "首页" },
   { id: "library", index: "02", label: "书库" },
@@ -503,6 +545,21 @@ export const navItems: Array<{ id: View; index: string; label: string }> = [
   { id: "search", index: "04", label: "搜索" },
   { id: "my", index: "05", label: "我的" },
 ];
+
+export function navItemsForLocale(locale: Locale = DEFAULT_LOCALE): Array<{ id: View; index: string; label: string }> {
+  const labels: Record<Exclude<View, "settings">, Record<Locale, string>> = {
+    home: { "zh-CN": "首页", en: "Home", ja: "ホーム" },
+    library: { "zh-CN": "书库", en: "Library", ja: "ライブラリ" },
+    discover: { "zh-CN": "发现", en: "Discover", ja: "見つける" },
+    search: { "zh-CN": "搜索", en: "Search", ja: "検索" },
+    my: { "zh-CN": "我的", en: "My shelf", ja: "マイページ" },
+  };
+  return (["home", "library", "discover", "search", "my"] as const).map((id, offset) => ({
+    id,
+    index: String(offset + 1).padStart(2, "0"),
+    label: labels[id][locale],
+  }));
+}
 
 export const viewLabels: Record<View, string> = {
   home: "首页",
@@ -512,6 +569,17 @@ export const viewLabels: Record<View, string> = {
   my: "我的阅读",
   settings: "设置",
 };
+
+export function viewLabelsForLocale(locale: Locale = DEFAULT_LOCALE): Record<View, string> {
+  return {
+    home: localizeMessage({ "zh-CN": "首页", en: "Home", ja: "ホーム" }, locale),
+    library: localizeMessage({ "zh-CN": "书库", en: "Library", ja: "ライブラリ" }, locale),
+    discover: localizeMessage({ "zh-CN": "发现", en: "Discover", ja: "見つける" }, locale),
+    search: localizeMessage({ "zh-CN": "搜索", en: "Search", ja: "検索" }, locale),
+    my: localizeMessage({ "zh-CN": "我的阅读", en: "My reading", ja: "マイリーディング" }, locale),
+    settings: localizeMessage({ "zh-CN": "设置", en: "Settings", ja: "設定" }, locale),
+  };
+}
 
 export function numberValue(value: unknown, fallback = 0): number {
   const parsed = Number(value);
@@ -531,23 +599,20 @@ export function recordValue(value: unknown): Record<string, unknown> {
     : {};
 }
 
-export function compactNumber(value: unknown): string {
-  return new Intl.NumberFormat("zh-CN", { notation: "compact", maximumFractionDigits: 1 }).format(numberValue(value));
+export function compactNumber(value: unknown, locale: Locale = DEFAULT_LOCALE): string {
+  return new Intl.NumberFormat(intlLocale(locale), { notation: "compact", maximumFractionDigits: 1 }).format(numberValue(value));
 }
 
-export function greeting(): string {
+export function greeting(locale: Locale = DEFAULT_LOCALE): string {
   const hour = new Date().getHours();
-  if (hour < 6) return "夜深了，继续你的阅读";
-  if (hour < 12) return "早上好，开始今天的阅读";
-  if (hour < 18) return "下午好，留一点时间阅读";
-  return "晚上好，继续你的阅读";
+  if (hour < 6) return localizeMessage({ "zh-CN": "夜深了，继续你的阅读", en: "A late night for another chapter", ja: "夜更けに、続きを読む" }, locale);
+  if (hour < 12) return localizeMessage({ "zh-CN": "早上好，开始今天的阅读", en: "Good morning. Start today's reading", ja: "おはようございます。今日の読書を始めましょう" }, locale);
+  if (hour < 18) return localizeMessage({ "zh-CN": "下午好，留一点时间阅读", en: "Good afternoon. Make time to read", ja: "こんにちは。読書の時間を少しだけ" }, locale);
+  return localizeMessage({ "zh-CN": "晚上好，继续你的阅读", en: "Good evening. Continue your reading", ja: "こんばんは。続きを読みましょう" }, locale);
 }
 
-export function formatDay(): string {
-  const parts = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" })
-    .formatToParts(new Date())
-    .reduce<Record<string, string>>((result, part) => ({ ...result, [part.type]: part.value }), {});
-  return `${parts.weekday || "TODAY"} · ${parts.day || ""} ${parts.month || ""}`.toUpperCase();
+export function formatDay(locale: Locale = DEFAULT_LOCALE): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), { weekday: "long", month: "long", day: "numeric" }).format(new Date());
 }
 
 export function localDateKey(date = new Date()): string {
@@ -557,7 +622,7 @@ export function localDateKey(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-export function heroPosition(item: CatalogItem, detail: WorkDetailResponse | null): string {
+export function heroPosition(item: CatalogItem, detail: WorkDetailResponse | null, locale: Locale = DEFAULT_LOCALE): string {
   const labels = [
     item.item_label,
     detail?.doujin_series?.find((entry) => entry.sequence_label)?.sequence_label,
@@ -565,7 +630,9 @@ export function heroPosition(item: CatalogItem, detail: WorkDetailResponse | nul
   const label = labels.map((value) => String(value || "").trim()).find(Boolean);
   if (label) return label;
   const progress = progressFor(item);
-  return progress ? `第 ${progress.index + 1} 页` : pageMeta(item);
+  return progress
+    ? localizeMessage({ "zh-CN": "第 {page} 页", en: "Page {page}", ja: "{page}ページ" }, locale, { page: progress.index + 1 })
+    : pageMeta(item, locale);
 }
 
 export function heroCreator(detail: WorkDetailResponse | null): string {
@@ -614,9 +681,11 @@ export function chapterLabel(item: WorkSummary): string {
   return concise || cleanTitle(label);
 }
 
-export function readerNextItemLabel(item: WorkSummary): string {
+export function readerNextItemLabel(item: WorkSummary, locale: Locale = DEFAULT_LOCALE): string {
   const label = chapterLabel(item);
-  return label.length <= 10 ? `下一话 · ${label}` : "下一话";
+  return label.length <= 10
+    ? localizeMessage({ "zh-CN": "下一话 · {label}", en: "Next · {label}", ja: "次の話 · {label}" }, locale, { label })
+    : localizeMessage({ "zh-CN": "下一话", en: "Next chapter", ja: "次の話" }, locale);
 }
 
 export function userMarkMatchesPayload(mark: UserMark, payload: UserMarkSavePayload, field: PersonalMarkField): boolean {
@@ -631,13 +700,17 @@ export function focusRelatedSection(id: "detail-related-editions-title" | "detai
   });
 }
 
-export async function readerPreparationRequest<T>(label: string, request: Promise<T>): Promise<T> {
+export async function readerPreparationRequest<T>(label: string, request: Promise<T>, locale: Locale = DEFAULT_LOCALE): Promise<T> {
   try {
     return await request;
   } catch (reason) {
     if ((reason as { name?: string })?.name === "AbortError") throw reason;
     const status = reason instanceof ApiError && reason.status > 0 ? `（HTTP ${reason.status}）` : "";
-    throw new Error(`${label}读取失败${status}：${apiErrorText(reason)}`, { cause: reason });
+    throw new Error(localizeMessage({
+      "zh-CN": "{label}读取失败{status}：{error}",
+      en: "Could not load {label}{status}: {error}",
+      ja: "{label}を読み込めませんでした{status}：{error}",
+    }, locale, { label, status, error: apiErrorText(reason, locale) }), { cause: reason });
   }
 }
 
@@ -662,7 +735,7 @@ export function remainingMinutes(item: CatalogItem): number | null {
   return Math.max(1, Math.ceil((remainingPages * 35) / 60));
 }
 
-export function formatLastRead(item: CatalogItem): string {
+export function formatLastRead(item: CatalogItem, locale: Locale = DEFAULT_LOCALE): string {
   const value = String(
     item.progress?.last_read_at
       || item.progress_last_read_at
@@ -677,20 +750,29 @@ export function formatLastRead(item: CatalogItem): string {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const readDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
   const dayDelta = Math.round((today - readDay) / 86_400_000);
-  const label = dayDelta === 0 ? "今天" : dayDelta === 1 ? (date.getHours() >= 18 ? "昨晚" : "昨天") : `${date.getMonth() + 1}月${date.getDate()}日`;
-  const time = new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  const label = dayDelta === 0
+    ? localizeMessage({ "zh-CN": "今天", en: "Today", ja: "今日" }, locale)
+    : dayDelta === 1
+      ? localizeMessage(
+        date.getHours() >= 18
+          ? { "zh-CN": "昨晚", en: "Last night", ja: "昨夜" }
+          : { "zh-CN": "昨天", en: "Yesterday", ja: "昨日" },
+        locale,
+      )
+      : new Intl.DateTimeFormat(intlLocale(locale), { month: "short", day: "numeric" }).format(date);
+  const time = new Intl.DateTimeFormat(intlLocale(locale), { hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
   return `${label} · ${time}`;
 }
 
-export function heroNote(item: CatalogItem, detail: WorkDetailResponse | null): string {
+export function heroNote(item: CatalogItem, detail: WorkDetailResponse | null, locale: Locale = DEFAULT_LOCALE): string {
   const personalNote = String(detail?.mark?.notes || "").trim();
   if (personalNote) return personalNote;
   const progress = progressFor(item);
-  if (progress?.completed) return "这一册已经读完，随时可以回来重温。";
+  if (progress?.completed) return localizeMessage({ "zh-CN": "这一册已经读完，随时可以回来重温。", en: "Finished. Come back whenever you want to reread it.", ja: "読了済みです。いつでも読み返せます。" }, locale);
   if (progress?.count) {
     const remainingPages = Math.max(0, progress.count - (progress.index + 1));
-    if (remainingPages > 0 && remainingPages <= 8) return `只剩 ${remainingPages} 页，今晚正好读完这一段。`;
+    if (remainingPages > 0 && remainingPages <= 8) return localizeMessage({ "zh-CN": "只剩 {pages} 页，今晚正好读完这一段。", en: "Only {pages} pages left—just enough to finish tonight.", ja: "残り{pages}ページ。今夜ちょうど読み切れそうです。" }, locale, { pages: remainingPages });
   }
-  if (progress) return "书页替你记住了上次停下的地方。";
-  return "新入馆的一册，等你从第一页翻开。";
+  if (progress) return localizeMessage({ "zh-CN": "书页替你记住了上次停下的地方。", en: "Your last page is waiting for you.", ja: "前回止めたページを覚えています。" }, locale);
+  return localizeMessage({ "zh-CN": "新入馆的一册，等你从第一页翻开。", en: "A new arrival, waiting to be opened from page one.", ja: "新しく加わった一冊。最初のページからどうぞ。" }, locale);
 }

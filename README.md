@@ -1,13 +1,15 @@
 # bmanga-core
 
+**English** · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
+
 **Turn an authorized local manga or comics folder into a local-first,
 self-hosted web library with a searchable shelf, reader, and reading progress.
 The supplied Compose profile mounts the source library read-only.**
 
-[简体中文](README.zh-CN.md) · [5-minute GHCR trial](#5-minute-ghcr-trial) ·
+[5-minute GHCR trial](#5-minute-ghcr-trial) ·
 [Report a bug][bug-report] · [Ask a question][discussions]
 
-[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.2)
+[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)
 [![CI](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml)
 [![Container](https://img.shields.io/badge/GHCR-linux%2Famd64-2496ED?logo=docker&logoColor=white)](https://github.com/zzzcws/bmanga-core/pkgs/container/bmanga-core)
 [![License](https://img.shields.io/github/license/zzzcws/bmanga-core)](LICENSE)
@@ -15,6 +17,12 @@ The supplied Compose profile mounts the source library read-only.**
 > [!WARNING]
 > bmanga-core is an **alpha preview**. The published container currently supports
 > **Linux/amd64 only** and should not be exposed directly to the Internet.
+
+> [!NOTE]
+> The published `v0.1.0-alpha.3` image includes an English / 简体中文 / 日本語
+> interface selector. It changes interface copy only; it does not translate book
+> contents or catalog metadata. Simplified Chinese remains the safe default until
+> a language is selected explicitly.
 
 ![Desktop home](docs/assets/home-desktop.png)
 
@@ -25,7 +33,8 @@ The supplied Compose profile mounts the source library read-only.**
 ![Mobile library](docs/assets/library-mobile.png)
 
 _The screenshots use synthetic demo metadata and artwork; bmanga-core ships no
-importable books, standalone cover images, or sample archives._
+importable books, standalone cover images, or sample archives. They show the
+Simplified Chinese interface; the language selector is available in Settings._
 
 ## What the public core does
 
@@ -73,7 +82,7 @@ cp config/libraries.example.json config/libraries.json
 Edit the untracked `.env` file and set at least these values:
 
 ```dotenv
-BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.2
+BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.3
 BMANGA_AUTH_USER=bmanga
 BMANGA_AUTH_PASSWORD=<a-long-random-password>
 BMANGA_SESSION_SECRET=<a-different-long-random-value>
@@ -97,7 +106,7 @@ docker compose --env-file .env down
 ```
 
 There is deliberately no `latest` tag during alpha. Review the
-[release notes](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.2)
+[release notes](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)
 before updating a pinned version.
 
 ## Early testers wanted

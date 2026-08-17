@@ -439,14 +439,59 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
 
     .panel-topline {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 18px;
       margin-bottom: clamp(42px, 7vh, 72px);
     }
 
     .panel-eyebrow {
+      margin: 7px 0 0;
       color: var(--ink-faint);
+    }
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .language-switcher {
+      display: inline-flex;
+      align-items: stretch;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      background: rgba(255, 250, 241, 0.58);
+    }
+
+    .language-option {
+      min-height: 32px;
+      padding: 5px 9px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink-faint);
+      font-size: 10px;
+      font-weight: 720;
+      white-space: nowrap;
+      transition: color 180ms var(--ease), background 180ms var(--ease);
+    }
+
+    .language-option:last-child {
+      border-right: 0;
+    }
+
+    .language-option:hover {
+      background: rgba(33, 56, 47, 0.055);
+      color: var(--forest);
+    }
+
+    .language-option[aria-pressed="true"] {
+      background: var(--forest);
+      color: var(--paper-bright);
     }
 
     .private-state {
@@ -949,29 +994,29 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#login-form">跳到登录表单</a>
+  <a class="skip-link" href="#login-form" data-i18n="skipLink">跳到登录表单</a>
   <div class="page">
     <main class="login-shell" data-login-design="paper-ink-v2">
       <section class="login-editorial" aria-labelledby="brand-title">
         <div class="editorial-topline">
-          <div class="brand-lockup" aria-label="bmanga 私人漫画馆">
+          <div class="brand-lockup" aria-label="bmanga 私人漫画馆" data-i18n-aria-label="brandAria">
             <span class="brand-mark" aria-hidden="true"></span>
             <span class="brand-copy">
               <strong>bmanga</strong>
-              <small>PRIVATE MANGA LIBRARY</small>
+              <small data-i18n="brandSubtitle">私人漫画馆</small>
             </span>
           </div>
-          <span class="folio">EDITION · V2</span>
+          <span class="folio" data-i18n="folio">版本 · V2</span>
         </div>
         <div class="editorial-story">
-          <p class="kicker">PRIVATE READING · PERSONAL ARCHIVE</p>
-          <h1 id="brand-title">纸墨之间，<br />回到<em>自己的书架。</em></h1>
-          <p>阅读、整理与进度，安静地留在你的私人空间。每次回来，都从上一次停下的地方继续。</p>
+          <p class="kicker" data-i18n="kicker">私人阅读 · 个人典藏</p>
+          <h1 id="brand-title"><span data-i18n="heroLineOne">纸墨之间，</span><br /><span data-i18n="heroLineTwo">回到</span><em data-i18n="heroEmphasis">自己的书架。</em></h1>
+          <p data-i18n="heroDescription">阅读、整理与进度，安静地留在你的私人空间。每次回来，都从上一次停下的地方继续。</p>
         </div>
         <div class="editorial-ledger" aria-hidden="true">
-          <span class="ledger-item"><strong>READ</strong><small>沉浸阅读</small></span>
-          <span class="ledger-item"><strong>KEEP</strong><small>私人收藏</small></span>
-          <span class="ledger-item"><strong>RESUME</strong><small>跨设备续读</small></span>
+          <span class="ledger-item"><strong>READ</strong><small data-i18n="ledgerRead">沉浸阅读</small></span>
+          <span class="ledger-item"><strong>KEEP</strong><small data-i18n="ledgerKeep">私人收藏</small></span>
+          <span class="ledger-item"><strong>RESUME</strong><small data-i18n="ledgerResume">跨设备续读</small></span>
         </div>
         <span class="editorial-orbit" aria-hidden="true"></span>
         <span class="issue-mark" aria-hidden="true">01</span>
@@ -979,29 +1024,36 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
 
       <section class="login-panel" aria-labelledby="login-title">
         <div class="panel-topline">
-          <p class="panel-eyebrow">LIBRARY ACCESS</p>
-          <span class="private-state">PROTECTED</span>
+          <p class="panel-eyebrow" data-i18n="panelEyebrow">书库访问</p>
+          <div class="panel-actions">
+            <div class="language-switcher" role="group" aria-label="界面语言" data-locale-switcher data-i18n-aria-label="languageSwitcherAria">
+              <button class="language-option" type="button" data-locale="zh-CN" aria-label="切换到中文" data-i18n-aria-label="localeZhAria" aria-pressed="true"><span lang="zh-CN">中文</span></button>
+              <button class="language-option" type="button" data-locale="en" aria-label="切换到英文" data-i18n-aria-label="localeEnAria" aria-pressed="false"><span lang="en">English</span></button>
+              <button class="language-option" type="button" data-locale="ja" aria-label="切换到日文" data-i18n-aria-label="localeJaAria" aria-pressed="false"><span lang="ja">日本語</span></button>
+            </div>
+            <span class="private-state" data-i18n="protectedState">受保护</span>
+          </div>
         </div>
         <div class="login-intro">
-          <h2 id="login-title">进入私人书房</h2>
-          <p>输入用户名和访问密码，继续上一次阅读。</p>
+          <h2 id="login-title" data-i18n="loginTitle">进入私人书房</h2>
+          <p data-i18n="loginDescription">输入用户名和访问密码，继续上一次阅读。</p>
         </div>
         ` + messageHTML + `
         <form id="login-form" class="login-form" method="post" action="` + html.EscapeString(formAction) + `" data-login-form aria-describedby="login-privacy" tabindex="-1">
           <input type="hidden" name="next" value="` + html.EscapeString(safeNext) + `" />
           <div class="field-group">
-            <label class="field-label" for="login-username"><span>用户名</span><small>USER</small></label>
+            <label class="field-label" for="login-username"><span data-i18n="usernameLabel">用户名</span><small data-i18n="usernameHint">用户</small></label>
             <span class="input-frame">
-              <input id="login-username" name="username" type="text" value="` + html.EscapeString(user) + `" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+              <input id="login-username" name="username" type="text" value="` + html.EscapeString(user) + `" placeholder="输入用户名" data-i18n-placeholder="usernamePlaceholder" autocomplete="username" autocapitalize="none" spellcheck="false" required />
             </span>
           </div>
           <div class="field-group">
-            <label class="field-label" for="login-password"><span>访问密码</span><small>PASSWORD</small></label>
+            <label class="field-label" for="login-password"><span data-i18n="accessLabel">访问密码</span><small data-i18n="accessHint">密码</small></label>
             <span class="password-frame">
-              <input id="login-password" name="password" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required autofocus data-password-field aria-describedby="password-meta" />
+              <input id="login-password" name="password" type="password" placeholder="输入访问密码" data-i18n-placeholder="accessPlaceholder" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required autofocus data-password-field aria-describedby="password-meta" />
               <button class="password-toggle" type="button" data-password-toggle aria-controls="login-password" aria-label="显示密码" aria-pressed="false"><span data-password-toggle-label>显示</span></button>
             </span>
-            <span class="field-meta"><span>区分大小写</span><span id="password-meta" data-password-meta>0 位</span></span>
+            <span class="field-meta"><span data-i18n="caseSensitive">区分大小写</span><span id="password-meta" data-password-meta>0 位</span></span>
           </div>
           <button class="login-submit" type="submit">
             <span class="submit-label" data-submit-label>进入书库</span>
@@ -1010,7 +1062,7 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
         </form>
         <div class="privacy-note" id="login-privacy">
           <span class="privacy-seal" aria-hidden="true"></span>
-          <p><strong>受保护的私人访问</strong>此浏览器会保存登录会话；退出或会话失效后需要重新验证。</p>
+          <p><strong data-i18n="privacyTitle">受保护的私人访问</strong><span data-i18n="privacyBody">此浏览器会保存登录会话；退出或会话失效后需要重新验证。</span></p>
         </div>
         <div class="panel-foot" aria-hidden="true">
           <span>BMANGA / LOCAL-FIRST</span>
@@ -1021,6 +1073,154 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
   </div>
   <script nonce="` + nonce + `">
     (function () {
+      var LOCALE_STORAGE_KEY = "bmanga.uiLocale.v1";
+      var DEFAULT_LOCALE = "zh-CN";
+      var GENERIC_LOGIN_ERROR = "loginFailed";
+      var messages = {
+        "zh-CN": {
+          documentTitle: "登录 · bmanga 私人漫画馆",
+          skipLink: "跳到登录表单",
+          brandAria: "bmanga 私人漫画馆",
+          brandSubtitle: "私人漫画馆",
+          folio: "版本 · V2",
+          kicker: "私人阅读 · 个人典藏",
+          heroLineOne: "纸墨之间，",
+          heroLineTwo: "回到",
+          heroEmphasis: "自己的书架。",
+          heroDescription: "阅读、整理与进度，安静地留在你的私人空间。每次回来，都从上一次停下的地方继续。",
+          ledgerRead: "沉浸阅读",
+          ledgerKeep: "私人收藏",
+          ledgerResume: "跨设备续读",
+          panelEyebrow: "书库访问",
+          protectedState: "受保护",
+          languageSwitcherAria: "界面语言",
+          localeZhAria: "切换到中文",
+          localeEnAria: "切换到英文",
+          localeJaAria: "切换到日文",
+          loginTitle: "进入私人书房",
+          loginDescription: "输入用户名和访问密码，继续上一次阅读。",
+          usernameLabel: "用户名",
+          usernameHint: "用户",
+          usernamePlaceholder: "输入用户名",
+          accessLabel: "访问密码",
+          accessHint: "密码",
+          accessPlaceholder: "输入访问密码",
+          showAccess: "显示",
+          hideAccess: "隐藏",
+          showAccessAria: "显示密码",
+          hideAccessAria: "隐藏密码",
+          caseSensitive: "区分大小写",
+          accessCountOne: "{count} 位",
+          accessCount: "{count} 位",
+          submitLabel: "进入书库",
+          submitPending: "正在验证",
+          privacyTitle: "受保护的私人访问",
+          privacyBody: "此浏览器会保存登录会话；退出或会话失效后需要重新验证。",
+          loginFailed: "登录失败，请再试一次。",
+          errorMalformedRequest: "登录请求格式不对，请刷新后再试。",
+          errorInvalidCredentials: "账号或密码不对。",
+          errorSessionSave: "暂时无法保存登录状态，请稍后重试。",
+          errorRateLimited: "登录尝试太频繁，请稍后再试。"
+        },
+        en: {
+          documentTitle: "Sign in · bmanga private manga library",
+          skipLink: "Skip to the sign-in form",
+          brandAria: "bmanga private manga library",
+          brandSubtitle: "PRIVATE MANGA LIBRARY",
+          folio: "EDITION · V2",
+          kicker: "PRIVATE READING · PERSONAL ARCHIVE",
+          heroLineOne: "Between paper and ink,",
+          heroLineTwo: "return to ",
+          heroEmphasis: "your own shelf.",
+          heroDescription: "Keep reading, organization, and progress quietly in your private space. Each return starts where you left off.",
+          ledgerRead: "Immersive reading",
+          ledgerKeep: "Private collection",
+          ledgerResume: "Resume across devices",
+          panelEyebrow: "LIBRARY ACCESS",
+          protectedState: "PROTECTED",
+          languageSwitcherAria: "Interface language",
+          localeZhAria: "Switch to Chinese",
+          localeEnAria: "Switch to English",
+          localeJaAria: "Switch to Japanese",
+          loginTitle: "Enter your private library",
+          loginDescription: "Enter your username and access password to continue reading.",
+          usernameLabel: "Username",
+          usernameHint: "USER",
+          usernamePlaceholder: "Enter username",
+          accessLabel: "Access password",
+          accessHint: "PASSWORD",
+          accessPlaceholder: "Enter access password",
+          showAccess: "Show",
+          hideAccess: "Hide",
+          showAccessAria: "Show password",
+          hideAccessAria: "Hide password",
+          caseSensitive: "Case-sensitive",
+          accessCountOne: "{count} character",
+          accessCount: "{count} characters",
+          submitLabel: "Enter library",
+          submitPending: "Verifying",
+          privacyTitle: "Protected private access",
+          privacyBody: "This browser saves your sign-in session. You will need to verify again after signing out or when the session expires.",
+          loginFailed: "Sign-in failed. Please try again.",
+          errorMalformedRequest: "The sign-in request was invalid. Refresh the page and try again.",
+          errorInvalidCredentials: "The username or password is incorrect.",
+          errorSessionSave: "The session could not be saved securely. Try again later.",
+          errorRateLimited: "Too many sign-in attempts. Try again later."
+        },
+        ja: {
+          documentTitle: "ログイン · bmanga プライベートマンガライブラリ",
+          skipLink: "ログインフォームへ移動",
+          brandAria: "bmanga プライベートマンガライブラリ",
+          brandSubtitle: "プライベートマンガライブラリ",
+          folio: "エディション · V2",
+          kicker: "プライベート読書 · 個人アーカイブ",
+          heroLineOne: "紙とインクの間から、",
+          heroLineTwo: "自分だけの本棚へ",
+          heroEmphasis: "帰ろう。",
+          heroDescription: "読書、整理、進捗を自分だけの空間に静かに残します。戻るたびに、前回の続きから始められます。",
+          ledgerRead: "没入できる読書",
+          ledgerKeep: "プライベートコレクション",
+          ledgerResume: "デバイスをまたいで再開",
+          panelEyebrow: "ライブラリアクセス",
+          protectedState: "保護されています",
+          languageSwitcherAria: "表示言語",
+          localeZhAria: "中国語に切り替え",
+          localeEnAria: "英語に切り替え",
+          localeJaAria: "日本語に切り替え",
+          loginTitle: "プライベート書庫へ",
+          loginDescription: "ユーザー名とアクセスパスワードを入力して、読書を続けてください。",
+          usernameLabel: "ユーザー名",
+          usernameHint: "ユーザー",
+          usernamePlaceholder: "ユーザー名を入力",
+          accessLabel: "アクセスパスワード",
+          accessHint: "パスワード",
+          accessPlaceholder: "アクセスパスワードを入力",
+          showAccess: "表示",
+          hideAccess: "非表示",
+          showAccessAria: "パスワードを表示",
+          hideAccessAria: "パスワードを非表示",
+          caseSensitive: "大文字と小文字を区別",
+          accessCountOne: "{count} 文字",
+          accessCount: "{count} 文字",
+          submitLabel: "書庫に入る",
+          submitPending: "確認中",
+          privacyTitle: "保護されたプライベートアクセス",
+          privacyBody: "このブラウザーにはログインセッションが保存されます。ログアウト後またはセッションの有効期限が切れた後は、再認証が必要です。",
+          loginFailed: "ログインに失敗しました。もう一度お試しください。",
+          errorMalformedRequest: "ログインリクエストの形式が正しくありません。ページを再読み込みして、もう一度お試しください。",
+          errorInvalidCredentials: "ユーザー名またはパスワードが正しくありません。",
+          errorSessionSave: "ログイン状態を安全に保存できませんでした。しばらくしてからもう一度お試しください。",
+          errorRateLimited: "ログイン試行回数が多すぎます。しばらくしてからもう一度お試しください。"
+        }
+      };
+      var knownLoginErrors = {
+        "登录请求格式不对，请刷新后再试。": "errorMalformedRequest",
+        "账号或密码不对。": "errorInvalidCredentials",
+        "暂时无法保存登录状态，请稍后重试。": "errorSessionSave",
+        "登录尝试太频繁，请稍后再试。": "errorRateLimited"
+      };
+      var currentLocale = DEFAULT_LOCALE;
+      var isSubmitting = false;
       var form = document.querySelector("[data-login-form]");
       var errorSlot = document.querySelector("[data-login-error]");
       var usernameField = form ? form.querySelector("input[name='username']") : null;
@@ -1029,18 +1229,105 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
       var passwordToggleLabel = document.querySelector("[data-password-toggle-label]");
       var passwordMeta = document.querySelector("[data-password-meta]");
       var submitLabel = document.querySelector("[data-submit-label]");
+      var localeButtons = document.querySelectorAll("[data-locale]");
+      function normalizeLocale(value) {
+        var normalized = typeof value === "string" ? value.trim() : "";
+        return Object.prototype.hasOwnProperty.call(messages, normalized) ? normalized : DEFAULT_LOCALE;
+      }
+      function readStoredLocale() {
+        try {
+          return normalizeLocale(window.localStorage.getItem(LOCALE_STORAGE_KEY));
+        } catch (_) {
+          return DEFAULT_LOCALE;
+        }
+      }
+      function storeLocale(locale) {
+        try {
+          window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+        } catch (_) {}
+      }
+      function translate(key) {
+        var localized = messages[currentLocale] || messages[DEFAULT_LOCALE];
+        return localized[key] || messages[DEFAULT_LOCALE][key] || key;
+      }
+      function localizedLoginError(rawMessage) {
+        var raw = String(rawMessage || "").trim();
+        if (!raw || raw === GENERIC_LOGIN_ERROR) return translate("loginFailed");
+        var errorKey = knownLoginErrors[raw];
+        return errorKey ? translate(errorKey) : translate("loginFailed");
+      }
+      function renderLoginError() {
+        if (!errorSlot || errorSlot.hidden) return;
+        var source = errorSlot.getAttribute("data-error-source");
+        if (source === null) {
+          source = errorSlot.textContent || "";
+          errorSlot.setAttribute("data-error-source", source);
+        }
+        errorSlot.textContent = localizedLoginError(source);
+      }
+      function showLoginError(rawMessage) {
+        if (!errorSlot) return;
+        errorSlot.setAttribute("data-error-source", String(rawMessage || ""));
+        errorSlot.textContent = localizedLoginError(rawMessage);
+        errorSlot.hidden = false;
+        errorSlot.focus();
+      }
       function clearLoginError() {
         if (!errorSlot) return;
         errorSlot.hidden = true;
         errorSlot.textContent = "";
+        errorSlot.removeAttribute("data-error-source");
       }
       function loginErrorMessage(data) {
-		return (data && data.error) || "登录失败，请再试一次。";
+        return (data && data.error) || GENERIC_LOGIN_ERROR;
+      }
+      function updatePasswordToggle() {
+        if (!passwordField || !passwordToggle) return;
+        var visible = passwordField.type === "text";
+        if (passwordToggleLabel) passwordToggleLabel.textContent = translate(visible ? "hideAccess" : "showAccess");
+        passwordToggle.setAttribute("aria-label", translate(visible ? "hideAccessAria" : "showAccessAria"));
+        passwordToggle.setAttribute("aria-pressed", visible ? "true" : "false");
       }
       function updatePasswordMeta() {
         if (!passwordField || !passwordMeta) return;
-        passwordMeta.textContent = Array.from(passwordField.value || "").length + " 位";
+        var count = Array.from(passwordField.value || "").length;
+        passwordMeta.textContent = translate(count === 1 ? "accessCountOne" : "accessCount").replace("{count}", String(count));
       }
+      function updateSubmitLabel() {
+        if (submitLabel) submitLabel.textContent = translate(isSubmitting ? "submitPending" : "submitLabel");
+      }
+      function applyLocale(locale) {
+        currentLocale = normalizeLocale(locale);
+        document.documentElement.lang = currentLocale;
+        document.title = translate("documentTitle");
+        document.querySelectorAll("[data-i18n]").forEach(function (element) {
+          element.textContent = translate(element.getAttribute("data-i18n"));
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(function (element) {
+          element.setAttribute("placeholder", translate(element.getAttribute("data-i18n-placeholder")));
+        });
+        document.querySelectorAll("[data-i18n-aria-label]").forEach(function (element) {
+          element.setAttribute("aria-label", translate(element.getAttribute("data-i18n-aria-label")));
+        });
+        localeButtons.forEach(function (button) {
+          button.setAttribute("aria-pressed", button.getAttribute("data-locale") === currentLocale ? "true" : "false");
+        });
+        updatePasswordToggle();
+        updatePasswordMeta();
+        updateSubmitLabel();
+        renderLoginError();
+      }
+      localeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var locale = normalizeLocale(button.getAttribute("data-locale"));
+          applyLocale(locale);
+          storeLocale(locale);
+        });
+      });
+      window.addEventListener("storage", function (event) {
+        if (event.key === LOCALE_STORAGE_KEY || event.key === null) applyLocale(event.newValue);
+      });
+      applyLocale(readStoredLocale());
       if (usernameField) {
         usernameField.addEventListener("input", clearLoginError);
         usernameField.addEventListener("change", clearLoginError);
@@ -1054,16 +1341,13 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
           clearLoginError();
           updatePasswordMeta();
         });
-        updatePasswordMeta();
       }
       if (passwordField && passwordToggle) {
         passwordToggle.addEventListener("click", function () {
           clearLoginError();
           var visible = passwordField.type === "text";
           passwordField.type = visible ? "password" : "text";
-          if (passwordToggleLabel) passwordToggleLabel.textContent = visible ? "显示" : "隐藏";
-          passwordToggle.setAttribute("aria-label", visible ? "显示密码" : "隐藏密码");
-          passwordToggle.setAttribute("aria-pressed", visible ? "false" : "true");
+          updatePasswordToggle();
           passwordField.focus();
           updatePasswordMeta();
         });
@@ -1072,10 +1356,10 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
         var button = form.querySelector("button[type='submit']");
-        var originalLabel = submitLabel ? submitLabel.textContent : "";
+        isSubmitting = true;
         form.setAttribute("aria-busy", "true");
         if (button) button.disabled = true;
-        if (submitLabel) submitLabel.textContent = "正在验证";
+        updateSubmitLabel();
         clearLoginError();
         try {
           var response = await fetch(form.action, {
@@ -1093,20 +1377,24 @@ func loginPageHTMLWithNonce(user string, message string, next string, nonce stri
             data = await response.json();
           } catch (_) {}
           if (!response.ok || !data.ok) {
-            throw new Error(loginErrorMessage(data));
+            var loginFailure = new Error(loginErrorMessage(data));
+            loginFailure.loginErrorSource = loginErrorMessage(data);
+            throw loginFailure;
           }
           window.location.replace(data.next || "/v2/");
         } catch (error) {
+          var errorSource = error && Object.prototype.hasOwnProperty.call(error, "loginErrorSource")
+            ? error.loginErrorSource
+            : GENERIC_LOGIN_ERROR;
           if (errorSlot) {
-            errorSlot.textContent = error.message || String(error);
-            errorSlot.hidden = false;
-            errorSlot.focus();
+            showLoginError(errorSource);
           } else {
-            alert(error.message || String(error));
+            alert(localizedLoginError(errorSource));
           }
+          isSubmitting = false;
           form.setAttribute("aria-busy", "false");
           if (button) button.disabled = false;
-          if (submitLabel) submitLabel.textContent = originalLabel;
+          updateSubmitLabel();
         }
       });
     })();
