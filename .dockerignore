@@ -1,0 +1,16 @@
+*
+!go.mod
+!go.sum
+!LICENSE
+!THIRD_PARTY_NOTICES.md
+!LICENSES/
+!LICENSES/**
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+!web-v2/
+!web-v2/**
+web-v2/node_modules/
+!tools/
+!tools/build-web-assets.mjs

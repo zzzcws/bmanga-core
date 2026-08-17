@@ -1,0 +1,93 @@
+services:
+  bmanga:
+    platform: linux/amd64
+    image: ${BMANGA_IMAGE:-bmanga:local}
+    build:
+      context: .
+      args:
+        VERSION: ${BMANGA_VERSION:-0.0.0-dev}
+        REVISION: ${BMANGA_REVISION:-local}
+        SOURCE_URL: ${BMANGA_SOURCE_URL:-https://github.com/zzzcws/bmanga-core}
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      BMANGA_AUTH_USER: ${BMANGA_AUTH_USER:-bmanga}
+      BMANGA_AUTH_PASSWORD: ${BMANGA_AUTH_PASSWORD:?Set BMANGA_AUTH_PASSWORD in an untracked env file}
+      BMANGA_SESSION_SECRET: ${BMANGA_SESSION_SECRET:?Set BMANGA_SESSION_SECRET in an untracked env file}
+      BMANGA_COOKIE_SECURE: ${BMANGA_COOKIE_SECURE:-0}
+      BMANGA_INDEX_ON_READ: ${BMANGA_INDEX_ON_READ:-async}
+    ports:
+      - "${BMANGA_BIND_ADDRESS:-127.0.0.1}:${BMANGA_PORT:-8765}:8765"
+    volumes:
+      - type: volume
+        source: bmanga-data
+        target: /app/data
+      - type: volume
+        source: bmanga-cache
+        target: /app/cache
+      - type: volume
+        source: bmanga-page-cache
+        target: /app/.cache
+      - type: volume
+        source: bmanga-runs
+        target: /app/runs
+      - type: bind
+        source: ${BMANGA_LIBRARY_PATH:?Set BMANGA_LIBRARY_PATH to an authorized local library}
+        target: /libraries/main
+        read_only: true
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    stop_grace_period: 30s
+
+  scan:
+    profiles:
+      - tools
+    platform: linux/amd64
+    image: ${BMANGA_IMAGE:-bmanga:local}
+    build:
+      context: .
+      args:
+        VERSION: ${BMANGA_VERSION:-0.0.0-dev}
+        REVISION: ${BMANGA_REVISION:-local}
+        SOURCE_URL: ${BMANGA_SOURCE_URL:-https://github.com/zzzcws/bmanga-core}
+    entrypoint:
+      - /app/bmanga-scan
+    command:
+      - -config
+      - /app/config/libraries.json
+    restart: "no"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - type: volume
+        source: bmanga-data
+        target: /app/data
+      - type: bind
+        source: ${BMANGA_LIBRARY_PATH:?Set BMANGA_LIBRARY_PATH to an authorized local library}
+        target: /libraries/main
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BMANGA_LIBRARY_CONFIG_PATH:-./config/libraries.json}
+        target: /app/config/libraries.json
+        read_only: true
+        bind:
+          create_host_path: false
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+
+volumes:
+  bmanga-data:
+  bmanga-cache:
+  bmanga-page-cache:
+  bmanga-runs:

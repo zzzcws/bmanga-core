@@ -1,0 +1,12 @@
+* @zzzcws
+
+/.github/ @zzzcws
+/Dockerfile @zzzcws
+/compose.yaml @zzzcws
+/LICENSE @zzzcws
+/LICENSES/ @zzzcws
+/docs/first-party-rights.md @zzzcws
+/SECURITY.md @zzzcws
+/THIRD_PARTY_NOTICES.md @zzzcws
+/tools/check-third-party-licenses.py @zzzcws
+/tools/update-third-party-licenses.py @zzzcws

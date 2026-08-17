@@ -1,0 +1,55 @@
+{
+  "name": "bmanga-web-v2",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "repository": "https://github.com/zzzcws/bmanga-core",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "test:queue": "node --test --experimental-strip-types tests/progressQueue.test.mjs",
+    "test:route": "node --test --experimental-strip-types tests/browseRoute.test.mjs",
+    "test:library-page-state": "node --test --experimental-strip-types tests/libraryPageState.test.mjs",
+    "test:pagination": "node --test --experimental-strip-types tests/pagination.test.mjs",
+    "test:series": "node --test --experimental-strip-types tests/seriesOrder.test.mjs",
+    "test:series-resume": "node --test --experimental-strip-types tests/seriesResume.test.mjs",
+    "test:privacy": "node --test --experimental-strip-types tests/privateText.test.mjs",
+    "test:catalog": "node --test --experimental-strip-types tests/catalogPresentation.test.mjs",
+    "test:related": "node --test --experimental-strip-types tests/relatedWorksPresentation.test.mjs",
+    "test:work-metadata": "node --test --experimental-strip-types tests/workMetadataPresentation.test.mjs",
+    "test:motion": "node --test --experimental-strip-types tests/motion.test.mjs",
+    "test:discover": "node --test --experimental-strip-types tests/discoverState.test.mjs",
+    "test:catalog-cache": "node --test --experimental-strip-types tests/catalogPageCache.test.mjs",
+    "test:favorites-cache": "node --test --experimental-strip-types tests/favoritesPageCache.test.mjs",
+    "test:marks": "node --test --experimental-strip-types tests/userMarks.test.mjs",
+    "test:user-mark-queue": "node --test --experimental-strip-types tests/userMarkQueue.test.mjs",
+    "test:reader-interaction": "node --test --experimental-strip-types tests/readerInteraction.test.mjs",
+    "test:reader-page-cache": "node --test --experimental-strip-types tests/readerPageCache.test.mjs",
+    "test:reader-prefetch": "node --test --experimental-strip-types tests/readerPrefetch.test.mjs",
+    "test:reader-preparation-cache": "node --test --experimental-strip-types tests/readerPreparationCache.test.mjs",
+    "test:reader-image": "node --test --experimental-strip-types tests/readerImage.test.mjs",
+    "test:reader-spread": "node --test --experimental-strip-types tests/readerSpread.test.mjs",
+    "test:detail-progress": "node --test --experimental-strip-types tests/detailProgress.test.mjs",
+    "test:api": "node --test --experimental-strip-types tests/apiRetry.test.mjs",
+    "test": "npm run test:queue && npm run test:route && npm run test:library-page-state && npm run test:pagination && npm run test:series && npm run test:series-resume && npm run test:privacy && npm run test:catalog && npm run test:related && npm run test:work-metadata && npm run test:motion && npm run test:discover && npm run test:catalog-cache && npm run test:favorites-cache && npm run test:marks && npm run test:user-mark-queue && npm run test:reader-interaction && npm run test:reader-page-cache && npm run test:reader-prefetch && npm run test:reader-preparation-cache && npm run test:reader-image && npm run test:reader-spread && npm run test:detail-progress && npm run test:api",
+    "smoke:pagination": "node tests/pagination-ui-smoke.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "typescript": "7.0.2",
+    "vite": "8.1.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

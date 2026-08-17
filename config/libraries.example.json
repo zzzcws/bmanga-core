@@ -1,0 +1,16 @@
+{
+  "database": "/app/data/bmanga.sqlite",
+  "libraries": [
+    {
+      "key": "library",
+      "name": "My Library",
+      "root": "/libraries/main",
+      "mode": "mixed",
+      "catalog_kind": "standalone",
+      "ignore_directories": [
+        "#recycle",
+        "@eadir"
+      ]
+    }
+  ]
+}

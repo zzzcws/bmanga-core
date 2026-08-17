@@ -1,0 +1,603 @@
+{
+  "schemaVersion": 1,
+  "bundlePurpose": "machine-verifiable license-text inventory for one candidate artifact profile; not a legal conclusion",
+  "releaseReadiness": {
+    "ready": false,
+    "blockingReasons": [
+      {
+        "code": "human-license-review-pending",
+        "detail": "original texts and component mappings require human review"
+      }
+    ]
+  },
+  "artifactProfile": {
+    "go": {
+      "version": "1.26.6",
+      "goos": "linux",
+      "goarch": "amd64",
+      "cgoEnabled": false,
+      "goModSha256": "5986a1fc21c69d3448b5c193182b6780dffa03f9467b6012d1052d536b10dfa4",
+      "goSumSha256": "5c6c5595aea3aa07497aa7e25f8e5a64e702151902e3433446ca176736168ab9",
+      "binaryLinkage": [
+        {
+          "package": "cmd/bmanga-go",
+          "externalModules": [
+            {
+              "module": "github.com/dustin/go-humanize",
+              "version": "v1.0.1"
+            },
+            {
+              "module": "github.com/google/uuid",
+              "version": "v1.6.0"
+            },
+            {
+              "module": "github.com/remyoudompheng/bigfft",
+              "version": "v0.0.0-20230129092748-24d4a6f8daec"
+            },
+            {
+              "module": "golang.org/x/image",
+              "version": "v0.45.0"
+            },
+            {
+              "module": "golang.org/x/sys",
+              "version": "v0.47.0"
+            },
+            {
+              "module": "golang.org/x/text",
+              "version": "v0.41.0"
+            },
+            {
+              "module": "modernc.org/libc",
+              "version": "v1.72.0"
+            },
+            {
+              "module": "modernc.org/mathutil",
+              "version": "v1.7.1"
+            },
+            {
+              "module": "modernc.org/memory",
+              "version": "v1.11.0"
+            },
+            {
+              "module": "modernc.org/sqlite",
+              "version": "v1.50.0"
+            }
+          ]
+        },
+        {
+          "package": "cmd/bmanga-scan",
+          "externalModules": [
+            {
+              "module": "github.com/dustin/go-humanize",
+              "version": "v1.0.1"
+            },
+            {
+              "module": "github.com/google/uuid",
+              "version": "v1.6.0"
+            },
+            {
+              "module": "github.com/remyoudompheng/bigfft",
+              "version": "v0.0.0-20230129092748-24d4a6f8daec"
+            },
+            {
+              "module": "golang.org/x/image",
+              "version": "v0.45.0"
+            },
+            {
+              "module": "golang.org/x/sys",
+              "version": "v0.47.0"
+            },
+            {
+              "module": "golang.org/x/text",
+              "version": "v0.41.0"
+            },
+            {
+              "module": "modernc.org/libc",
+              "version": "v1.72.0"
+            },
+            {
+              "module": "modernc.org/mathutil",
+              "version": "v1.7.1"
+            },
+            {
+              "module": "modernc.org/memory",
+              "version": "v1.11.0"
+            },
+            {
+              "module": "modernc.org/sqlite",
+              "version": "v1.50.0"
+            }
+          ]
+        }
+      ]
+    },
+    "web": {
+      "packageLock": "web-v2/package-lock.json",
+      "packageLockSha256": "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a",
+      "productionPackages": [
+        {
+          "name": "react",
+          "version": "19.2.7"
+        },
+        {
+          "name": "react-dom",
+          "version": "19.2.7"
+        },
+        {
+          "name": "scheduler",
+          "version": "0.27.0"
+        }
+      ],
+      "injectedBuildRuntime": [
+        {
+          "name": "vite",
+          "version": "8.1.4"
+        },
+        {
+          "name": "rolldown",
+          "version": "1.1.5"
+        }
+      ]
+    },
+    "container": {
+      "dockerfileFrontend": "docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e",
+      "buildImages": {
+        "node": "docker.io/library/node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436",
+        "go": "docker.io/library/golang:1.26.6-bookworm@sha256:116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36"
+      },
+      "runtimeBase": "scratch",
+      "user": "65532:65532",
+      "buildTarget": {
+        "targetplatform": "linux/amd64",
+        "targetos": "linux",
+        "targetarch": "amd64",
+        "enforcement": "Dockerfile pre-build guard"
+      },
+      "includedFilesystem": "two static Go binaries, generated web assets, project license, third-party notices, and this LICENSES tree"
+    }
+  },
+  "components": [
+    {
+      "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
+      "name": "github.com/dustin/go-humanize",
+      "version": "v1.0.1",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/github.com/dustin/go-humanize@v1.0.1/LICENSE",
+          "bytes": 1136,
+          "sha256": "a973b4498c13eb74baa2a8e5c351426a6826f2fcdd909916dbe53ee2e755fd71",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "github.com/dustin/go-humanize@v1.0.1/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:github.com/google/uuid@v1.6.0",
+      "name": "github.com/google/uuid",
+      "version": "v1.6.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/github.com/google/uuid@v1.6.0/LICENSE",
+          "bytes": 1480,
+          "sha256": "0a8d61ed3cbfd5312326e8126c31ce9c627a283adc99131b56896d29ada04b2d",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "github.com/google/uuid@v1.6.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
+      "name": "github.com/remyoudompheng/bigfft",
+      "version": "v0.0.0-20230129092748-24d4a6f8daec",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
+          "bytes": 1479,
+          "sha256": "dd26a7abddd02e2d0aba97805b31f248ef7835d9e10da289b22e3b8ab78b324d",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:golang.org/x/image@v0.45.0",
+      "name": "golang.org/x/image",
+      "version": "v0.45.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/golang.org/x/image@v0.45.0/LICENSE",
+          "bytes": 1453,
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "golang.org/x/image@v0.45.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/golang.org/x/image@v0.45.0/PATENTS",
+          "bytes": 1303,
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "golang.org/x/image@v0.45.0/PATENTS",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:golang.org/x/sys@v0.47.0",
+      "name": "golang.org/x/sys",
+      "version": "v0.47.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/golang.org/x/sys@v0.47.0/LICENSE",
+          "bytes": 1453,
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "golang.org/x/sys@v0.47.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/golang.org/x/sys@v0.47.0/PATENTS",
+          "bytes": 1303,
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "golang.org/x/sys@v0.47.0/PATENTS",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:golang.org/x/text@v0.41.0",
+      "name": "golang.org/x/text",
+      "version": "v0.41.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/golang.org/x/text@v0.41.0/LICENSE",
+          "bytes": 1453,
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "golang.org/x/text@v0.41.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/golang.org/x/text@v0.41.0/PATENTS",
+          "bytes": 1303,
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "golang.org/x/text@v0.41.0/PATENTS",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/libc@v1.72.0",
+      "name": "modernc.org/libc",
+      "version": "v1.72.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE",
+          "bytes": 1482,
+          "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/libc@v1.72.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE-3RD-PARTY.md",
+          "bytes": 10505,
+          "sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/libc@v1.72.0/LICENSE-3RD-PARTY.md",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/mathutil@v1.7.1",
+      "name": "modernc.org/mathutil",
+      "version": "v1.7.1",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/mathutil@v1.7.1/LICENSE",
+          "bytes": 1486,
+          "sha256": "bfa9bf72a72ca009fd62a8f84fca3dca67e51d93af96352723646599898b6cf5",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/mathutil@v1.7.1/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/memory@v1.11.0",
+      "name": "modernc.org/memory",
+      "version": "v1.11.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE",
+          "bytes": 1484,
+          "sha256": "59895e669f48f168b6b858358f6005779cdf40a265f7828813061b56af67b496",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/memory@v1.11.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-GO",
+          "bytes": 1479,
+          "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/memory@v1.11.0/LICENSE-GO",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-MMAP-GO",
+          "bytes": 1518,
+          "sha256": "c2eba69f20d05414538c3a5df7694dde392e065ff70882e1625e90f5d6659fff",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/memory@v1.11.0/LICENSE-MMAP-GO",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/sqlite@v1.50.0",
+      "name": "modernc.org/sqlite",
+      "version": "v1.50.0",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/LICENSE",
+          "bytes": 1489,
+          "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/sqlite@v1.50.0/LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        },
+        {
+          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/SQLITE-LICENSE",
+          "bytes": 1506,
+          "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
+          "source": {
+            "kind": "go-module-cache",
+            "locator": "modernc.org/sqlite@v1.50.0/SQLITE-LICENSE",
+            "moduleZipAuthenticatedBy": "go.sum"
+          }
+        }
+      ]
+    },
+    {
+      "id": "go-toolchain-1.26.6",
+      "name": "Go toolchain and standard library",
+      "version": "1.26.6",
+      "artifactRoles": [
+        "bmanga-go",
+        "bmanga-scan"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/go/toolchain-go1.26.6/LICENSE",
+          "bytes": 1453,
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+          "source": {
+            "kind": "go-toolchain",
+            "locator": "go1.26.6/LICENSE",
+            "verifiedLocalToolchain": "go1.26.6"
+          }
+        },
+        {
+          "path": "LICENSES/go/toolchain-go1.26.6/PATENTS",
+          "bytes": 1303,
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+          "source": {
+            "kind": "go-toolchain",
+            "locator": "go1.26.6/PATENTS",
+            "verifiedLocalToolchain": "go1.26.6"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm:react-dom@19.2.7",
+      "name": "react-dom",
+      "version": "19.2.7",
+      "artifactRoles": [
+        "browser-runtime"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/npm/react-dom@19.2.7/LICENSE",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "source": {
+            "kind": "npm-ci-install",
+            "locator": "node_modules/react-dom/LICENSE",
+            "lockIntegrity": "sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==",
+            "lockResolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.7.tgz"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm:react@19.2.7",
+      "name": "react",
+      "version": "19.2.7",
+      "artifactRoles": [
+        "browser-runtime"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/npm/react@19.2.7/LICENSE",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "source": {
+            "kind": "npm-ci-install",
+            "locator": "node_modules/react/LICENSE",
+            "lockIntegrity": "sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==",
+            "lockResolved": "https://registry.npmjs.org/react/-/react-19.2.7.tgz"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm:rolldown@1.1.5",
+      "name": "rolldown",
+      "version": "1.1.5",
+      "artifactRoles": [
+        "browser-injected-modulepreload-runtime"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/npm/rolldown@1.1.5/LICENSE",
+          "bytes": 1302,
+          "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734",
+          "source": {
+            "kind": "npm-ci-install",
+            "locator": "node_modules/rolldown/LICENSE",
+            "lockIntegrity": "sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA==",
+            "lockResolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.1.5.tgz"
+          }
+        },
+        {
+          "path": "LICENSES/npm/rolldown@1.1.5/THIRD-PARTY-LICENSE",
+          "bytes": 2209,
+          "sha256": "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c",
+          "source": {
+            "kind": "fixed-upstream-tag",
+            "locator": "https://raw.githubusercontent.com/rolldown/rolldown/v1.1.5/THIRD-PARTY-LICENSE",
+            "reason": "the npm package LICENSE links to this file but omits it"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm:scheduler@0.27.0",
+      "name": "scheduler",
+      "version": "0.27.0",
+      "artifactRoles": [
+        "browser-runtime"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/npm/scheduler@0.27.0/LICENSE",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "source": {
+            "kind": "npm-ci-install",
+            "locator": "node_modules/scheduler/LICENSE",
+            "lockIntegrity": "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==",
+            "lockResolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm:vite@8.1.4",
+      "name": "vite",
+      "version": "8.1.4",
+      "artifactRoles": [
+        "browser-injected-runtime"
+      ],
+      "reviewStatus": "pending-human-review",
+      "files": [
+        {
+          "path": "LICENSES/npm/vite@8.1.4/LICENSE.md",
+          "bytes": 110976,
+          "sha256": "b1d741c26b53de1bbc0d4d7d3365b79888f9fe511527544a8a7b8e24dec43147",
+          "source": {
+            "kind": "npm-ci-install",
+            "locator": "node_modules/vite/LICENSE.md",
+            "lockIntegrity": "sha512-bTT9PsdWO+MQMNG9ZXIP/qM9wGh37DFxTV/sPq9cFpHr3w4jkgef032PkAL9jAqhk3Nz8NQw3O8n6/xFkqO4QQ==",
+            "lockResolved": "https://registry.npmjs.org/vite/-/vite-8.1.4.tgz"
+          }
+        }
+      ]
+    }
+  ]
+}

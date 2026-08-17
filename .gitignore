@@ -1,0 +1,85 @@
+# Secrets and local credentials
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.ppk
+*.p12
+*.pfx
+id_*
+*.token
+*.cookie
+*stored_tokens*
+*secret*
+
+# Local/runtime data
+/data/
+/cache/
+/.cache/
+/runs/
+/models/
+/bin/
+/out/
+/python-wheels/
+/intake-staging/
+/.tools/
+/.vendor/
+/vendor/
+/.venv*/
+/node_modules/
+/web-v2/node_modules/
+/tools/figma-bmanga-sync/node_modules/
+/tools/figma-bmanga-sync/dist/
+/tools/figma-bmanga-sync/*.tsbuildinfo
+
+# Generated or temporary files
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+coverage/
+*.log
+*.tmp
+*.bak
+*.sqlite
+*.sqlite-*
+*.db
+*.rdb
+
+# Generated web assets; source files stay in Git
+/web/app.min.js
+/web/app.min.js.br
+/web/app.min.js.gz
+/web/styles.min.css
+/web/styles.min.css.br
+/web/styles.min.css.gz
+/web/v2/
+
+# Local handoff/runtime reports
+/PROJECT_HANDOFF.md
+/PROJECT_HANDOFF_COMPACT.md
+/NEXT_CHAT_PROMPT.md
+/smb-inventory-*/
+/*inventory*.tsv
+
+# Local launch and NAS admin helpers
+/打开 bmanga 书库.url
+/NAS_SSH_SETUP.md
+/nas-inventory.ps1
+/smb-inventory.ps1
+/synology-enable-bmanga-shell.sh
+/synology-install-bmanga-key.sh
+/start-bmanga*.cmd
+/stop-bmanga.cmd
+/start-bmanga-hidden.vbs
+
+# Real local deployment configs; examples stay in Git
+/config/metadata-scrape-sources.json
+/config/nas-write-policy.json
+/config/import-intake-policy.json
+/config/import-review-local-policy.json
+/config/import-review-retention-policy.json
+/config/auth-password.txt
+/config/libraries.json

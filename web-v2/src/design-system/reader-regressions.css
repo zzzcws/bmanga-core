@@ -1,0 +1,282 @@
+/*
+ * Reader controls restored after the V2 shell rewrite.
+ *
+ * Keep these rules isolated and loaded after the broader design-system files:
+ * the original mobile control grid only accounted for five children, while the
+ * restored reader has explicit edge jumps, a submit action, and an optional
+ * secondary-action group.
+ */
+
+.reader {
+  --reader-controls-clearance: calc(84px + env(safe-area-inset-bottom));
+}
+
+.reader-controls {
+  display: grid;
+  grid-template-areas: "previous fit jump sync secondary next";
+  grid-template-columns: auto auto minmax(340px, 1fr) auto auto auto;
+  align-items: center;
+  justify-content: stretch;
+  gap: 7px;
+}
+
+.reader-controls > button:first-child {
+  grid-area: previous;
+  justify-self: stretch;
+}
+
+.reader-controls > button:last-child {
+  grid-area: next;
+  justify-self: stretch;
+}
+
+.reader-fit-toggle {
+  min-width: 0;
+  grid-area: fit;
+}
+
+.reader-page-jump {
+  display: grid;
+  min-width: 0;
+  grid-area: jump;
+  grid-template-columns: auto auto minmax(58px, 72px) auto auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.reader-page-jump input {
+  width: 100%;
+  min-width: 0;
+}
+
+.reader-page-jump .reader-edge-jump,
+.reader-page-jump .reader-page-submit {
+  min-width: 52px;
+  white-space: nowrap;
+}
+
+.reader-sync-state {
+  min-width: 0;
+  grid-area: sync;
+  justify-self: end;
+}
+
+.reader-secondary-actions {
+  display: flex;
+  min-width: 0;
+  grid-area: secondary;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.reader-secondary-actions:empty {
+  display: none;
+}
+
+.reader-secondary-actions button {
+  white-space: nowrap;
+}
+
+/*
+ * Neutral split-wide foundation.  Mode selection alone keeps full-page
+ * containment, so portrait pages remain intact.  Intrinsically wide pages add
+ * the split-wide-active / is-split-wide contract before cropping is enabled.
+ */
+.reader-stage.split-wide,
+.reader.split-wide .reader-stage {
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+.reader-stage.split-wide .reader-image,
+.reader.split-wide .reader-stage .reader-image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transform-origin: center;
+}
+
+.reader-stage.split-wide-active,
+.reader-stage[data-split-wide-active="true"] {
+  contain: layout paint;
+}
+
+.reader-stage.split-wide-active .reader-image.is-split-wide,
+.reader-stage[data-split-wide-active="true"] .reader-image.is-split-wide {
+  flex: 0 0 auto;
+  max-width: none;
+  max-height: none;
+  transition: opacity 90ms ease-out;
+}
+
+.reader-stage[data-split-panel="0"] .reader-image.is-split-wide,
+.reader-stage[data-split-panel="1"] .reader-image.is-split-wide {
+  object-position: center;
+}
+
+.reader-stage.split-wide-active .reader-image {
+  flex: 0 0 auto;
+  object-fit: fill;
+  transition: opacity 90ms ease-out;
+}
+
+@media (max-width: 1180px) and (min-width: 761px) {
+  .reader {
+    --reader-controls-clearance: calc(140px + env(safe-area-inset-bottom));
+  }
+
+  .reader-controls {
+    grid-template-areas:
+      "previous fit fit next"
+      "jump jump sync secondary";
+    grid-template-columns: auto minmax(360px, 1fr) auto auto;
+  }
+
+  .reader-fit-toggle {
+    justify-self: center;
+  }
+
+  .reader-page-jump {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .reader {
+    --reader-controls-clearance: calc(244px + env(safe-area-inset-bottom));
+  }
+
+  .reader-controls {
+    grid-template-areas:
+      "previous next"
+      "fit fit"
+      "jump jump"
+      "secondary sync";
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px;
+    min-height: calc(198px + env(safe-area-inset-bottom));
+    padding: 7px max(8px, env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .reader-controls > button:first-child,
+  .reader-controls > button:last-child {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .reader-fit-toggle {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-self: stretch;
+  }
+
+  .reader-fit-toggle button {
+    min-width: 0;
+    padding-right: 8px;
+    padding-left: 8px;
+    white-space: nowrap;
+  }
+
+  .reader-page-jump {
+    width: 100%;
+    grid-template-columns: auto minmax(44px, 60px) auto auto auto;
+    justify-content: stretch;
+    gap: 5px;
+  }
+
+  .reader-page-jump label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .reader-page-jump .reader-edge-jump,
+  .reader-page-jump .reader-page-submit {
+    min-width: 44px;
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .reader-secondary-actions {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    justify-content: flex-start;
+    justify-self: stretch;
+  }
+
+  .reader-secondary-actions button {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    flex: 0 1 auto;
+    padding-right: 8px;
+    padding-left: 8px;
+    text-overflow: ellipsis;
+  }
+
+  .reader-secondary-actions button:first-child:not(:last-child) {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+
+  .reader-secondary-actions button:last-child:not(:first-child) {
+    min-width: 44px;
+    flex: 0 0 auto;
+  }
+
+  .reader-sync-state {
+    justify-self: end;
+  }
+}
+
+@media (max-width: 360px) {
+  .reader-controls {
+    gap: 6px;
+    min-height: calc(194px + env(safe-area-inset-bottom));
+    padding-right: max(6px, env(safe-area-inset-right));
+    padding-left: max(6px, env(safe-area-inset-left));
+  }
+
+  .reader-controls button {
+    font-size: 10px;
+  }
+
+  .reader-fit-toggle button,
+  .reader-page-jump .reader-edge-jump,
+  .reader-page-jump .reader-page-submit,
+  .reader-secondary-actions button {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  .reader-page-jump {
+    grid-template-columns: auto minmax(42px, 54px) auto auto auto;
+    gap: 4px;
+  }
+
+  .reader-page-jump input {
+    height: 44px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .reader-sync-state {
+    padding-right: 6px;
+    padding-left: 6px;
+    font-size: 8px;
+    letter-spacing: 0.02em;
+  }
+}

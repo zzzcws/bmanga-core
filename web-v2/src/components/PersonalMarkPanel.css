@@ -1,0 +1,119 @@
+.personal-mark-panel {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--forest);
+}
+
+.personal-mark-panel > header {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.personal-mark-panel > header > span {
+  color: var(--vermilion-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.personal-mark-panel > header h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 520;
+}
+
+.personal-mark-panel > header p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.personal-mark-fieldset {
+  min-width: 0;
+  margin: 0 0 17px;
+  padding: 0;
+  border: 0;
+}
+
+.personal-mark-fieldset legend {
+  margin-bottom: 8px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.personal-mark-option-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+  gap: 5px;
+}
+
+.personal-mark-option {
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.personal-mark-option:hover:not(:disabled) {
+  border-color: var(--forest);
+  background: var(--forest-pale);
+}
+
+.personal-mark-option.is-active {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: var(--paper-soft);
+}
+
+.personal-mark-option.is-clear:not(.is-active) {
+  color: var(--ink-soft);
+}
+
+.personal-mark-quality-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.personal-mark-warning {
+  margin: -9px 0 18px;
+  color: var(--vermilion-dark);
+  font-size: 10px;
+}
+
+.personal-mark-status {
+  min-height: 1.5em;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+@media (max-width: 520px) {
+  .personal-mark-panel {
+    margin-top: 30px;
+    padding-top: 22px;
+  }
+
+  .personal-mark-quality-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .personal-mark-option-row {
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .personal-mark-option-row {
+    grid-template-columns: repeat(3, minmax(44px, 1fr));
+  }
+}

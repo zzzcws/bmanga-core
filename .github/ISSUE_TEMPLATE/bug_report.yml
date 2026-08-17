@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible bmanga problem using synthetic or redacted data.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach credentials, real library paths, databases, covers, pages, or archives.
+  - type: input
+    id: revision
+    attributes:
+      label: Revision or version
+      placeholder: commit SHA or release tag
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment mode
+      options:
+        - Docker Compose
+        - Local source build
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include expected and actual behavior with sensitive values redacted.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Use a synthetic fixture and list exact steps.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Relevant checks
+      description: List tests or commands already run; do not paste private logs.

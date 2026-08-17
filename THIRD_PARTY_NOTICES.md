@@ -1,0 +1,93 @@
+# Third-party notices — reviewed-input candidate
+
+bmanga-core itself is licensed under Apache License 2.0; see `LICENSE`.
+Third-party components retain their own terms. Original license and patent
+files are preserved under `LICENSES/` and mapped to exact component versions,
+artifact roles, source locators, byte counts, and SHA-256 values in
+`LICENSES/manifest.json`.
+
+This inventory is evidence for review, not a legal opinion. Its current
+`releaseReadiness.ready` value is deliberately `false`: a human still needs to
+review every component mapping and applicable obligation before an artifact is
+published. The reviewed artifact scope is intentionally limited to
+`linux/amd64`, `CGO_ENABLED=0`; adding another published platform requires a
+new platform-specific inventory before that platform is enabled.
+
+## Covered artifact profile
+
+The checked-in profile is the final `linux/amd64`, `CGO_ENABLED=0` container.
+Both Go binaries were inspected with `go version -m`; they link the same ten
+external modules:
+
+- `github.com/dustin/go-humanize` 1.0.1
+- `github.com/google/uuid` 1.6.0
+- `github.com/remyoudompheng/bigfft` 24d4a6f8daec
+- `golang.org/x/image` 0.45.0
+- `golang.org/x/sys` 0.47.0
+- `golang.org/x/text` 0.41.0
+- `modernc.org/libc` 1.72.0
+- `modernc.org/mathutil` 1.7.1
+- `modernc.org/memory` 1.11.0
+- `modernc.org/sqlite` 1.50.0
+
+The bundle also preserves Go 1.26.6 `LICENSE` and `PATENTS`, the `PATENTS`
+files for the `golang.org/x/*` modules, and applicable modernc supplemental
+files including `LICENSE-3RD-PARTY.md`, `LICENSE-GO`, `LICENSE-MMAP-GO`, and
+`SQLITE-LICENSE`.
+
+The browser production tree contains React 19.2.7, React DOM 19.2.7, and
+Scheduler 0.27.0. The built bundle additionally contains Vite 8.1.4 injected
+runtime code and Rolldown 1.1.5's module-preload polyfill, so their complete
+published license files are included. Rolldown's npm archive refers to but
+omits `THIRD-PARTY-LICENSE`; the bundle adds the exact file from the versioned
+upstream `v1.1.5` tag and pins both its URL and reviewed SHA-256.
+
+## Container boundary
+
+The final image uses `scratch` and numeric user `65532:65532`. It contains only
+the two static Go binaries, generated web assets, the project license, this
+notice, and the `LICENSES/` tree. Node and Go images are build inputs and their
+filesystems are not copied into the distributed runtime image. Compose does not
+enable Docker's host-provided init injection.
+
+The Dockerfile rejects any target other than `linux/amd64` before compilation,
+and both Go builds receive the checked `TARGETOS` and `TARGETARCH` explicitly.
+Supporting another platform requires generating and reviewing that platform's
+artifact inventory first; it is not an override to the current guard.
+
+This narrow boundary is valid only while the service remains CGO-disabled and
+does not require runtime CA certificates, timezone data, operating-system user
+lookup, or external helper programs. A change that adds any such capability
+must re-open the runtime image and license review.
+
+## Verification
+
+The integrity check is network-free and fails on a changed lockfile, changed
+Docker runtime boundary, missing/unmapped text, or mismatched hash:
+
+```sh
+python tools/check-third-party-licenses.py --verify
+```
+
+CI additionally rebuilds both Go binaries and compares the locked npm
+production tree to the manifest. Release automation must also run:
+
+```sh
+python tools/check-third-party-licenses.py --release-readiness
+```
+
+That command intentionally fails until the human-review blocker recorded in
+the manifest has been resolved. The platform guard remains a conditional gate:
+a new target cannot be enabled until its own inventory has been generated and
+reviewed.
+
+## Deliberately excluded from this runtime
+
+- PyMuPDF/MuPDF and `fitz`-based PDF helpers
+- Python and local wheel bundles
+- `p7zip`, `py7zr`, and their transitive codecs
+- Calibre/`ebook-convert` and MOBI conversion caches
+
+A future optional image or helper needs its own source offer, original license
+texts, SBOM, security boundary, and compatibility review. Process separation
+alone must not be treated as resolving license obligations.

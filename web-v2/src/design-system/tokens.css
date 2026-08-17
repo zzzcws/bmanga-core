@@ -1,0 +1,70 @@
+:root {
+  color-scheme: light;
+
+  /* Core palette — paper, ink and a deliberately restrained editorial accent. */
+  --paper: #f3eee4;
+  --paper-deep: #e9e1d3;
+  --paper-soft: #faf7f0;
+  --paper-bright: #fffaf1;
+  --ink: #1d231f;
+  --ink-soft: #60645d;
+  /* Small metadata must remain readable on paper; reserve ornament for non-text folios. */
+  --ink-faint: #676b64;
+  --ink-ornament: #929187;
+  --forest: #21382f;
+  --forest-soft: #355448;
+  --forest-pale: #dfe5dd;
+  --vermilion: #a74332;
+  --vermilion-dark: #863327;
+  --gold: #a18758;
+  --danger: #9e3c30;
+
+  /* Semantic surfaces and strokes. Keep the legacy names while pages migrate. */
+  --surface-canvas: var(--paper);
+  --surface-sidebar: var(--paper-deep);
+  --surface-control: var(--paper-soft);
+  --surface-feature: var(--forest);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-tertiary: var(--ink-faint);
+  --text-on-dark-muted: rgba(250, 247, 240, 0.72);
+  --text-on-dark-subtle: rgba(250, 247, 240, 0.64);
+  --accent-primary: var(--vermilion);
+  --accent-pressed: var(--vermilion-dark);
+  --line: rgba(29, 35, 31, 0.14);
+  --line-strong: rgba(29, 35, 31, 0.24);
+  --line-light: rgba(255, 250, 241, 0.2);
+  --overlay: rgba(18, 23, 20, 0.5);
+  --focus: rgba(167, 67, 50, 0.32);
+
+  /* Typography. CJK serif remains the editorial voice; sans handles controls. */
+  --serif: "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, SimSun, serif;
+  --sans: Inter, "Noto Sans SC", "SF Pro Text", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-editorial: var(--serif);
+  --font-interface: var(--sans);
+
+  /* Shared layout scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --radius-none: 0;
+  --radius-hairline: 2px;
+  --radius-control: 4px;
+  --radius-panel: 8px;
+  --radius-round: 999px;
+
+  --sidebar-width: 238px;
+  --topbar-height: 80px;
+  --content-pad: clamp(30px, 3vw, 52px);
+  --content-max: 1760px;
+  --ease: cubic-bezier(0.22, 0.76, 0.24, 1);
+  --shadow-cover: 0 8px 18px rgba(52, 46, 38, 0.08);
+  --shadow-cover-hover: 0 14px 27px rgba(52, 46, 38, 0.15);
+}

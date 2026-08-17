@@ -1,0 +1,250 @@
+name: ci
+
+"on":
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GOFLAGS: -mod=readonly
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go tests and vet
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test all Go packages
+        run: go test ./...
+
+      - name: Vet all Go packages
+        run: go vet ./...
+
+      - name: Verify shipped Go module linkage and license mapping
+        run: python tools/check-third-party-licenses.py --verify --verify-go-linkage
+
+      - name: Scan reachable Go vulnerabilities
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+
+      - name: Scan the checkout for credential patterns
+        run: |
+          go run github.com/zricethezav/gitleaks/v8@v8.30.1 dir --redact --no-banner --max-target-megabytes 2 .
+          go run github.com/zricethezav/gitleaks/v8@v8.30.1 git --redact --no-banner .
+
+  safety:
+    name: Publication safety gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Reject secrets, local paths, and runtime artifacts
+        run: python tools/check-github-upload-safety.py --strict-paths --json
+
+      - name: Test the publication safety gate
+        run: python -m unittest tools.check_github_upload_safety_test
+
+      - name: Test the third-party license gate
+        run: python -m unittest tools.check_third_party_licenses_test
+
+      - name: Verify third-party license bundle integrity
+        run: python tools/check-third-party-licenses.py --verify
+
+      - name: Verify public identity and project license
+        run: |
+          python - <<'PY'
+          from hashlib import sha256
+          from json import loads
+          from pathlib import Path
+
+          expected_module = "module github.com/zzzcws/bmanga-core"
+          expected_license_sha256 = "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+
+          if Path("go.mod").read_text(encoding="utf-8").splitlines()[0] != expected_module:
+              raise SystemExit("go.mod does not use the public repository module path")
+          if sha256(Path("LICENSE").read_bytes()).hexdigest() != expected_license_sha256:
+              raise SystemExit("LICENSE is not the reviewed Apache-2.0 text")
+
+          package = loads(Path("web-v2/package.json").read_text(encoding="utf-8"))
+          if package.get("license") != "Apache-2.0":
+              raise SystemExit("web-v2 package metadata is missing Apache-2.0")
+          if package.get("repository") != "https://github.com/zzzcws/bmanga-core":
+              raise SystemExit("web-v2 package metadata has the wrong repository")
+
+          dockerfile = Path("Dockerfile").read_text(encoding="utf-8")
+          expected_frontend = (
+              "# syntax=docker.io/docker/dockerfile:1.7@"
+              "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
+          )
+          if dockerfile.splitlines()[0] != expected_frontend:
+              raise SystemExit("Dockerfile frontend is not pinned to the reviewed digest")
+          for marker in (
+              'org.opencontainers.image.source="${SOURCE_URL}"',
+              'org.opencontainers.image.licenses="Apache-2.0"',
+              "COPY --chown=65532:65532 LICENSE THIRD_PARTY_NOTICES.md /app/",
+              "COPY --chown=65532:65532 LICENSES /app/LICENSES",
+          ):
+              if marker not in dockerfile:
+                  raise SystemExit(f"Dockerfile is missing release metadata: {marker}")
+          PY
+          if git grep -n -E 'OWNER|github\.com/zzzcws/bmanga([^a-zA-Z0-9_-]|$)' -- ':!.github/workflows/ci.yml'; then
+            echo "placeholder or old repository identity remains"
+            exit 1
+          fi
+
+      - name: Enforce the Go-only runtime image boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          dockerfile = Path("Dockerfile").read_text(encoding="utf-8").casefold()
+          forbidden_anywhere = (
+              "pymupdf",
+              "python-wheels",
+              "render-pdf-page",
+              "zip-pdf-page-helper",
+          )
+          final_stage = dockerfile.rsplit("\nfrom ", 1)[-1]
+          found = [marker for marker in forbidden_anywhere if marker in dockerfile]
+          if "copy tools" in final_stage:
+              found.append("runtime copy tools")
+          expected_build_stages = (
+              "from --platform=$buildplatform docker.io/library/node:22-bookworm-slim@sha256:"
+              "d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 as web-build",
+              "from --platform=$buildplatform docker.io/library/golang:1.26.6-bookworm@sha256:"
+              "116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36 as go-build",
+          )
+          for stage in expected_build_stages:
+              if dockerfile.count(stage) != 1:
+                  found.append(f"missing reviewed build stage: {stage}")
+          if any(
+              row.startswith(("arg node_image", "arg go_image"))
+              for row in dockerfile.splitlines()
+          ):
+              found.append("build image is build-arg overrideable")
+          if not final_stage.startswith("scratch\n"):
+              found.append("final stage is not scratch")
+          if "user 65532:65532" not in final_stage:
+              found.append("runtime user is not numeric 65532:65532")
+          if "runtime_image" in dockerfile or "distroless" in dockerfile:
+              found.append("unexpected runtime base")
+          for marker in (
+              "arg targetplatform",
+              "arg targetos",
+              "arg targetarch",
+              '"${targetplatform}" != "linux/amd64"',
+              '"${targetos}" != "linux"',
+              '"${targetarch}" != "amd64"',
+          ):
+              if marker not in dockerfile:
+                  found.append(f"missing target guard: {marker}")
+          if dockerfile.count('"${targetplatform}" != "linux/amd64"') != 2:
+              found.append("both build stages must guard TARGETPLATFORM")
+          if dockerfile.count('"${targetos}" != "linux"') != 2:
+              found.append("both build stages must guard TARGETOS")
+          if dockerfile.count('"${targetarch}" != "amd64"') != 2:
+              found.append("both build stages must guard TARGETARCH")
+          target_build = 'goos="${targetos}" goarch="${targetarch}" cgo_enabled=0 go build'
+          if dockerfile.count(target_build) != 2:
+              found.append("both binaries must use guarded target variables")
+          for marker in ('actual="$(go env goversion)"', '"${actual}" != "go1.26.6"'):
+              if dockerfile.count(marker) != 1:
+                  found.append(f"missing exact Go toolchain guard: {marker}")
+          compose = Path("compose.yaml").read_text(encoding="utf-8").casefold()
+          if any(row.strip().startswith("init:") for row in compose.splitlines()):
+              found.append("compose injects docker-init into scratch")
+          if sum(row.strip() == "platform: linux/amd64" for row in compose.splitlines()) != 2:
+              found.append("both compose services must select linux/amd64")
+          if found:
+              raise SystemExit(f"Dockerfile contains excluded runtime components: {found}")
+          PY
+
+  web-v2:
+    name: Web V2 tests and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web-v2
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web-v2/package-lock.json
+
+      - name: Install locked frontend dependencies
+        run: npm ci
+
+      - name: Verify browser artifact license sources
+        run: python ../tools/check-third-party-licenses.py --verify --verify-web-sources
+
+      - name: Audit the complete dependency graph
+        run: npm audit --audit-level=high
+
+      - name: Run frontend unit tests
+        run: npm test
+
+      - name: Type-check frontend
+        run: npm run typecheck
+
+      - name: Build and precompress the V2 frontend
+        working-directory: ${{ github.workspace }}
+        run: node tools/build-web-assets.mjs
+
+  sbom:
+    name: Source dependency SBOMs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+
+      - name: Generate CycloneDX source dependency inventories
+        run: |
+          mkdir -p artifacts
+          go run github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.11.0 mod -test -json -licenses -output artifacts/bmanga-go.cdx.json .
+          npm --prefix web-v2 sbom --package-lock-only --sbom-format=cyclonedx > artifacts/bmanga-web.cdx.json
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: source-sboms
+          path: artifacts/*.cdx.json
+          if-no-files-found: error
