@@ -5,11 +5,10 @@ page-oriented image archives. The intended public core indexes libraries that
 the operator is authorized to access, keeps the source mounts read-only, and
 stores catalog and personal reading state in a local SQLite database.
 
-> **Publication status:** this repository is a source-preview candidate and has
-> not been published yet. The source is licensed under Apache License 2.0. A
-> source-only public preview is intentionally separate from a supported tag,
-> container, or binary release; the artifact evidence listed below must still
-> be completed before the first public tag.
+> **Publication status:** this repository is a public source preview licensed
+> under Apache License 2.0. Tagged container releases are separate, narrowly
+> scoped artifacts; the first supported artifact profile is the pre-release
+> Linux/amd64, CGO-disabled image described below.
 
 The founding maintainer's initial-content publication authority is recorded in
 [`docs/first-party-rights.md`](docs/first-party-rights.md). Third-party
@@ -71,8 +70,8 @@ The Node and Go build images are pinned to reviewed multi-architecture manifest
 digests; the final runtime has no base filesystem and runs as numeric user
 `65532:65532`. Until another platform receives its own reviewed artifact and
 license inventory, the Dockerfile fails closed on targets other than
-`linux/amd64`. The release workflow still needs signed provenance and generated
-source/image SBOMs before a tag can be published.
+`linux/amd64`. The tag-only release workflow publishes the reviewed image with
+an image SBOM, GitHub build provenance, and a keyless image signature.
 
 ## Local Compose skeleton
 
@@ -163,9 +162,9 @@ go run ./cmd/bmanga-import-plan \
 - [Third-party notices and mapped original texts](THIRD_PARTY_NOTICES.md)
 - [Third-party license bundle](LICENSES/README.md)
 
-## Publication gates
+## Publication and artifact gates
 
-A source-only preview may be made public after all of these source gates pass:
+The public source preview passed these source gates:
 
 1. Keep the initial-content rights attestation accurate.
 2. Create the first real commit and run the publication, project-specific
@@ -173,10 +172,10 @@ A source-only preview may be made public after all of these source gates pass:
 3. Confirm the public tree contains no runtime data, private deployment
    material, third-party media, or unreviewed copied assets.
 
-That source preview does not authorize a tag, container, or binary release.
-Artifact publication remains blocked until maintainers complete human review
-of the checked-in third-party mapping, reconcile a final image SBOM or
-equivalent immutable file inventory, validate the Compose image on a clean
-Linux Docker host, and bind the resulting hashes to the source revision in
-signed provenance. Those artifact controls do not block the source-only
-preview.
+The checked-in Linux/amd64 third-party mapping now has a maintainer-authorized,
+Codex-assisted technical review record under `LICENSES/reviews/`; it is not
+legal advice. A tag still does not bypass the release workflow: the exact
+commit must pass CI and release-readiness checks, and the pushed digest must be
+inspected, smoke-tested, inventoried, attested, and signed before the versioned
+image tag is promoted. No `latest` image is published for alpha
+releases.

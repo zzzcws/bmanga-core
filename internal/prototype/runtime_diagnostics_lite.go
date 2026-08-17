@@ -26,6 +26,7 @@ const (
 var (
 	runtimeDiagnosticsProcessStartedAt = time.Now()
 	runtimeDiagnosticsCaches           runtimeDiagnosticsCacheCoordinator
+	releaseVersion                     string
 )
 
 type runtimeDiagnosticsDatabase struct {
@@ -96,19 +97,29 @@ func (s *Server) handleRuntimeDiagnosticsLite(w http.ResponseWriter, r *http.Req
 }
 
 func publicRuntimeVersion() string {
+	if version := validatedPublicRuntimeVersion(releaseVersion); version != "" {
+		return version
+	}
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return "development"
 	}
-	version := strings.TrimSpace(info.Main.Version)
+	if version := validatedPublicRuntimeVersion(info.Main.Version); version != "" {
+		return version
+	}
+	return "development"
+}
+
+func validatedPublicRuntimeVersion(value string) string {
+	version := strings.TrimSpace(value)
 	if version == "" || version == "(devel)" || len(version) > 64 {
-		return "development"
+		return ""
 	}
 	for _, character := range version {
 		if unicode.IsLetter(character) || unicode.IsDigit(character) || strings.ContainsRune("._+-", character) {
 			continue
 		}
-		return "development"
+		return ""
 	}
 	return version
 }

@@ -74,6 +74,23 @@ func TestRuntimeDiagnosticsLiteReportsOnlyAggregatedReadOnlyState(t *testing.T) 
 	}
 }
 
+func TestPublicRuntimeVersionPrefersValidatedLinkerValue(t *testing.T) {
+	previous := releaseVersion
+	t.Cleanup(func() { releaseVersion = previous })
+
+	releaseVersion = "0.1.0-alpha.1"
+	if got := publicRuntimeVersion(); got != releaseVersion {
+		t.Fatalf("version = %q, want %q", got, releaseVersion)
+	}
+
+	for _, invalid := range []string{"bad version", "bad/version", strings.Repeat("v", 65)} {
+		releaseVersion = invalid
+		if got := publicRuntimeVersion(); got == invalid {
+			t.Fatalf("invalid linker version %q was exposed", invalid)
+		}
+	}
+}
+
 func TestRuntimeDiagnosticsLiteSkipsLinksAndDoesNotLeakErrors(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, "data"), 0o755); err != nil {

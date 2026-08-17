@@ -2,9 +2,9 @@
 
 ## Supported versions
 
-There is no supported public release yet. Security fixes are currently applied
-only to the unreleased candidate branch. A supported-version table will be added
-with the first release.
+The `0.1.0-alpha.x` line is a public preview and receives best-effort security
+fixes. It is not yet a stable compatibility commitment. Only the newest alpha
+tag is supported.
 
 ## Reporting a vulnerability
 

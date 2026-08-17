@@ -52,8 +52,10 @@ components.
   nonzero result is a non-waivable release stop, not an instruction to flip the
   manifest state.
 - Record source revision, build parameters, build-image digests, binary hashes,
-  license-manifest hash, and SBOM hashes in signed provenance.
-- Sign the release tag and published artifacts.
+  license-manifest hash, and SBOM hashes in GitHub build provenance and the
+  release record.
+- Publish only from an immutable release tag; attach an SBOM attestation and
+  sign the image digest with keyless Cosign identity.
 
 ## Release evidence
 

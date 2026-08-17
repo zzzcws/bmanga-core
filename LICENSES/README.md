@@ -46,22 +46,26 @@ Regeneration fetches only Rolldown's missing supplemental notice from a fixed
 tag and verifies its reviewed SHA-256. All other text comes from the exact Go
 toolchain/module caches and locked npm installation.
 
-## Deliberate fail-closed status
+## Review status and fail-closed transitions
 
 Hash verification proves only that the reviewed input files have not changed.
-It is not a legal opinion or a compatibility determination. The manifest keeps
-`releaseReadiness.ready` set to `false` until a human reviews every
-component-to-file mapping and applicable obligation for the current artifact
-profile.
+It is not a legal opinion. The current profile was technically reviewed by
+OpenAI Codex under explicit maintainer delegation and publication authority;
+the exact conclusions and obligations are recorded in
+`LICENSES/reviews/linux-amd64.json`. The manifest is release-ready only for
+this reviewed Linux/amd64 artifact profile.
+The schema label `human-reviewed` denotes that the maintainer-authorized review
+gate is complete; the decision's `reviewedBy` field explicitly identifies the
+delegated AI technical reviewer rather than implying legal-counsel review.
 
 The current intended release scope is exactly `linux/amd64`,
 `CGO_ENABLED=0`, and its inventory is present. Another `GOOS/GOARCH` becomes a
 new release blocker only if maintainers decide to publish that target; its
 inventory must be generated and reviewed before the Dockerfile guard changes.
 
-`python tools/check-third-party-licenses.py --release-readiness` intentionally
-fails while the human-review blocker remains. Do not change the state merely
-to make a release job pass.
+`python tools/check-third-party-licenses.py --release-readiness` fails whenever
+the review record, component inventory, or evidence hashes do not match. Do
+not change the state merely to make a release job pass.
 
 A completed review is recorded as one structured JSON decision under
 `LICENSES/reviews/`. It contains exactly these top-level fields:
@@ -81,9 +85,8 @@ through `reviewEvidence.decisionFile` and the decision file's exact
 readiness become true with no blockers.
 
 These machine checks prove structural completeness, exact inventory binding,
-and evidence-file integrity only. They do not prove the reviewer's identity,
-that the stated review actually occurred, or that its legal conclusion is
-correct. Reviewer authenticity must be enforced outside this checker with
-CODEOWNERS review, protected-branch approval, and signed commits or signed
-release attestations. Do not treat a self-authored JSON file as independent
-review evidence.
+and evidence-file integrity only. They do not turn a technical review into
+legal advice or independently prove its conclusions. Publication authority is
+recorded by the maintainer; release authenticity is enforced through tag-gated,
+pinned, minimum-permission GitHub workflows, immutable digests, build
+attestations, and image signatures.

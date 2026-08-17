@@ -19,6 +19,7 @@ FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.26.6-bookworm@sha256:1
 ARG TARGETPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
+ARG VERSION=0.0.0-dev
 RUN if [ "${TARGETPLATFORM}" != "linux/amd64" ] || [ "${TARGETOS}" != "linux" ] || [ "${TARGETARCH}" != "amd64" ]; then \
       echo "unsupported release target: ${TARGETOS}/${TARGETARCH}; license manifest covers linux/amd64 only" >&2; \
       exit 1; \
@@ -28,6 +29,15 @@ RUN actual="$(go env GOVERSION)"; \
       echo "unexpected Go toolchain: ${actual}; license manifest covers go1.26.6 only" >&2; \
       exit 1; \
     fi
+RUN if [ -z "${VERSION}" ] || [ "${#VERSION}" -gt 64 ]; then \
+      echo "invalid release version: expected 1-64 characters from A-Za-z0-9._+-" >&2; \
+      exit 1; \
+    fi; \
+    case "${VERSION}" in \
+      *[!A-Za-z0-9._+-]*) \
+        echo "invalid release version: expected 1-64 characters from A-Za-z0-9._+-" >&2; \
+        exit 1 ;; \
+    esac
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
@@ -38,14 +48,14 @@ RUN mkdir -p /out/data /out/cache /out/.cache /out/runs \
       -buildvcs=false \
       -mod=readonly \
       -trimpath \
-      -ldflags="-s -w -buildid=" \
+      -ldflags="-s -w -buildid= -X github.com/zzzcws/bmanga-core/internal/prototype.releaseVersion=${VERSION}" \
       -o /out/bmanga \
       ./cmd/bmanga-go \
     && GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" CGO_ENABLED=0 go build \
       -buildvcs=false \
       -mod=readonly \
       -trimpath \
-      -ldflags="-s -w -buildid=" \
+      -ldflags="-s -w -buildid= -X github.com/zzzcws/bmanga-core/internal/prototype.releaseVersion=${VERSION}" \
       -o /out/bmanga-scan \
       ./cmd/bmanga-scan
 
@@ -58,7 +68,7 @@ LABEL org.opencontainers.image.title="bmanga-core" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.source="${SOURCE_URL}" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.licenses="Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND LicenseRef-SQLite-Public-Domain"
 
 ENV TZ=UTC
 WORKDIR /app

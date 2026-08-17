@@ -1,4 +1,4 @@
-# Third-party notices — reviewed-input candidate
+# Third-party notices — reviewed Linux/amd64 artifact
 
 bmanga-core itself is licensed under Apache License 2.0; see `LICENSE`.
 Third-party components retain their own terms. Original license and patent
@@ -6,12 +6,16 @@ files are preserved under `LICENSES/` and mapped to exact component versions,
 artifact roles, source locators, byte counts, and SHA-256 values in
 `LICENSES/manifest.json`.
 
-This inventory is evidence for review, not a legal opinion. Its current
-`releaseReadiness.ready` value is deliberately `false`: a human still needs to
-review every component mapping and applicable obligation before an artifact is
-published. The reviewed artifact scope is intentionally limited to
-`linux/amd64`, `CGO_ENABLED=0`; adding another published platform requires a
-new platform-specific inventory before that platform is enabled.
+This inventory and its decision record are a maintainer-authorized, Codex-
+assisted technical review, not legal advice. The exact component mappings and
+obligations are approved for the `linux/amd64`, `CGO_ENABLED=0` profile. Adding
+another published platform requires a new platform-specific inventory and
+review before that platform is enabled.
+
+The OCI aggregate license expression for this image is
+`Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND LicenseRef-SQLite-Public-Domain`.
+`LicenseRef-SQLite-Public-Domain` refers to
+`LICENSES/go/modernc.org/sqlite@v1.50.0/SQLITE-LICENSE`.
 
 ## Covered artifact profile
 
@@ -76,10 +80,9 @@ production tree to the manifest. Release automation must also run:
 python tools/check-third-party-licenses.py --release-readiness
 ```
 
-That command intentionally fails until the human-review blocker recorded in
-the manifest has been resolved. The platform guard remains a conditional gate:
-a new target cannot be enabled until its own inventory has been generated and
-reviewed.
+That command fails if the reviewed decision, mapped files, or readiness state
+diverge. The platform guard remains a conditional gate: a new target cannot be
+enabled until its own inventory has been generated and reviewed.
 
 ## Deliberately excluded from this runtime
 

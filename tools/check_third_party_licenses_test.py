@@ -83,13 +83,31 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         manifest["releaseReadiness"] = {"ready": True, "blockingReasons": []}
         return decision_path
 
+    def pending_manifest(self) -> dict:
+        manifest = copy.deepcopy(self.manifest)
+        for component in manifest["components"]:
+            component["reviewStatus"] = "pending-human-review"
+            component.pop("reviewEvidence", None)
+        manifest["releaseReadiness"] = {
+            "ready": False,
+            "blockingReasons": [
+                {
+                    "code": "human-license-review-pending",
+                    "detail": "original texts and component mappings require human review",
+                }
+            ],
+        }
+        shutil.rmtree(self.repo / "LICENSES" / "reviews", ignore_errors=True)
+        return manifest
+
     def test_pending_bundle_integrity_passes(self) -> None:
-        CHECKER.verify_integrity(self.manifest)
+        CHECKER.verify_integrity(self.pending_manifest())
 
     def test_pending_bundle_is_not_release_ready(self) -> None:
-        CHECKER.verify_integrity(self.manifest)
+        manifest = self.pending_manifest()
+        CHECKER.verify_integrity(manifest)
         with self.assertRaisesRegex(CHECKER.VerificationError, "human-license-review-pending"):
-            CHECKER.verify_release_readiness(self.manifest)
+            CHECKER.verify_release_readiness(manifest)
 
     def test_human_review_evidence_can_clear_release_blocker(self) -> None:
         manifest = copy.deepcopy(self.manifest)
@@ -98,7 +116,7 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         CHECKER.verify_release_readiness(manifest)
 
     def test_reviewed_status_without_evidence_is_rejected(self) -> None:
-        manifest = copy.deepcopy(self.manifest)
+        manifest = self.pending_manifest()
         manifest["components"][0]["reviewStatus"] = "human-reviewed"
         with self.assertRaisesRegex(CHECKER.VerificationError, "component schema"):
             CHECKER.verify_integrity(manifest)

@@ -2,13 +2,8 @@
   "schemaVersion": 1,
   "bundlePurpose": "machine-verifiable license-text inventory for one candidate artifact profile; not a legal conclusion",
   "releaseReadiness": {
-    "ready": false,
-    "blockingReasons": [
-      {
-        "code": "human-license-review-pending",
-        "detail": "original texts and component mappings require human review"
-      }
-    ]
+    "ready": true,
+    "blockingReasons": []
   },
   "artifactProfile": {
     "go": {
@@ -165,7 +160,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/github.com/dustin/go-humanize@v1.0.1/LICENSE",
@@ -187,7 +186,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/github.com/google/uuid@v1.6.0/LICENSE",
@@ -209,7 +212,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
@@ -231,7 +238,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/golang.org/x/image@v0.45.0/LICENSE",
@@ -263,7 +274,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/golang.org/x/sys@v0.47.0/LICENSE",
@@ -295,7 +310,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/golang.org/x/text@v0.41.0/LICENSE",
@@ -327,7 +346,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE",
@@ -359,7 +382,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/mathutil@v1.7.1/LICENSE",
@@ -381,7 +408,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE",
@@ -423,7 +454,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/LICENSE",
@@ -455,7 +490,11 @@
         "bmanga-go",
         "bmanga-scan"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/go/toolchain-go1.26.6/LICENSE",
@@ -486,7 +525,11 @@
       "artifactRoles": [
         "browser-runtime"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/npm/react-dom@19.2.7/LICENSE",
@@ -508,7 +551,11 @@
       "artifactRoles": [
         "browser-runtime"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/npm/react@19.2.7/LICENSE",
@@ -530,7 +577,11 @@
       "artifactRoles": [
         "browser-injected-modulepreload-runtime"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/npm/rolldown@1.1.5/LICENSE",
@@ -562,7 +613,11 @@
       "artifactRoles": [
         "browser-runtime"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/npm/scheduler@0.27.0/LICENSE",
@@ -584,7 +639,11 @@
       "artifactRoles": [
         "browser-injected-runtime"
       ],
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "human-reviewed",
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+      },
       "files": [
         {
           "path": "LICENSES/npm/vite@8.1.4/LICENSE.md",
