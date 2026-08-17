@@ -2,6 +2,7 @@ export type NumericValue = number | string;
 export type Nullable<T> = T | null;
 export type ReaderFitMode = "" | "fit-page" | "fit-width" | "split-wide";
 export type TargetType = "work" | "series";
+export type MetadataOverrideField = "title" | "creator" | "series" | "language";
 
 export interface ApiRecord {
   [key: string]: unknown;
@@ -318,6 +319,28 @@ export interface DiscoverPayload {
   random_items: WorkSummary[];
   history?: ReadingHistoryItem[];
   stats?: DiscoverStats;
+}
+
+export interface MetadataOverrideEntry extends ApiRecord {
+  field_name: MetadataOverrideField;
+  field_value: string;
+  applied_at?: string;
+  updated_at?: string;
+}
+
+export interface MetadataOverrideResponse {
+  ok?: boolean;
+  target_type: "work";
+  target_id: string;
+  work_identity_id: string;
+  overrides: Partial<Record<MetadataOverrideField, MetadataOverrideEntry>>;
+}
+
+export interface MetadataOverrideSavePayload {
+  target_type: "work";
+  target_id: string;
+  field_name: MetadataOverrideField;
+  field_value: string;
 }
 
 export interface DiscoverResponse extends DiscoverPayload {

@@ -109,10 +109,39 @@ configured library root is read-only in the Compose profile. Never reuse a
 database or configuration exported from a private deployment as public sample
 data.
 
+## Local-only workflows
+
+The public core includes three deliberately narrow local workflows:
+
+- Work details can store presentation-only overrides for title, creator,
+  series label, and language. These values live in SQLite and never rename or
+  rewrite source files. See
+  [`docs/features/metadata-overrides.md`](docs/features/metadata-overrides.md).
+- Settings show bounded aggregate diagnostics for process uptime, database
+  availability, and application-cache usage. The endpoint returns no paths or
+  underlying error text and performs no network or maintenance operation. See
+  [`docs/features/runtime-diagnostics.md`](docs/features/runtime-diagnostics.md).
+- `bmanga-import-plan` compares an explicitly selected intake tree with an
+  explicitly selected library tree and emits a private JSON review plan. It
+  hashes files read-only and exposes no apply, move, overwrite, quarantine, or
+  delete action. See
+  [`docs/read-only-import-planner.md`](docs/read-only-import-planner.md).
+
+The planner is a source tool rather than part of the current container image:
+
+```sh
+go run ./cmd/bmanga-import-plan \
+  --root /srv/bmanga-review \
+  --intake incoming \
+  --library library
+```
+
 ## Repository layout
 
 - `cmd/bmanga-go` — service entry point and authentication boundary.
 - `cmd/bmanga-scan` — explicit, source-agnostic catalog scanner.
+- `cmd/bmanga-import-plan` — bounded, read-only intake/library comparison.
+- `internal/importplan` — path-safe hashing and conflict-plan implementation.
 - `internal/prototype` — catalog, reader, review, and local-state APIs.
 - `web-v2` — React/Vite user interface and tests.
 - `tools/build-web-assets.mjs` — V2-only production asset builder.

@@ -1,0 +1,91 @@
+.runtime-diagnostics-lite {
+  max-width: 980px;
+  min-width: 0;
+  margin-top: 22px;
+  padding: 28px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(250, 247, 240, 0.52);
+}
+
+.runtime-diagnostics-lite > span {
+  color: var(--vermilion-dark);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.runtime-diagnostics-lite h2 {
+  margin: 7px 0 8px;
+  font-family: var(--serif);
+  font-size: clamp(20px, 2vw, 27px);
+  font-weight: 520;
+}
+
+.runtime-diagnostics-lite > p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.75;
+}
+
+.runtime-diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 20px 0 0;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.runtime-diagnostics-grid > div {
+  min-width: 0;
+  padding: 14px 16px;
+  background: var(--paper-soft);
+}
+
+.runtime-diagnostics-grid dt {
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.runtime-diagnostics-grid dd {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 16px;
+}
+
+.runtime-diagnostics-lite .runtime-diagnostics-message {
+  margin-top: 16px;
+}
+
+.runtime-diagnostics-lite .runtime-diagnostics-message.is-error {
+  color: var(--vermilion-dark);
+}
+
+.runtime-diagnostics-lite .runtime-diagnostics-retry {
+  min-height: 40px;
+  margin-top: 12px;
+  background: transparent;
+}
+
+@media (max-width: 760px) {
+  .runtime-diagnostics-lite {
+    padding: 22px 18px;
+  }
+
+  .runtime-diagnostics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .runtime-diagnostics-grid {
+    grid-template-columns: 1fr;
+  }
+}

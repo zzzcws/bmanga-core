@@ -5,6 +5,8 @@ import type {
   CorrectionSavePayload,
   CorrectionSaveResponse,
   ContinueTargetResponse,
+  MetadataOverrideResponse,
+  MetadataOverrideSavePayload,
   PagesResponse,
   ProgressResponse,
   ProgressSavePayload,
@@ -361,6 +363,23 @@ export function getSeries(query: BrowseQuery = {}, options: ApiRequestOptions = 
 
 export function getWork(id: string, options: ApiRequestOptions = {}): Promise<WorkDetailResponse> {
   return apiGet<WorkDetailResponse>("/api/work", withParams(options, { id }));
+}
+
+export function getMetadataOverrides(
+  targetID: string,
+  options: ApiRequestOptions = {},
+): Promise<MetadataOverrideResponse> {
+  return apiGet<MetadataOverrideResponse>(
+    "/api/metadata-overrides",
+    withParams(options, { target_type: "work", target_id: targetID }),
+  );
+}
+
+export function saveMetadataOverride(
+  payload: MetadataOverrideSavePayload,
+  options: ApiRequestOptions = {},
+): Promise<MetadataOverrideResponse> {
+  return apiPost<MetadataOverrideResponse>("/api/metadata-overrides", payload, options);
 }
 
 export function getSeriesDetail(id: string, options: ApiRequestOptions = {}): Promise<SeriesDetailResponse> {

@@ -18,13 +18,21 @@ application-data location, and exposes an authenticated web UI.
   personal-mark workflows.
 - Archive path and resource-limit checks.
 - Exact cover duplicate evidence and manual corrections.
+- A bounded, read-only intake/library comparison tool that emits a private
+  review plan but cannot apply, move, overwrite, quarantine, or delete files.
+- Local presentation-only metadata overrides for title, creator, series label,
+  and language; scanned metadata and source files remain unchanged.
+- Local runtime diagnostics limited to the application version, process uptime,
+  a bounded database health check, and aggregate application-cache file/byte
+  counts and scan-error totals.
 - A V2-only web application and a loopback-first container profile.
 
 ## Excluded
 
 - Provider-specific search, scraping, comments, authentication, or downloads.
 - External account/progress synchronization.
-- Import intake, quarantine, source deletion, and NAS maintenance automation.
+- Import apply, quarantine, source move/overwrite/deletion, and NAS maintenance
+  automation.
 - Public-access, DDNS, tunnel, certificate, or reverse-proxy automation.
 - GPU/model jobs and automated similarity decisions.
 - PDF, PDF-inside-ZIP, 7z, and MOBI helpers in the public-core image.
@@ -50,6 +58,15 @@ application-data location, and exposes an authenticated web UI.
    base filesystem requires a new capability, security, and license review.
    Compose must not inject a host init binary, and Docker builds must reject
    platforms without a separately reviewed artifact/license inventory.
+9. Runtime diagnostics are read-only and local. They never invoke a shell,
+   inspect sockets, probe external services, trigger refresh or cleanup work,
+   or return absolute paths and underlying error text. Cache inspection is
+   bounded and reports only aggregate counts.
+10. Import planning is a dry run over explicit, disjoint trees inside one
+    security root. It rejects links, reparse points, special files, boundary
+    escapes, and configured resource-limit overruns; it has no apply endpoint.
+11. Metadata overrides affect only local presentation state. They never rename
+    a catalog series, mutate scanner output, or write to a library mount.
 
 ## Extension rule
 

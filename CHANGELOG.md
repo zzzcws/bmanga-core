@@ -23,6 +23,12 @@ be finalized before the first release.
   with no host init injection and a pre-build Linux/amd64 license-profile
   guard; verified with synthetic scanner, authenticated service, and session
   writes.
+- A bounded, read-only import planner that compares explicit intake and library
+  trees by whole-file SHA-256 without exposing an apply operation.
+- Presentation-only title, creator, series-label, and language overrides stored
+  in SQLite without changing scanned metadata or source files.
+- Local runtime diagnostics limited to process uptime, bounded database health,
+  and aggregate application-cache counts and bytes.
 
 ### Security
 

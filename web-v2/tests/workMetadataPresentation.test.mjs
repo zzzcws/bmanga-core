@@ -3,6 +3,9 @@ import test from "node:test";
 
 import {
   workCreatorNames,
+  workLanguageNames,
+  workMetadataOriginalValues,
+  workMetadataOverrideValues,
   workSeriesNames,
   workTranslationNames,
 } from "../src/lib/workMetadataPresentation.ts";
@@ -24,6 +27,15 @@ test("作者显示按人工校正、结构化、展示值和标题提示依次�
   assert.deepEqual(workCreatorNames(detail({
     work: {
       metadata_overrides: {
+        creator: { field_value: "Synthetic Public Creator" },
+        author: { field_value: "Synthetic Legacy Author" },
+      },
+    },
+  })), ["Synthetic Public Creator"]);
+
+  assert.deepEqual(workCreatorNames(detail({
+    work: {
+      metadata_overrides: {
         circle: { field_value: "Synthetic Override Circle" },
         author: { field_value: "Synthetic Override Author" },
       },
@@ -41,6 +53,44 @@ test("作者显示按人工校正、结构化、展示值和标题提示依次�
 
   assert.deepEqual(workCreatorNames(detail({ work: { display_creator: "Synthetic Display Fallback" } })), ["Synthetic Display Fallback"]);
   assert.deepEqual(workCreatorNames(detail({ title_hints: { creators: ["Synthetic Hint Fallback"], series: "" } })), ["Synthetic Hint Fallback"]);
+});
+
+test("语言显示使用本地覆盖并对标签去重", () => {
+  assert.deepEqual(workLanguageNames(detail({
+    work: { metadata_overrides: { language: { field_value: "中文, English, 中文" } } },
+  })), ["中文", "English"]);
+  assert.deepEqual(workLanguageNames(detail({
+    work: { language: "English" },
+  })), ["English"]);
+});
+
+test("编辑器数据区分扫描原值和本地覆盖", () => {
+  const data = detail({
+    work: {
+      title: "Local Display Title",
+      metadata_source_title: "Scanned Work Title",
+      metadata_overrides: {
+        title: { field_value: "Local Display Title" },
+        creator: { field_value: "Local Creator" },
+        series: { field_value: "Local Series" },
+        language: { field_value: "Local Language" },
+      },
+    },
+    creators: [{ creator_display: "Scanned Creator" }],
+    series: [{ series_title: "Scanned Series" }],
+  });
+  assert.deepEqual(workMetadataOverrideValues(data), {
+    title: "Local Display Title",
+    creator: "Local Creator",
+    series: "Local Series",
+    language: "Local Language",
+  });
+  assert.deepEqual(workMetadataOriginalValues(data), {
+    title: "Scanned Work Title",
+    creator: "Scanned Creator",
+    series: "Scanned Series",
+    language: "",
+  });
 });
 
 test("系列优先使用校正和结构化数据", () => {

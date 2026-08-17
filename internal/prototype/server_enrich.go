@@ -8,9 +8,11 @@ import (
 )
 
 // These fields are read from existing local overrides for catalog display.
-// The public core does not expose metadata import or override write routes.
+// The public write route owns only title, creator, series, and language; the
+// remaining fields stay read-only for compatibility with existing databases.
 var metadataOverrideFieldNames = []string{
 	"title",
+	"creator",
 	"series",
 	"circle",
 	"author",
@@ -139,6 +141,9 @@ func enrichWork(item map[string]any) {
 }
 
 func workDisplayCreator(item map[string]any) string {
+	if creator := metadataOverrideValue(item, "creator"); creator != "" {
+		return creator
+	}
 	author := metadataOverrideValue(item, "author")
 	circle := metadataOverrideValue(item, "circle")
 	if author != "" && circle != "" && !strings.EqualFold(author, circle) {

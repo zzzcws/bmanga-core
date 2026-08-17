@@ -59,6 +59,8 @@ import {
 import { DetailCoverFrame, DetailHeader, PersonalNoteEditor } from "./components/DetailChrome";
 import { AsyncRegionBoundary } from "./components/AsyncRegionBoundary";
 import { RelatedWorks } from "./components/RelatedWorks";
+import { MetadataOverrideEditor } from "./components/MetadataOverrideEditor";
+import { RuntimeDiagnosticsLite } from "./components/RuntimeDiagnosticsLite";
 import { nextSeriesReadable } from "./lib/seriesOrder";
 import { preferredScrollBehavior } from "./lib/motion";
 import { hasDiscoverAuxiliary, mergeDiscoverPayload, planDiscoverRequest } from "./lib/discoverState";
@@ -165,7 +167,7 @@ import {
   progressFor,
 } from "./lib/catalogPresentation";
 import { uniqueRelatedWorks } from "./lib/relatedWorksPresentation";
-import { workCreatorNames, workSeriesNames, workTranslationNames } from "./lib/workMetadataPresentation";
+import { workCreatorNames, workLanguageNames, workSeriesNames, workTranslationNames } from "./lib/workMetadataPresentation";
 import type {
   CatalogItem,
   ContinueTarget,
@@ -2725,6 +2727,21 @@ function App() {
     }
   }, [applyMarkToDetailSession, detail, noteDraft, noteSaving, showToast]);
 
+  const applyWorkMetadataUpdate = useCallback((data: WorkDetailResponse) => {
+    const candidateID = data.work.candidate_id;
+    setDetail((current) => current?.kind === "work" && current.data.work.candidate_id === candidateID
+      ? { kind: "work", data }
+      : current,
+    );
+    setHeroDetail((current) => current?.work.candidate_id === candidateID ? data : current);
+    seriesDetailCacheRef.current.clear();
+    seriesDetailResolvedRef.current.clear();
+    invalidateCatalogPageCache();
+    invalidateFavoritesPageCache();
+    setDataRevision((current) => current + 1);
+    setFavoritesRevision((current) => current + 1);
+  }, [invalidateCatalogPageCache, invalidateFavoritesPageCache]);
+
   const flushPendingMarks = useCallback(async () => {
     const result = await flushPendingUserMarks((payload) => saveUserMark(payload));
     if (!result.sent.length) return;
@@ -3796,7 +3813,7 @@ function App() {
             folio="06 / SETTINGS"
             meta={<span>{readerFitLabel}</span>}
           />
-          <p className="page-lead settings-lead">这里只保存阅读器布局偏好，不读取或运行任何维护任务。单本作品已保存的布局与停留位置仍优先恢复。</p>
+          <p className="page-lead settings-lead">这里保存阅读器布局偏好，并显示只读的本地运行状态；不会运行任何维护任务。单本作品已保存的布局与停留位置仍优先恢复。</p>
           <section className="settings-reader-card" aria-labelledby="reader-preference-title">
             <span>READING LAYOUT</span>
             <h2 id="reader-preference-title">默认阅读布局</h2>
@@ -3808,6 +3825,7 @@ function App() {
             </div>
             <output aria-live="polite">当前默认：{readerFitPreference === "fit-page" ? "整页显示" : readerFitPreference === "fit-width" ? "适应屏幕宽度" : "横页从右到左拆分"}</output>
           </section>
+          <RuntimeDiagnosticsLite />
         </section>
       );
     }
@@ -3970,6 +3988,7 @@ function App() {
   const browseSurfaceInert = detailLayerOpen;
   const detailWorkCreators = detail?.kind === "work" ? workCreatorNames(detail.data) : [];
   const detailWorkSeries = detail?.kind === "work" ? workSeriesNames(detail.data) : [];
+  const detailWorkLanguages = detail?.kind === "work" ? workLanguageNames(detail.data) : [];
   const detailWorkTranslations = detail?.kind === "work" ? workTranslationNames(detail.data) : [];
   const detailRelatedEditionItems = detail?.kind === "work" ? uniqueRelatedWorks(detail.data.related?.editions, detail.data.work.candidate_id) : [];
   const detailRelatedSeriesItems = detail?.kind === "work" ? uniqueRelatedWorks(detail.data.related?.series, detail.data.work.candidate_id) : [];
@@ -4024,11 +4043,12 @@ function App() {
                   <div className="detail-copy">
                     <span className="eyebrow">CATALOGUE ENTRY</span>
                     <h1 id="detail-heading">{cleanTitle(itemTitle(detail.data.work))}</h1>
-                    {detailWorkCreators.length || detailWorkSeries.length || detailWorkTranslations.length || detailRelatedEditionItems.length ? (
+                    {detailWorkCreators.length || detailWorkSeries.length || detailWorkLanguages.length || detailWorkTranslations.length || detailRelatedEditionItems.length ? (
                       <dl className="detail-identities" aria-label="作品元数据">
                         {detailRelatedEditionItems.length ? <div><dt>其他版本</dt><dd><button type="button" onClick={() => focusRelatedSection("detail-related-editions-title")}>查看 {detailRelatedEditionItems.length} 本同作品版本</button></dd></div> : null}
                         {detailWorkCreators.length ? <div><dt>作者／社团</dt><dd><span>{detailWorkCreators.join(" · ")}</span>{detailRelatedCreatorItems.length ? <button type="button" onClick={() => focusRelatedSection("detail-related-creators-title")}>查看同作者作品</button> : null}</dd></div> : null}
                         {detailWorkSeries.length ? <div><dt>系列</dt><dd><span>{detailWorkSeries.join(" · ")}</span>{detailRelatedSeriesItems.length ? <button type="button" onClick={() => focusRelatedSection("detail-related-series-title")}>查看同系列作品</button> : null}</dd></div> : null}
+                        {detailWorkLanguages.length ? <div><dt>语言</dt><dd><span>{detailWorkLanguages.join(" · ")}</span></dd></div> : null}
                         {detailWorkTranslations.length ? <div><dt>汉化／翻译</dt><dd><span>{detailWorkTranslations.join(" · ")}</span></dd></div> : null}
                       </dl>
                     ) : null}
@@ -4048,6 +4068,7 @@ function App() {
                   </div>
                 </div>
                 <RelatedWorks currentID={detail.data.work.candidate_id} editions={detail.data.related?.editions} series={detail.data.related?.series} creators={detail.data.related?.creators} onOpen={openDetail} />
+                <MetadataOverrideEditor detail={detail.data} disabled={detailBusy} onUpdated={applyWorkMetadataUpdate} />
                 <Suspense fallback={<Status>正在准备个人标记…</Status>}>
                   <PersonalMarkPanel targetType="work" targetID={detail.data.work.candidate_id} mark={detail.data.mark} disabled={detailBusy} savingField={personalMarkSavingField} statusMessage={personalMarkStatus} onPatch={(payload, field) => { void saveDetailPersonalMark(payload, field); }} />
                 </Suspense>
