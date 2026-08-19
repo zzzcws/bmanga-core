@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "43858bc9d149a1c7afc09018f1fa790fdd1c38ba3fd802573ba975179f3a9d63",
+  "artifactProfileSha256": "cb09b5b775f70e1ff0cfc523a5892b79804fb6a184b344a83a8b344a183936e0",
   "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-19T06:15:45Z",
+  "reviewedAt": "2026-08-19T06:38:07Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
@@ -109,7 +109,7 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/libc@v1.72.0",
+      "id": "go-module:modernc.org/libc@v1.74.4",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause AND MIT AND BSD-2-Clause with documented public-domain portions",
       "obligations": [
@@ -119,11 +119,11 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE",
           "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600"
         },
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE-3RD-PARTY.md",
+          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE-3RD-PARTY.md",
           "sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c"
         }
       ]
@@ -167,20 +167,22 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/sqlite@v1.50.0",
+      "id": "go-module:modernc.org/sqlite@v1.56.0",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with documented SQLite public-domain dedication",
       "obligations": [
         "Distribute the mapped modernc BSD LICENSE and SQLITE-LICENSE public-domain provenance statement.",
-        "Reproduce the BSD copyright notice, conditions, and disclaimer, and observe its non-endorsement condition."
+        "Reproduce the BSD copyright notice, conditions, and disclaimer, and observe its non-endorsement condition.",
+        "This approval covers only the imported modernc.org/sqlite, modernc.org/sqlite/lib, and modernc.org/sqlite/vtab packages in the reviewed binaries.",
+        "Do not import or distribute the optional modernc.org/sqlite/vec package without adding its sqlite-vec license text and completing a new artifact review."
       ],
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/LICENSE",
           "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"
         },
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/SQLITE-LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/SQLITE-LICENSE",
           "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0"
         }
       ]

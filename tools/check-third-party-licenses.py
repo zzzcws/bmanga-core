@@ -33,9 +33,21 @@ GO_BUILD_IMAGE = (
 )
 GO_VERSION = "1.26.6"
 NODE_VERSION = "24.19.0"
-GO_MOD_SHA256 = "5986a1fc21c69d3448b5c193182b6780dffa03f9467b6012d1052d536b10dfa4"
-GO_SUM_SHA256 = "5c6c5595aea3aa07497aa7e25f8e5a64e702151902e3433446ca176736168ab9"
+GO_MOD_SHA256 = "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792"
+GO_SUM_SHA256 = "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc"
 PACKAGE_LOCK_SHA256 = "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a"
+SQLITE_TECHNICAL_REVIEW = (
+    "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json"
+)
+SQLITE_TECHNICAL_REVIEW_SHA256 = (
+    "d1e3318b4fb1d28d9fd5bbf18681f7110689762168e005f2b32cad47cb813dcd"
+)
+REVIEWED_SQLITE_PACKAGES = {
+    "modernc.org/sqlite",
+    "modernc.org/sqlite/lib",
+    "modernc.org/sqlite/vtab",
+}
+EXCLUDED_SQLITE_PACKAGES = {"modernc.org/sqlite/vec"}
 ROLLDOWN_NOTICE_URL = (
     "https://raw.githubusercontent.com/rolldown/rolldown/"
     "v1.1.5/THIRD-PARTY-LICENSE"
@@ -84,7 +96,7 @@ GO_MODULE_FILES: dict[tuple[str, str], dict[str, str]] = {
         "LICENSE": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
         "PATENTS": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
     },
-    ("modernc.org/libc", "v1.72.0"): {
+    ("modernc.org/libc", "v1.74.4"): {
         "LICENSE": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600",
         "LICENSE-3RD-PARTY.md": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c",
     },
@@ -96,7 +108,7 @@ GO_MODULE_FILES: dict[tuple[str, str], dict[str, str]] = {
         "LICENSE-GO": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
         "LICENSE-MMAP-GO": "c2eba69f20d05414538c3a5df7694dde392e065ff70882e1625e90f5d6659fff",
     },
-    ("modernc.org/sqlite", "v1.50.0"): {
+    ("modernc.org/sqlite", "v1.56.0"): {
         "LICENSE": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
         "SQLITE-LICENSE": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
     },
@@ -195,6 +207,140 @@ def load_strict_json(path: Path) -> Any:
         return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicate_keys)
     except json.JSONDecodeError as exc:
         raise VerificationError(f"invalid human-review decision JSON: {exc}") from exc
+
+
+def verify_sqlite_technical_review(go_profile: dict[str, Any]) -> Path:
+    evidence = go_profile.get("technicalReviewEvidence")
+    expected_evidence = {
+        "path": SQLITE_TECHNICAL_REVIEW,
+        "sha256": SQLITE_TECHNICAL_REVIEW_SHA256,
+    }
+    if evidence != expected_evidence:
+        raise VerificationError("SQLite technical-review evidence mapping changed")
+    path = safe_repo_path(SQLITE_TECHNICAL_REVIEW)
+    if not path.is_file() or sha256(path) != SQLITE_TECHNICAL_REVIEW_SHA256:
+        raise VerificationError("SQLite technical-review evidence changed or is missing")
+    review = load_strict_json(path)
+    expected_keys = {
+        "schemaVersion",
+        "reviewType",
+        "reviewedBy",
+        "reviewedAt",
+        "subject",
+        "artifactProfile",
+        "integrityEvidence",
+        "importAndLinkageEvidence",
+        "containerEvidence",
+        "decision",
+    }
+    if not isinstance(review, dict) or set(review) != expected_keys:
+        raise VerificationError("unexpected SQLite technical-review schema")
+    if review["schemaVersion"] != 1 or review["reviewType"] != (
+        "dependency-upgrade-artifact-boundary"
+    ):
+        raise VerificationError("unsupported SQLite technical-review version or type")
+    if not meaningful_review_text(review["reviewedBy"]):
+        raise VerificationError("SQLite technical-review reviewer is missing")
+    validate_reviewed_at(review["reviewedAt"])
+    if review["subject"] != {
+        "module": "modernc.org/sqlite",
+        "fromVersion": "v1.50.0",
+        "toVersion": "v1.56.0",
+        "requiredTransitiveModule": "modernc.org/libc",
+        "requiredTransitiveVersion": "v1.74.4",
+    }:
+        raise VerificationError("SQLite technical-review subject changed")
+    if review["artifactProfile"] != {
+        "goVersion": f"go{GO_VERSION}",
+        "goos": "linux",
+        "goarch": "amd64",
+        "cgoEnabled": False,
+        "webBuild": {
+            "nodeVersion": NODE_VERSION,
+            "builderImage": NODE_BUILD_IMAGE,
+        },
+        "entrypoints": ["cmd/bmanga-go", "cmd/bmanga-scan"],
+        "runtimeBase": "scratch",
+    }:
+        raise VerificationError("SQLite technical-review artifact profile changed")
+
+    integrity = review["integrityEvidence"]
+    expected_module_checksums = [
+        {
+            "module": "modernc.org/libc",
+            "version": "v1.74.4",
+            "sum": "h1:fX1Omw4o2/1C2iRkkIsrQTasJQldLhRmuPreXLoWs9k=",
+            "goModSum": "h1:eeQAS9W3sZeKYMFubydxJpII9ybHWshk+7or7bLG9co=",
+        },
+        {
+            "module": "modernc.org/sqlite",
+            "version": "v1.56.0",
+            "sum": "h1:/D8e2RfFqoy/Zc6PuC76U28zFwmI/sYx1Kjm4yEn9e0=",
+            "goModSum": "h1:yCJ2cmAaIkHQ25oXWrF8H4O1lIfPYPR26yCEDj2P3pQ=",
+        },
+    ]
+    if integrity != {
+        "goModSha256": GO_MOD_SHA256,
+        "goSumSha256": GO_SUM_SHA256,
+        "moduleChecksums": expected_module_checksums,
+        "goModVerify": "all modules verified",
+    }:
+        raise VerificationError("SQLite technical-review integrity evidence changed")
+
+    linkage = review["importAndLinkageEvidence"]
+    linked_modules = [
+        f"{module}@{version}" for module, version in sorted(GO_MODULE_FILES)
+    ]
+    optional_exclusions = [
+        {
+            "package": "modernc.org/sqlite/vec",
+            "upstreamPayload": "sqlite-vec v0.1.9",
+            "presentInDownloadedModule": True,
+            "requiresExplicitSideEffectImport": True,
+            "importedByEntrypoints": False,
+            "linkedIntoBinaries": False,
+            "binarySymbolMatches": 0,
+        }
+    ]
+    if (
+        not isinstance(linkage, dict)
+        or linkage.get("linkedExternalModules") != linked_modules
+        or linkage.get("importedSqlitePackages") != sorted(REVIEWED_SQLITE_PACKAGES)
+        or linkage.get("optionalPackageExclusions") != optional_exclusions
+        or not isinstance(linkage.get("verificationCommands"), list)
+        or len(linkage["verificationCommands"]) != 5
+        or any(not meaningful_review_text(item) for item in linkage["verificationCommands"])
+    ):
+        raise VerificationError("SQLite technical-review linkage evidence changed")
+
+    expected_final_copies = [
+        "COPY --from=go-build --chown=65532:65532 /out/ /app/",
+        "COPY --from=web-build --chown=65532:65532 /src/web/v2 /app/web/v2",
+        "COPY --chown=65532:65532 LICENSE THIRD_PARTY_NOTICES.md /app/",
+        "COPY --chown=65532:65532 LICENSES /app/LICENSES",
+    ]
+    if review["containerEvidence"] != {
+        "runtimeBase": "scratch",
+        "finalStageCopies": expected_final_copies,
+        "goModuleCacheCopied": False,
+        "sourceTreeCopied": False,
+        "sqliteVecDistributed": False,
+    }:
+        raise VerificationError("SQLite technical-review container evidence changed")
+    decision = review["decision"]
+    if (
+        not isinstance(decision, dict)
+        or set(decision) != {"status", "rationale", "residualRisks"}
+        or decision["status"] != "approved"
+        or not isinstance(decision["rationale"], list)
+        or len(decision["rationale"]) < 3
+        or any(not meaningful_review_text(item) for item in decision["rationale"])
+        or not isinstance(decision["residualRisks"], list)
+        or len(decision["residualRisks"]) < 2
+        or any(not meaningful_review_text(item) for item in decision["residualRisks"])
+    ):
+        raise VerificationError("SQLite technical-review decision is incomplete")
+    return path
 
 
 def verify_review_decision(manifest: dict[str, Any], path: Path) -> None:
@@ -540,6 +686,7 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
     if sha256(REPO / "go.sum") != GO_SUM_SHA256 or go_profile.get("goSumSha256") != GO_SUM_SHA256:
         raise VerificationError("go.sum changed without regenerating the license bundle")
     expected_artifact_sets(manifest)
+    technical_review_path = verify_sqlite_technical_review(go_profile)
 
     web_profile = profile.get("web", {})
     if web_profile.get("nodeVersion") != NODE_VERSION:
@@ -586,6 +733,21 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
             raise VerificationError(f"Dockerfile final stage is missing: {marker}")
     if "RUNTIME_IMAGE" in dockerfile or "distroless" in dockerfile.casefold():
         raise VerificationError("Dockerfile reintroduced an unreviewed runtime base")
+    expected_final_copies = [
+        "COPY --from=go-build --chown=65532:65532 /out/ /app/",
+        "COPY --from=web-build --chown=65532:65532 /src/web/v2 /app/web/v2",
+        "COPY --chown=65532:65532 LICENSE THIRD_PARTY_NOTICES.md /app/",
+        "COPY --chown=65532:65532 LICENSES /app/LICENSES",
+    ]
+    actual_final_copies = [
+        line.strip()
+        for line in final_stage.splitlines()
+        if line.strip().startswith("COPY ")
+    ]
+    if actual_final_copies != expected_final_copies:
+        raise VerificationError(
+            "scratch final-stage copies differ from the reviewed artifact boundary"
+        )
     for marker in (
         "ARG TARGETPLATFORM",
         "ARG TARGETOS",
@@ -622,6 +784,7 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
             raise VerificationError(f"Docker build context excludes the license bundle: {marker}")
 
     referenced = verify_source_mappings(manifest, lock)
+    referenced.add(technical_review_path)
 
     pending_review = any(
         component.get("reviewStatus") != "human-reviewed"
@@ -723,6 +886,32 @@ def verify_go_linkage(manifest: dict[str, Any]) -> None:
     modcache = Path(run("go", "env", "GOMODCACHE", env=build_env))
     with tempfile.TemporaryDirectory(prefix="bmanga-license-verify-") as temp:
         for package, expected in expected_by_package.items():
+            imports = set(
+                run(
+                    "go",
+                    "list",
+                    "-deps",
+                    "-f={{.ImportPath}}",
+                    f"./{package}",
+                    env=build_env,
+                ).splitlines()
+            )
+            imported_sqlite_packages = {
+                item
+                for item in imports
+                if item == "modernc.org/sqlite" or item.startswith("modernc.org/sqlite/")
+            }
+            if imported_sqlite_packages != REVIEWED_SQLITE_PACKAGES:
+                raise VerificationError(
+                    f"{package} SQLite import scope changed; "
+                    f"missing={sorted(REVIEWED_SQLITE_PACKAGES - imported_sqlite_packages)}, "
+                    f"unexpected={sorted(imported_sqlite_packages - REVIEWED_SQLITE_PACKAGES)}"
+                )
+            if imports & EXCLUDED_SQLITE_PACKAGES:
+                raise VerificationError(
+                    f"{package} imports excluded optional SQLite packages: "
+                    f"{sorted(imports & EXCLUDED_SQLITE_PACKAGES)}"
+                )
             output = str(Path(temp) / Path(package).name)
             run(
                 "go",
@@ -746,6 +935,24 @@ def verify_go_linkage(manifest: dict[str, Any]) -> None:
                 raise VerificationError(
                     f"{package} linked modules changed; missing={sorted(expected - actual)}, "
                     f"unexpected={sorted(actual - expected)}"
+                )
+            audit_output = output + "-symbols"
+            run(
+                "go",
+                "build",
+                "-buildvcs=false",
+                "-mod=readonly",
+                "-trimpath",
+                "-ldflags=-buildid=",
+                "-o",
+                audit_output,
+                f"./{package}",
+                env=build_env,
+            )
+            symbols = run("go", "tool", "nm", audit_output, env=build_env)
+            if any(item in symbols for item in EXCLUDED_SQLITE_PACKAGES):
+                raise VerificationError(
+                    f"{package} binary contains excluded optional SQLite package symbols"
                 )
 
     by_id = {component["id"]: component for component in manifest["components"]}

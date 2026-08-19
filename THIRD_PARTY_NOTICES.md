@@ -15,7 +15,7 @@ review before that platform is enabled.
 The OCI aggregate license expression for this image is
 `Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND LicenseRef-SQLite-Public-Domain`.
 `LicenseRef-SQLite-Public-Domain` refers to
-`LICENSES/go/modernc.org/sqlite@v1.50.0/SQLITE-LICENSE`.
+`LICENSES/go/modernc.org/sqlite@v1.56.0/SQLITE-LICENSE`.
 
 ## Covered artifact profile
 
@@ -29,15 +29,27 @@ external modules:
 - `golang.org/x/image` 0.45.0
 - `golang.org/x/sys` 0.47.0
 - `golang.org/x/text` 0.41.0
-- `modernc.org/libc` 1.72.0
+- `modernc.org/libc` 1.74.4
 - `modernc.org/mathutil` 1.7.1
 - `modernc.org/memory` 1.11.0
-- `modernc.org/sqlite` 1.50.0
+- `modernc.org/sqlite` 1.56.0
 
 The bundle also preserves Go 1.26.6 `LICENSE` and `PATENTS`, the `PATENTS`
 files for the `golang.org/x/*` modules, and applicable modernc supplemental
 files including `LICENSE-3RD-PARTY.md`, `LICENSE-GO`, `LICENSE-MMAP-GO`, and
 `SQLITE-LICENSE`.
+
+The downloaded `modernc.org/sqlite` 1.56.0 module also contains the optional
+`modernc.org/sqlite/vec` package, which bundles sqlite-vec 0.1.9. Neither
+shipped entrypoint imports that side-effect package: the reviewed Linux/amd64
+import graphs contain only `modernc.org/sqlite`, `modernc.org/sqlite/lib`, and
+`modernc.org/sqlite/vtab`, and symbol inspection finds no `sqlite/vec` package
+in either binary. The scratch image copies only those binaries, generated web
+assets, and the mapped license bundle, not the Go module cache or source tree.
+Accordingly sqlite-vec code is not part of this artifact. Importing or
+distributing it later requires adding its upstream license text and completing
+a new artifact review. The structured evidence is recorded in
+`LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json`.
 
 The browser production tree contains React 19.2.7, React DOM 19.2.7, and
 Scheduler 0.27.0. The built bundle additionally contains Vite 8.1.4 injected

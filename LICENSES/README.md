@@ -56,6 +56,13 @@ OpenAI Codex under explicit maintainer delegation and publication authority;
 the exact conclusions and obligations are recorded in
 `LICENSES/reviews/linux-amd64.json`. The manifest is release-ready only for
 this reviewed Linux/amd64 artifact profile.
+The modernc.org/sqlite 1.56.0 upgrade also has a separate structured artifact-
+boundary review at
+`LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json`. It records and
+pins the evidence that the optional `modernc.org/sqlite/vec` package is present
+in the downloaded module but is not imported, linked, or copied into the
+scratch runtime image. Adding that package later requires its sqlite-vec
+license text and a new review.
 The schema label `human-reviewed` denotes that the maintainer-authorized review
 gate is complete; the decision's `reviewedBy` field explicitly identifies the
 delegated AI technical reviewer rather than implying legal-counsel review.

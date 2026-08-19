@@ -257,6 +257,7 @@ jobs:
             artifacts/rootfs/app/bmanga-scan \
             LICENSES/manifest.json \
             LICENSES/reviews/linux-amd64.json \
+            LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json \
             > artifacts/checksums.txt
 
       - name: Smoke-test the exact digest

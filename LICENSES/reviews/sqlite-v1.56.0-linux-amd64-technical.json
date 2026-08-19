@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "reviewType": "dependency-upgrade-artifact-boundary",
+  "reviewedBy": "OpenAI Codex technical dependency review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
+  "reviewedAt": "2026-08-19T06:16:47Z",
+  "subject": {
+    "module": "modernc.org/sqlite",
+    "fromVersion": "v1.50.0",
+    "toVersion": "v1.56.0",
+    "requiredTransitiveModule": "modernc.org/libc",
+    "requiredTransitiveVersion": "v1.74.4"
+  },
+  "artifactProfile": {
+    "goVersion": "go1.26.6",
+    "goos": "linux",
+    "goarch": "amd64",
+    "cgoEnabled": false,
+    "webBuild": {
+      "nodeVersion": "24.19.0",
+      "builderImage": "docker.io/library/node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03"
+    },
+    "entrypoints": [
+      "cmd/bmanga-go",
+      "cmd/bmanga-scan"
+    ],
+    "runtimeBase": "scratch"
+  },
+  "integrityEvidence": {
+    "goModSha256": "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792",
+    "goSumSha256": "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc",
+    "moduleChecksums": [
+      {
+        "module": "modernc.org/libc",
+        "version": "v1.74.4",
+        "sum": "h1:fX1Omw4o2/1C2iRkkIsrQTasJQldLhRmuPreXLoWs9k=",
+        "goModSum": "h1:eeQAS9W3sZeKYMFubydxJpII9ybHWshk+7or7bLG9co="
+      },
+      {
+        "module": "modernc.org/sqlite",
+        "version": "v1.56.0",
+        "sum": "h1:/D8e2RfFqoy/Zc6PuC76U28zFwmI/sYx1Kjm4yEn9e0=",
+        "goModSum": "h1:yCJ2cmAaIkHQ25oXWrF8H4O1lIfPYPR26yCEDj2P3pQ="
+      }
+    ],
+    "goModVerify": "all modules verified"
+  },
+  "importAndLinkageEvidence": {
+    "verificationCommands": [
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go list -deps ./cmd/bmanga-go",
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go list -deps ./cmd/bmanga-scan",
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -buildvcs=false -mod=readonly -trimpath ./cmd/bmanga-go",
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -buildvcs=false -mod=readonly -trimpath ./cmd/bmanga-scan",
+      "go tool nm <unstripped-audit-binary>"
+    ],
+    "linkedExternalModules": [
+      "github.com/dustin/go-humanize@v1.0.1",
+      "github.com/google/uuid@v1.6.0",
+      "github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
+      "golang.org/x/image@v0.45.0",
+      "golang.org/x/sys@v0.47.0",
+      "golang.org/x/text@v0.41.0",
+      "modernc.org/libc@v1.74.4",
+      "modernc.org/mathutil@v1.7.1",
+      "modernc.org/memory@v1.11.0",
+      "modernc.org/sqlite@v1.56.0"
+    ],
+    "importedSqlitePackages": [
+      "modernc.org/sqlite",
+      "modernc.org/sqlite/lib",
+      "modernc.org/sqlite/vtab"
+    ],
+    "optionalPackageExclusions": [
+      {
+        "package": "modernc.org/sqlite/vec",
+        "upstreamPayload": "sqlite-vec v0.1.9",
+        "presentInDownloadedModule": true,
+        "requiresExplicitSideEffectImport": true,
+        "importedByEntrypoints": false,
+        "linkedIntoBinaries": false,
+        "binarySymbolMatches": 0
+      }
+    ]
+  },
+  "containerEvidence": {
+    "runtimeBase": "scratch",
+    "finalStageCopies": [
+      "COPY --from=go-build --chown=65532:65532 /out/ /app/",
+      "COPY --from=web-build --chown=65532:65532 /src/web/v2 /app/web/v2",
+      "COPY --chown=65532:65532 LICENSE THIRD_PARTY_NOTICES.md /app/",
+      "COPY --chown=65532:65532 LICENSES /app/LICENSES"
+    ],
+    "goModuleCacheCopied": false,
+    "sourceTreeCopied": false,
+    "sqliteVecDistributed": false
+  },
+  "decision": {
+    "status": "approved",
+    "rationale": [
+      "The upgrade incorporates modernc.org/sqlite v1.56.0's journal-rollback corruption fix and its required modernc.org/libc v1.74.4 pin.",
+      "The reviewed modernc.org/sqlite and modernc.org/libc license originals are byte-identical to the previously approved texts, but remain versioned and mapped to the exact new module versions.",
+      "The combined artifact profile retains the digest-pinned Node.js 24.19.0 frontend builder from main and a Node-free scratch runtime image.",
+      "The optional modernc.org/sqlite/vec package exists in the downloaded module but is not imported, linked, or copied into the scratch runtime artifact."
+    ],
+    "residualRisks": [
+      "Importing modernc.org/sqlite/vec in the future would add sqlite-vec code and require its upstream license text, a new artifact review, and regenerated evidence before release.",
+      "Version 1.55.0 began interpreting mattn/go-sqlite3-compatible DSN aliases that 1.50.0 ignored. This project generates only the pre-existing _pragma form, whose accepted semantics are unchanged, and the complete test suite passed; any future externally supplied DSN using those aliases requires compatibility review.",
+      "Passing the checked tests and vulnerability scan reduces but does not eliminate regression risk in the upgraded database engine."
+    ]
+  }
+}
