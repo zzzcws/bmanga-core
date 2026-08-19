@@ -26,10 +26,11 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         for name in ("go.mod", "go.sum", "Dockerfile", "compose.yaml", ".dockerignore"):
             shutil.copy2(SOURCE_REPO / name, self.repo / name)
         (self.repo / "web-v2").mkdir()
-        shutil.copy2(
-            SOURCE_REPO / "web-v2" / "package-lock.json",
-            self.repo / "web-v2" / "package-lock.json",
-        )
+        for name in ("package.json", "package-lock.json"):
+            shutil.copy2(
+                SOURCE_REPO / "web-v2" / name,
+                self.repo / "web-v2" / name,
+            )
         shutil.copytree(SOURCE_REPO / "LICENSES", self.repo / "LICENSES")
         self.manifest = json.loads(
             (self.repo / "LICENSES" / "manifest.json").read_text(encoding="utf-8")
@@ -293,6 +294,20 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         manifest["artifactProfile"]["web"]["nodeVersion"] = "24.19.1"
         with self.assertRaisesRegex(CHECKER.VerificationError, "Node 24.19.0"):
             CHECKER.verify_integrity(manifest)
+
+    def test_node_type_profile_is_exact(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["artifactProfile"]["web"]["typeOnlyPackages"][0]["version"] = "26.1.1"
+        with self.assertRaisesRegex(CHECKER.VerificationError, "Node type package set"):
+            CHECKER.verify_integrity(manifest)
+
+    def test_package_json_node_types_are_exact(self) -> None:
+        package_json_path = self.repo / "web-v2" / "package.json"
+        package_json = json.loads(package_json_path.read_text(encoding="utf-8"))
+        package_json["devDependencies"]["@types/node"] = "26.1.1"
+        package_json_path.write_text(json.dumps(package_json) + "\n", encoding="utf-8")
+        with self.assertRaisesRegex(CHECKER.VerificationError, "package.json changed"):
+            CHECKER.verify_integrity(self.manifest)
 
     def test_node_build_image_is_exact(self) -> None:
         manifest = copy.deepcopy(self.manifest)
