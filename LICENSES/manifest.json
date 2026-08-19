@@ -11,8 +11,12 @@
       "goos": "linux",
       "goarch": "amd64",
       "cgoEnabled": false,
-      "goModSha256": "5986a1fc21c69d3448b5c193182b6780dffa03f9467b6012d1052d536b10dfa4",
-      "goSumSha256": "5c6c5595aea3aa07497aa7e25f8e5a64e702151902e3433446ca176736168ab9",
+      "goModSha256": "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792",
+      "goSumSha256": "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc",
+      "technicalReviewEvidence": {
+        "path": "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json",
+        "sha256": "d1e3318b4fb1d28d9fd5bbf18681f7110689762168e005f2b32cad47cb813dcd"
+      },
       "binaryLinkage": [
         {
           "package": "cmd/bmanga-go",
@@ -43,7 +47,7 @@
             },
             {
               "module": "modernc.org/libc",
-              "version": "v1.72.0"
+              "version": "v1.74.4"
             },
             {
               "module": "modernc.org/mathutil",
@@ -55,7 +59,7 @@
             },
             {
               "module": "modernc.org/sqlite",
-              "version": "v1.50.0"
+              "version": "v1.56.0"
             }
           ]
         },
@@ -88,7 +92,7 @@
             },
             {
               "module": "modernc.org/libc",
-              "version": "v1.72.0"
+              "version": "v1.74.4"
             },
             {
               "module": "modernc.org/mathutil",
@@ -100,7 +104,7 @@
             },
             {
               "module": "modernc.org/sqlite",
-              "version": "v1.50.0"
+              "version": "v1.56.0"
             }
           ]
         }
@@ -164,7 +168,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -190,7 +194,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -216,7 +220,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -242,7 +246,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -278,7 +282,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -314,7 +318,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -340,9 +344,9 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/libc@v1.72.0",
+      "id": "go-module:modernc.org/libc@v1.74.4",
       "name": "modernc.org/libc",
-      "version": "v1.72.0",
+      "version": "v1.74.4",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -350,26 +354,26 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE",
           "bytes": 1482,
           "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/libc@v1.72.0/LICENSE",
+            "locator": "modernc.org/libc@v1.74.4/LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE-3RD-PARTY.md",
+          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE-3RD-PARTY.md",
           "bytes": 10505,
           "sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/libc@v1.72.0/LICENSE-3RD-PARTY.md",
+            "locator": "modernc.org/libc@v1.74.4/LICENSE-3RD-PARTY.md",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
@@ -386,7 +390,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -412,7 +416,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -448,9 +452,9 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/sqlite@v1.50.0",
+      "id": "go-module:modernc.org/sqlite@v1.56.0",
       "name": "modernc.org/sqlite",
-      "version": "v1.50.0",
+      "version": "v1.56.0",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -458,26 +462,26 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/LICENSE",
           "bytes": 1489,
           "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/sqlite@v1.50.0/LICENSE",
+            "locator": "modernc.org/sqlite@v1.56.0/LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/SQLITE-LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/SQLITE-LICENSE",
           "bytes": 1506,
           "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/sqlite@v1.50.0/SQLITE-LICENSE",
+            "locator": "modernc.org/sqlite@v1.56.0/SQLITE-LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
@@ -494,7 +498,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -529,7 +533,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -555,7 +559,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -581,7 +585,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -617,7 +621,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {
@@ -643,7 +647,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
+        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
       },
       "files": [
         {

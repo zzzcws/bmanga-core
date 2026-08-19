@@ -25,9 +25,21 @@ REPO = Path(__file__).resolve().parents[1]
 LICENSES = REPO / "LICENSES"
 GO_VERSION = "1.26.6"
 NODE_VERSION = "24.19.0"
-GO_MOD_SHA256 = "5986a1fc21c69d3448b5c193182b6780dffa03f9467b6012d1052d536b10dfa4"
-GO_SUM_SHA256 = "5c6c5595aea3aa07497aa7e25f8e5a64e702151902e3433446ca176736168ab9"
+GO_MOD_SHA256 = "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792"
+GO_SUM_SHA256 = "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc"
 PACKAGE_LOCK_SHA256 = "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a"
+SQLITE_TECHNICAL_REVIEW = (
+    "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json"
+)
+SQLITE_TECHNICAL_REVIEW_SHA256 = (
+    "d1e3318b4fb1d28d9fd5bbf18681f7110689762168e005f2b32cad47cb813dcd"
+)
+REVIEWED_SQLITE_PACKAGES = {
+    "modernc.org/sqlite",
+    "modernc.org/sqlite/lib",
+    "modernc.org/sqlite/vtab",
+}
+EXCLUDED_SQLITE_PACKAGES = {"modernc.org/sqlite/vec"}
 GO_LICENSE_HASH = "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
 GO_PATENTS_HASH = "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
 ROLLDOWN_NOTICE_URL = (
@@ -81,7 +93,7 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "modernc.org/libc",
-        "v1.72.0",
+        "v1.74.4",
         [
             ("LICENSE", "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600"),
             (
@@ -109,7 +121,7 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "modernc.org/sqlite",
-        "v1.50.0",
+        "v1.56.0",
         [
             ("LICENSE", "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"),
             (
@@ -225,6 +237,32 @@ def build_linkage() -> list[dict[str, Any]]:
     with tempfile.TemporaryDirectory(prefix="bmanga-license-linkage-") as temp:
         for command in ("bmanga-go", "bmanga-scan"):
             package = f"./cmd/{command}"
+            imports = set(
+                run(
+                    "go",
+                    "list",
+                    "-deps",
+                    "-f={{.ImportPath}}",
+                    package,
+                    env=build_env,
+                ).splitlines()
+            )
+            imported_sqlite_packages = {
+                item
+                for item in imports
+                if item == "modernc.org/sqlite" or item.startswith("modernc.org/sqlite/")
+            }
+            if imported_sqlite_packages != REVIEWED_SQLITE_PACKAGES:
+                raise RuntimeError(
+                    f"{command} SQLite package scope changed; "
+                    f"missing={sorted(REVIEWED_SQLITE_PACKAGES - imported_sqlite_packages)}, "
+                    f"unexpected={sorted(imported_sqlite_packages - REVIEWED_SQLITE_PACKAGES)}"
+                )
+            if imports & EXCLUDED_SQLITE_PACKAGES:
+                raise RuntimeError(
+                    f"{command} imports excluded optional SQLite packages: "
+                    f"{sorted(imports & EXCLUDED_SQLITE_PACKAGES)}"
+                )
             output = str(Path(temp) / command)
             run(
                 "go",
@@ -285,6 +323,23 @@ def generate() -> None:
     go_sum = (REPO / "go.sum").read_bytes()
     if sha256(go_sum) != GO_SUM_SHA256:
         raise RuntimeError("go.sum changed; update the reviewed artifact profile first")
+    technical_review_bytes = read_checked(
+        REPO / SQLITE_TECHNICAL_REVIEW,
+        SQLITE_TECHNICAL_REVIEW_SHA256,
+    )
+    try:
+        technical_review = json.loads(technical_review_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("SQLite technical review evidence is not valid UTF-8 JSON") from exc
+    expected_subject = {
+        "module": "modernc.org/sqlite",
+        "fromVersion": "v1.50.0",
+        "toVersion": "v1.56.0",
+        "requiredTransitiveModule": "modernc.org/libc",
+        "requiredTransitiveVersion": "v1.74.4",
+    }
+    if technical_review.get("subject") != expected_subject:
+        raise RuntimeError("SQLite technical review subject changed")
     dockerfile = (REPO / "Dockerfile").read_text(encoding="utf-8")
     if dockerfile.splitlines()[0] != f"# syntax={DOCKERFILE_FRONTEND}":
         raise RuntimeError("Dockerfile frontend is not pinned to the reviewed digest")
@@ -458,6 +513,10 @@ def generate() -> None:
                 "cgoEnabled": False,
                 "goModSha256": sha256(go_mod),
                 "goSumSha256": sha256(go_sum),
+                "technicalReviewEvidence": {
+                    "path": SQLITE_TECHNICAL_REVIEW,
+                    "sha256": SQLITE_TECHNICAL_REVIEW_SHA256,
+                },
                 "binaryLinkage": linkage,
             },
             "web": {

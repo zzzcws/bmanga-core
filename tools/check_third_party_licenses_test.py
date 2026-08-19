@@ -97,7 +97,9 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
                 }
             ],
         }
-        shutil.rmtree(self.repo / "LICENSES" / "reviews", ignore_errors=True)
+        (self.repo / "LICENSES" / "reviews" / "linux-amd64.json").unlink(
+            missing_ok=True
+        )
         return manifest
 
     def test_pending_bundle_integrity_passes(self) -> None:
@@ -243,6 +245,41 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         license_path = self.repo / record["path"]
         license_path.write_bytes(license_path.read_bytes() + b"tampered\n")
         with self.assertRaisesRegex(CHECKER.VerificationError, "license size changed"):
+            CHECKER.verify_integrity(self.manifest)
+
+    def test_tampered_sqlite_technical_review_is_rejected(self) -> None:
+        review_path = self.repo / CHECKER.SQLITE_TECHNICAL_REVIEW
+        review_path.write_bytes(review_path.read_bytes() + b" ")
+        with self.assertRaisesRegex(
+            CHECKER.VerificationError,
+            "technical-review evidence changed",
+        ):
+            CHECKER.verify_integrity(self.manifest)
+
+    def test_sqlite_technical_review_mapping_is_required(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["artifactProfile"]["go"]["technicalReviewEvidence"]["sha256"] = (
+            "0" * 64
+        )
+        with self.assertRaisesRegex(
+            CHECKER.VerificationError,
+            "technical-review evidence mapping changed",
+        ):
+            CHECKER.verify_integrity(manifest)
+
+    def test_unreviewed_scratch_copy_is_rejected(self) -> None:
+        dockerfile = self.repo / "Dockerfile"
+        content = dockerfile.read_text(encoding="utf-8")
+        content = content.replace(
+            "FROM scratch\n",
+            "FROM scratch\nCOPY go.mod /app/unreviewed-go.mod\n",
+            1,
+        )
+        dockerfile.write_text(content, encoding="utf-8")
+        with self.assertRaisesRegex(
+            CHECKER.VerificationError,
+            "final-stage copies differ",
+        ):
             CHECKER.verify_integrity(self.manifest)
 
     def test_any_compose_init_key_is_rejected(self) -> None:

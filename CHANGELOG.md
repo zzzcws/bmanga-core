@@ -12,6 +12,14 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
   digest-pinned Node 24 Active LTS image in Docker and CI, while the final
   runtime remains a Node-free `scratch` image.
 
+### Security
+
+- Upgrade `modernc.org/sqlite` from 1.50.0 to 1.56.0 for the upstream
+  journal-rollback corruption fix and pin its required `modernc.org/libc`
+  1.74.4 dependency. Regenerated license/linkage evidence proves the optional
+  `modernc.org/sqlite/vec` package is not imported, linked, or shipped in the
+  reviewed scratch image.
+
 ## [0.1.0-alpha.3] - 2026-08-17
 
 ### Added
