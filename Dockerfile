@@ -1,11 +1,16 @@
 # syntax=docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e
 
-FROM --platform=$BUILDPLATFORM docker.io/library/node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 AS web-build
+FROM --platform=$BUILDPLATFORM docker.io/library/node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS web-build
 ARG TARGETPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 RUN if [ "${TARGETPLATFORM}" != "linux/amd64" ] || [ "${TARGETOS}" != "linux" ] || [ "${TARGETARCH}" != "amd64" ]; then \
       echo "unsupported release target: ${TARGETOS}/${TARGETARCH}; license manifest covers linux/amd64 only" >&2; \
+      exit 1; \
+    fi
+RUN actual="$(node --version)"; \
+    if [ "${actual}" != "v24.19.0" ]; then \
+      echo "unexpected Node toolchain: ${actual}; frontend artifact profile covers v24.19.0 only" >&2; \
       exit 1; \
     fi
 WORKDIR /src

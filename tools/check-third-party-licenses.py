@@ -24,14 +24,15 @@ DOCKERFILE_FRONTEND = (
     "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
 )
 NODE_BUILD_IMAGE = (
-    "docker.io/library/node:22-bookworm-slim@"
-    "sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436"
+    "docker.io/library/node:24-bookworm-slim@"
+    "sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03"
 )
 GO_BUILD_IMAGE = (
     "docker.io/library/golang:1.26.6-bookworm@"
     "sha256:116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36"
 )
 GO_VERSION = "1.26.6"
+NODE_VERSION = "24.19.0"
 GO_MOD_SHA256 = "5986a1fc21c69d3448b5c193182b6780dffa03f9467b6012d1052d536b10dfa4"
 GO_SUM_SHA256 = "5c6c5595aea3aa07497aa7e25f8e5a64e702151902e3433446ca176736168ab9"
 PACKAGE_LOCK_SHA256 = "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a"
@@ -541,6 +542,8 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
     expected_artifact_sets(manifest)
 
     web_profile = profile.get("web", {})
+    if web_profile.get("nodeVersion") != NODE_VERSION:
+        raise VerificationError(f"license bundle must remain scoped to Node {NODE_VERSION}")
     lock_value = web_profile.get("packageLock")
     if lock_value != "web-v2/package-lock.json":
         raise VerificationError("unexpected package-lock path in manifest")
@@ -602,6 +605,9 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
     for marker in ('actual="$(go env GOVERSION)"', '"${actual}" != "go1.26.6"'):
         if dockerfile.count(marker) != 1:
             raise VerificationError(f"Dockerfile Go toolchain guard is missing or ambiguous: {marker}")
+    for marker in ('actual="$(node --version)"', f'"${{actual}}" != "v{NODE_VERSION}"'):
+        if dockerfile.count(marker) != 1:
+            raise VerificationError(f"Dockerfile Node toolchain guard is missing or ambiguous: {marker}")
     target_build = 'GOOS="${TARGETOS}" GOARCH="${TARGETARCH}" CGO_ENABLED=0 go build'
     if dockerfile.count(target_build) != 2:
         raise VerificationError("both shipped Go binaries must use the guarded TARGETOS/TARGETARCH")

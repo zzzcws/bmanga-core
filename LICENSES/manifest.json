@@ -107,6 +107,7 @@
       ]
     },
     "web": {
+      "nodeVersion": "24.19.0",
       "packageLock": "web-v2/package-lock.json",
       "packageLockSha256": "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a",
       "productionPackages": [
@@ -137,7 +138,7 @@
     "container": {
       "dockerfileFrontend": "docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e",
       "buildImages": {
-        "node": "docker.io/library/node:22-bookworm-slim@sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436",
+        "node": "docker.io/library/node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03",
         "go": "docker.io/library/golang:1.26.6-bookworm@sha256:116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36"
       },
       "runtimeBase": "scratch",
@@ -163,7 +164,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -189,7 +190,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -215,7 +216,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -241,7 +242,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -277,7 +278,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -313,7 +314,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -349,7 +350,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -385,7 +386,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -411,7 +412,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -457,7 +458,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -493,7 +494,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -528,7 +529,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -554,7 +555,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -580,7 +581,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -616,7 +617,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {
@@ -642,7 +643,7 @@
       "reviewStatus": "human-reviewed",
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "ddaebc85723370230ad0883f420870efcf1b8985bf4ebf6e6328576f0eebaa01"
+        "sha256": "0f68c0e2857ddd3beed99182b662637e590f148550f3a867136bc0dc9b2907c4"
       },
       "files": [
         {

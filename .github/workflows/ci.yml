@@ -141,8 +141,8 @@ jobs:
           if "copy tools" in final_stage:
               found.append("runtime copy tools")
           expected_build_stages = (
-              "from --platform=$buildplatform docker.io/library/node:22-bookworm-slim@sha256:"
-              "d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436 as web-build",
+              "from --platform=$buildplatform docker.io/library/node:24-bookworm-slim@sha256:"
+              "3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 as web-build",
               "from --platform=$buildplatform docker.io/library/golang:1.26.6-bookworm@sha256:"
               "116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36 as go-build",
           )
@@ -182,6 +182,9 @@ jobs:
           for marker in ('actual="$(go env goversion)"', '"${actual}" != "go1.26.6"'):
               if dockerfile.count(marker) != 1:
                   found.append(f"missing exact Go toolchain guard: {marker}")
+          for marker in ('actual="$(node --version)"', '"${actual}" != "v24.19.0"'):
+              if dockerfile.count(marker) != 1:
+                  found.append(f"missing exact Node toolchain guard: {marker}")
           if dockerfile.count("arg version=0.0.0-dev") != 2:
               found.append("release version must be explicit in build and runtime stages")
           release_version_ldflag = (
@@ -212,7 +215,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version: "24.19.0"
           cache: npm
           cache-dependency-path: web-v2/package-lock.json
 
@@ -251,7 +254,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version: "24.19.0"
 
       - name: Generate CycloneDX source dependency inventories
         run: |

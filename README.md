@@ -128,7 +128,8 @@ channel described in [`SECURITY.md`](SECURITY.md).
 
 ## Build from a clean checkout
 
-Source builds require Go 1.26.6 or later and Node.js 22 or later.
+Source builds require Go 1.26.6 or later and Node.js 24 or later. CI and the
+container build currently use the reviewed Node.js 24.19.0 toolchain exactly.
 
 ```sh
 node tools/build-web-assets.mjs --ci
@@ -150,7 +151,7 @@ docker build -t bmanga:local .
 The frontend build uses the committed npm lockfile and writes ignored output to
 `web/v2`. The final container contains the two static Go binaries, generated web
 assets, and the reviewed license bundle; it contains no Python runtime or
-document/archive helper packages.
+Node.js/npm runtime, or document/archive helper packages.
 
 ## Local-only workflows
 

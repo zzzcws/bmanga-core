@@ -6,6 +6,12 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+### Changed
+
+- The reviewed frontend build chain now uses exact Node.js 24.19.0 from a
+  digest-pinned Node 24 Active LTS image in Docker and CI, while the final
+  runtime remains a Node-free `scratch` image.
+
 ## [0.1.0-alpha.3] - 2026-08-17
 
 ### Added
