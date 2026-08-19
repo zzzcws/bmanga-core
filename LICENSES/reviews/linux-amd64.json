@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "a32c3782f3d09590cc934f518d43bc1c06574deb934cf7c922d90d1fbb104545",
+  "artifactProfileSha256": "43858bc9d149a1c7afc09018f1fa790fdd1c38ba3fd802573ba975179f3a9d63",
   "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-17T11:42:17Z",
+  "reviewedAt": "2026-08-19T06:15:45Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",

@@ -251,6 +251,29 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         with self.assertRaisesRegex(CHECKER.VerificationError, "docker-init"):
             CHECKER.verify_integrity(self.manifest)
 
+    def test_node_artifact_profile_is_exact(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["artifactProfile"]["web"]["nodeVersion"] = "24.19.1"
+        with self.assertRaisesRegex(CHECKER.VerificationError, "Node 24.19.0"):
+            CHECKER.verify_integrity(manifest)
+
+    def test_node_build_image_is_exact(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["artifactProfile"]["container"]["buildImages"]["node"] = (
+            "docker.io/library/node:24-bookworm-slim@sha256:" + "0" * 64
+        )
+        with self.assertRaisesRegex(CHECKER.VerificationError, "reviewed Node and Go build images"):
+            CHECKER.verify_integrity(manifest)
+
+    def test_dockerfile_node_toolchain_guard_is_required(self) -> None:
+        dockerfile = self.repo / "Dockerfile"
+        dockerfile.write_text(
+            dockerfile.read_text(encoding="utf-8").replace("v24.19.0", "v24.19.1"),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(CHECKER.VerificationError, "Node toolchain guard"):
+            CHECKER.verify_integrity(self.manifest)
+
 
 if __name__ == "__main__":
     unittest.main()

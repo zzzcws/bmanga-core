@@ -24,6 +24,7 @@ from urllib.request import Request, urlopen
 REPO = Path(__file__).resolve().parents[1]
 LICENSES = REPO / "LICENSES"
 GO_VERSION = "1.26.6"
+NODE_VERSION = "24.19.0"
 GO_MOD_SHA256 = "5986a1fc21c69d3448b5c193182b6780dffa03f9467b6012d1052d536b10dfa4"
 GO_SUM_SHA256 = "5c6c5595aea3aa07497aa7e25f8e5a64e702151902e3433446ca176736168ab9"
 PACKAGE_LOCK_SHA256 = "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a"
@@ -38,8 +39,8 @@ DOCKERFILE_FRONTEND = (
     "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
 )
 NODE_BUILD_IMAGE = (
-    "docker.io/library/node:22-bookworm-slim@"
-    "sha256:d649c27dae7ba0137b3cef5dd75baa422c08dc3d9e3fc0c23dfb172dc3cc6436"
+    "docker.io/library/node:24-bookworm-slim@"
+    "sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03"
 )
 GO_BUILD_IMAGE = (
     "docker.io/library/golang:1.26.6-bookworm@"
@@ -306,6 +307,9 @@ def generate() -> None:
     ):
         if marker not in dockerfile:
             raise RuntimeError(f"Dockerfile no longer matches the no-base runtime profile: {marker}")
+    for marker in ('actual="$(node --version)"', f'"${{actual}}" != "v{NODE_VERSION}"'):
+        if dockerfile.count(marker) != 1:
+            raise RuntimeError(f"Dockerfile Node toolchain guard changed: {marker}")
     if dockerfile.count('"${TARGETOS}" != "linux"') != 2 or dockerfile.count(
         '"${TARGETARCH}" != "amd64"'
     ) != 2 or dockerfile.count('"${TARGETPLATFORM}" != "linux/amd64"') != 2:
@@ -457,6 +461,7 @@ def generate() -> None:
                 "binaryLinkage": linkage,
             },
             "web": {
+                "nodeVersion": NODE_VERSION,
                 "packageLock": "web-v2/package-lock.json",
                 "packageLockSha256": sha256(lock_path.read_bytes()),
                 "productionPackages": [

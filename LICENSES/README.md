@@ -8,6 +8,8 @@ The current snapshot represents only the checked-in `linux/amd64`,
 `CGO_ENABLED=0` container profile. Its final image starts from `scratch`; build
 images are not copied into the final filesystem. The Dockerfile rejects any
 other target before compiling, and Compose does not inject a host init binary.
+Web assets are built with exact Node.js 24.19.0 from the digest-pinned Node
+build image; neither Node.js nor npm is copied into the final image.
 The mapped components are:
 
 - Go 1.26.6 and the ten external modules linked into both Go binaries;
