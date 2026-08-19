@@ -11,6 +11,9 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 - The reviewed frontend build chain now uses exact Node.js 24.19.0 from a
   digest-pinned Node 24 Active LTS image in Docker and CI, while the final
   runtime remains a Node-free `scratch` image.
+- Frontend dependencies now use Vite 8.2.1, React 19.2.8, and Node 24-aligned
+  type definitions; the reviewed browser artifact component set remains
+  explicit and separate from type-only build inputs.
 
 ### Security
 

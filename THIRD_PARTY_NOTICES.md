@@ -51,12 +51,22 @@ distributing it later requires adding its upstream license text and completing
 a new artifact review. The structured evidence is recorded in
 `LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json`.
 
-The browser production tree contains React 19.2.7, React DOM 19.2.7, and
-Scheduler 0.27.0. The built bundle additionally contains Vite 8.1.4 injected
-runtime code and Rolldown 1.1.5's module-preload polyfill, so their complete
-published license files are included. Rolldown's npm archive refers to but
-omits `THIRD-PARTY-LICENSE`; the bundle adds the exact file from the versioned
-upstream `v1.1.5` tag and pins both its URL and reviewed SHA-256.
+The browser production tree contains React 19.2.8, React DOM 19.2.8, and
+Scheduler 0.27.0. The built bundle additionally contains Vite 8.2.1 injected
+runtime code and Rolldown 1.2.4's module-preload polyfill, so their complete
+published license files are included. Rolldown 1.2.4's npm archive includes
+both `LICENSE` and `THIRD-PARTY-LICENSE`; the inventory copies both files from
+the exact locked installation and verifies their source metadata and hashes.
+
+`@types/node` 24.13.3 and `undici-types` 7.18.2 are aligned to the reviewed
+Node.js 24 toolchain and recorded as type-only inputs in the artifact profile.
+They, `@vitejs/plugin-react`, TypeScript, PostCSS, Lightning CSS, native
+Rolldown/Lightning CSS bindings, and the other development dependencies are
+build inputs only. Their implementations and package files are not copied into
+the generated web assets or final `scratch` image. The component inventory
+consequently lists only the three browser production packages and the two
+build-tool components whose runtime helpers are present in the shipped browser
+output.
 
 ## Container boundary
 

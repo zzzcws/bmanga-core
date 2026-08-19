@@ -18,7 +18,6 @@ import subprocess
 import sys
 import tempfile
 from typing import Any
-from urllib.request import Request, urlopen
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -27,7 +26,8 @@ GO_VERSION = "1.26.6"
 NODE_VERSION = "24.19.0"
 GO_MOD_SHA256 = "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792"
 GO_SUM_SHA256 = "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc"
-PACKAGE_LOCK_SHA256 = "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a"
+PACKAGE_JSON_SHA256 = "95eec68b5cae0e48454a8f2eb7c1b42080e67ab42908885e061daa761dbd5db7"
+PACKAGE_LOCK_SHA256 = "4d0bebbe7c97d2369da450762839f51a5eb47e6e03cf8b21527c5da06295ff4f"
 SQLITE_TECHNICAL_REVIEW = (
     "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json"
 )
@@ -42,10 +42,6 @@ REVIEWED_SQLITE_PACKAGES = {
 EXCLUDED_SQLITE_PACKAGES = {"modernc.org/sqlite/vec"}
 GO_LICENSE_HASH = "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
 GO_PATENTS_HASH = "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
-ROLLDOWN_NOTICE_URL = (
-    "https://raw.githubusercontent.com/rolldown/rolldown/"
-    "v1.1.5/THIRD-PARTY-LICENSE"
-)
 DOCKERFILE_FRONTEND = (
     "docker.io/docker/dockerfile:1.7@"
     "sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e"
@@ -136,13 +132,13 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
 NPM_COMPONENTS: list[tuple[str, str, str, list[tuple[str, str]]]] = [
     (
         "react",
-        "19.2.7",
+        "19.2.8",
         "browser-runtime",
         [("LICENSE", "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93")],
     ),
     (
         "react-dom",
-        "19.2.7",
+        "19.2.8",
         "browser-runtime",
         [("LICENSE", "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93")],
     ),
@@ -154,15 +150,21 @@ NPM_COMPONENTS: list[tuple[str, str, str, list[tuple[str, str]]]] = [
     ),
     (
         "vite",
-        "8.1.4",
+        "8.2.1",
         "browser-injected-runtime",
-        [("LICENSE.md", "b1d741c26b53de1bbc0d4d7d3365b79888f9fe511527544a8a7b8e24dec43147")],
+        [("LICENSE.md", "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c")],
     ),
     (
         "rolldown",
-        "1.1.5",
+        "1.2.4",
         "browser-injected-modulepreload-runtime",
-        [("LICENSE", "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734")],
+        [
+            ("LICENSE", "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734"),
+            (
+                "THIRD-PARTY-LICENSE",
+                "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c",
+            ),
+        ],
     ),
 ]
 
@@ -190,16 +192,6 @@ def read_checked(path: Path, expected: str) -> bytes:
     actual = sha256(data)
     if actual != expected:
         raise RuntimeError(f"unexpected SHA-256 for {path.name}: {actual}, want {expected}")
-    return data
-
-
-def fetch_checked(url: str, expected: str) -> bytes:
-    request = Request(url, headers={"User-Agent": "bmanga-core-license-bundle/1"})
-    with urlopen(request, timeout=30) as response:
-        data = response.read()
-    actual = sha256(data)
-    if actual != expected:
-        raise RuntimeError(f"unexpected SHA-256 for {url}: {actual}, want {expected}")
     return data
 
 
@@ -391,9 +383,21 @@ def generate() -> None:
     linkage = build_linkage()
 
     lock_path = REPO / "web-v2" / "package-lock.json"
+    package_json_path = REPO / "web-v2" / "package.json"
+    if sha256(package_json_path.read_bytes()) != PACKAGE_JSON_SHA256:
+        raise RuntimeError("package.json changed; update the reviewed artifact profile first")
+    package_json = json.loads(package_json_path.read_text(encoding="utf-8"))
+    if (package_json.get("devDependencies") or {}).get("@types/node") != "24.13.3":
+        raise RuntimeError("generator requires @types/node 24.13.3 for the Node 24 profile")
     if sha256(lock_path.read_bytes()) != PACKAGE_LOCK_SHA256:
         raise RuntimeError("package-lock changed; update the reviewed artifact profile first")
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    lock_packages = lock.get("packages") or {}
+    if {
+        ("@types/node", (lock_packages.get("node_modules/@types/node") or {}).get("version")),
+        ("undici-types", (lock_packages.get("node_modules/undici-types") or {}).get("version")),
+    } != {("@types/node", "24.13.3"), ("undici-types", "7.18.2")}:
+        raise RuntimeError("locked Node type packages differ from the reviewed Node 24 profile")
     node_modules = REPO / "web-v2" / "node_modules"
     if not node_modules.is_dir():
         raise RuntimeError("run `npm --prefix web-v2 ci` before regenerating the bundle")
@@ -464,21 +468,6 @@ def generate() -> None:
                     },
                 )
             )
-        if name == "rolldown":
-            files.append(
-                write_license(
-                    f"npm/{name}@{version}/THIRD-PARTY-LICENSE",
-                    fetch_checked(
-                        ROLLDOWN_NOTICE_URL,
-                        "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c",
-                    ),
-                    {
-                        "kind": "fixed-upstream-tag",
-                        "locator": ROLLDOWN_NOTICE_URL,
-                        "reason": "the npm package LICENSE links to this file but omits it",
-                    },
-                )
-            )
         components.append(
             {
                 "id": f"npm:{name}@{version}",
@@ -521,16 +510,22 @@ def generate() -> None:
             },
             "web": {
                 "nodeVersion": NODE_VERSION,
+                "packageJson": "web-v2/package.json",
+                "packageJsonSha256": sha256(package_json_path.read_bytes()),
                 "packageLock": "web-v2/package-lock.json",
                 "packageLockSha256": sha256(lock_path.read_bytes()),
                 "productionPackages": [
-                    {"name": "react", "version": "19.2.7"},
-                    {"name": "react-dom", "version": "19.2.7"},
+                    {"name": "react", "version": "19.2.8"},
+                    {"name": "react-dom", "version": "19.2.8"},
                     {"name": "scheduler", "version": "0.27.0"},
                 ],
                 "injectedBuildRuntime": [
-                    {"name": "vite", "version": "8.1.4"},
-                    {"name": "rolldown", "version": "1.1.5"},
+                    {"name": "vite", "version": "8.2.1"},
+                    {"name": "rolldown", "version": "1.2.4"},
+                ],
+                "typeOnlyPackages": [
+                    {"name": "@types/node", "version": "24.13.3"},
+                    {"name": "undici-types", "version": "7.18.2"},
                 ],
             },
             "container": {

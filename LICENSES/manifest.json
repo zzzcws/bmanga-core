@@ -112,16 +112,18 @@
     },
     "web": {
       "nodeVersion": "24.19.0",
+      "packageJson": "web-v2/package.json",
+      "packageJsonSha256": "95eec68b5cae0e48454a8f2eb7c1b42080e67ab42908885e061daa761dbd5db7",
       "packageLock": "web-v2/package-lock.json",
-      "packageLockSha256": "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a",
+      "packageLockSha256": "4d0bebbe7c97d2369da450762839f51a5eb47e6e03cf8b21527c5da06295ff4f",
       "productionPackages": [
         {
           "name": "react",
-          "version": "19.2.7"
+          "version": "19.2.8"
         },
         {
           "name": "react-dom",
-          "version": "19.2.7"
+          "version": "19.2.8"
         },
         {
           "name": "scheduler",
@@ -131,11 +133,21 @@
       "injectedBuildRuntime": [
         {
           "name": "vite",
-          "version": "8.1.4"
+          "version": "8.2.1"
         },
         {
           "name": "rolldown",
-          "version": "1.1.5"
+          "version": "1.2.4"
+        }
+      ],
+      "typeOnlyPackages": [
+        {
+          "name": "@types/node",
+          "version": "24.13.3"
+        },
+        {
+          "name": "undici-types",
+          "version": "7.18.2"
         }
       ]
     },
@@ -166,10 +178,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/github.com/dustin/go-humanize@v1.0.1/LICENSE",
@@ -181,7 +189,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:github.com/google/uuid@v1.6.0",
@@ -192,10 +204,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/github.com/google/uuid@v1.6.0/LICENSE",
@@ -207,7 +215,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
@@ -218,10 +230,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
@@ -233,7 +241,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:golang.org/x/image@v0.45.0",
@@ -244,10 +256,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/golang.org/x/image@v0.45.0/LICENSE",
@@ -269,7 +277,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:golang.org/x/sys@v0.47.0",
@@ -280,10 +292,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/golang.org/x/sys@v0.47.0/LICENSE",
@@ -305,7 +313,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:golang.org/x/text@v0.41.0",
@@ -316,10 +328,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/golang.org/x/text@v0.41.0/LICENSE",
@@ -341,7 +349,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:modernc.org/libc@v1.74.4",
@@ -352,10 +364,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE",
@@ -377,7 +385,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:modernc.org/mathutil@v1.7.1",
@@ -388,10 +400,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/mathutil@v1.7.1/LICENSE",
@@ -403,7 +411,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:modernc.org/memory@v1.11.0",
@@ -414,10 +426,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE",
@@ -449,7 +457,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-module:modernc.org/sqlite@v1.56.0",
@@ -460,10 +472,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/LICENSE",
@@ -485,7 +493,11 @@
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "go-toolchain-1.26.6",
@@ -496,10 +508,6 @@
         "bmanga-scan"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/go/toolchain-go1.26.6/LICENSE",
@@ -521,95 +529,100 @@
             "verifiedLocalToolchain": "go1.26.6"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
-      "id": "npm:react-dom@19.2.7",
+      "id": "npm:react-dom@19.2.8",
       "name": "react-dom",
-      "version": "19.2.7",
+      "version": "19.2.8",
       "artifactRoles": [
         "browser-runtime"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
-          "path": "LICENSES/npm/react-dom@19.2.7/LICENSE",
+          "path": "LICENSES/npm/react-dom@19.2.8/LICENSE",
           "bytes": 1088,
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
           "source": {
             "kind": "npm-ci-install",
             "locator": "node_modules/react-dom/LICENSE",
-            "lockIntegrity": "sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==",
-            "lockResolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.7.tgz"
+            "lockIntegrity": "sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ==",
+            "lockResolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.8.tgz"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
-      "id": "npm:react@19.2.7",
+      "id": "npm:react@19.2.8",
       "name": "react",
-      "version": "19.2.7",
+      "version": "19.2.8",
       "artifactRoles": [
         "browser-runtime"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
-          "path": "LICENSES/npm/react@19.2.7/LICENSE",
+          "path": "LICENSES/npm/react@19.2.8/LICENSE",
           "bytes": 1088,
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
           "source": {
             "kind": "npm-ci-install",
             "locator": "node_modules/react/LICENSE",
-            "lockIntegrity": "sha512-HNe9WslTbXmFK8o8cmwgAeJFSBvt1bPdHCVKtaaV+WlAN36mpT4hcRpwbf3fY56ar2oIXzsBpOAiIRHAdY0OlQ==",
-            "lockResolved": "https://registry.npmjs.org/react/-/react-19.2.7.tgz"
+            "lockIntegrity": "sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==",
+            "lockResolved": "https://registry.npmjs.org/react/-/react-19.2.8.tgz"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
-      "id": "npm:rolldown@1.1.5",
+      "id": "npm:rolldown@1.2.4",
       "name": "rolldown",
-      "version": "1.1.5",
+      "version": "1.2.4",
       "artifactRoles": [
         "browser-injected-modulepreload-runtime"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
-          "path": "LICENSES/npm/rolldown@1.1.5/LICENSE",
+          "path": "LICENSES/npm/rolldown@1.2.4/LICENSE",
           "bytes": 1302,
           "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734",
           "source": {
             "kind": "npm-ci-install",
             "locator": "node_modules/rolldown/LICENSE",
-            "lockIntegrity": "sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA==",
-            "lockResolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.1.5.tgz"
+            "lockIntegrity": "sha512-rSr7irW0K7QRWzjdJXqZowkcRdDtjRduh43rBltnVKd0VFq839l1lJoDvGJb6gl7+4rTTCrPWu+YfujUL8Ug7w==",
+            "lockResolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.2.4.tgz"
           }
         },
         {
-          "path": "LICENSES/npm/rolldown@1.1.5/THIRD-PARTY-LICENSE",
+          "path": "LICENSES/npm/rolldown@1.2.4/THIRD-PARTY-LICENSE",
           "bytes": 2209,
           "sha256": "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c",
           "source": {
-            "kind": "fixed-upstream-tag",
-            "locator": "https://raw.githubusercontent.com/rolldown/rolldown/v1.1.5/THIRD-PARTY-LICENSE",
-            "reason": "the npm package LICENSE links to this file but omits it"
+            "kind": "npm-ci-install",
+            "locator": "node_modules/rolldown/THIRD-PARTY-LICENSE",
+            "lockIntegrity": "sha512-rSr7irW0K7QRWzjdJXqZowkcRdDtjRduh43rBltnVKd0VFq839l1lJoDvGJb6gl7+4rTTCrPWu+YfujUL8Ug7w==",
+            "lockResolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.2.4.tgz"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
       "id": "npm:scheduler@0.27.0",
@@ -619,10 +632,6 @@
         "browser-runtime"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
           "path": "LICENSES/npm/scheduler@0.27.0/LICENSE",
@@ -635,33 +644,37 @@
             "lockResolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     },
     {
-      "id": "npm:vite@8.1.4",
+      "id": "npm:vite@8.2.1",
       "name": "vite",
-      "version": "8.1.4",
+      "version": "8.2.1",
       "artifactRoles": [
         "browser-injected-runtime"
       ],
       "reviewStatus": "human-reviewed",
-      "reviewEvidence": {
-        "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "5cd234b1a9248deb24db762a0fba7e9f4e77011084f5e50f481932bfde52ee6e"
-      },
       "files": [
         {
-          "path": "LICENSES/npm/vite@8.1.4/LICENSE.md",
-          "bytes": 110976,
-          "sha256": "b1d741c26b53de1bbc0d4d7d3365b79888f9fe511527544a8a7b8e24dec43147",
+          "path": "LICENSES/npm/vite@8.2.1/LICENSE.md",
+          "bytes": 112425,
+          "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c",
           "source": {
             "kind": "npm-ci-install",
             "locator": "node_modules/vite/LICENSE.md",
-            "lockIntegrity": "sha512-bTT9PsdWO+MQMNG9ZXIP/qM9wGh37DFxTV/sPq9cFpHr3w4jkgef032PkAL9jAqhk3Nz8NQw3O8n6/xFkqO4QQ==",
-            "lockResolved": "https://registry.npmjs.org/vite/-/vite-8.1.4.tgz"
+            "lockIntegrity": "sha512-EU/eS7BH3XROHh2YnBefjM6DBKA6ZeMZEYQbj7NLWg5wHYlhB8B/Mayd5XsgWq+NFYccDOTemRpdETWR6Ka/lw==",
+            "lockResolved": "https://registry.npmjs.org/vite/-/vite-8.2.1.tgz"
           }
         }
-      ]
+      ],
+      "reviewEvidence": {
+        "decisionFile": "LICENSES/reviews/linux-amd64.json",
+        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+      }
     }
   ]
 }

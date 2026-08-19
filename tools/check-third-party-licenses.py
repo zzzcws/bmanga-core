@@ -35,7 +35,8 @@ GO_VERSION = "1.26.6"
 NODE_VERSION = "24.19.0"
 GO_MOD_SHA256 = "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792"
 GO_SUM_SHA256 = "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc"
-PACKAGE_LOCK_SHA256 = "8ff3b5eacb566d47fbfe183d3897f15f2251a36de76f3a3ba97aa76e1c89ea0a"
+PACKAGE_JSON_SHA256 = "95eec68b5cae0e48454a8f2eb7c1b42080e67ab42908885e061daa761dbd5db7"
+PACKAGE_LOCK_SHA256 = "4d0bebbe7c97d2369da450762839f51a5eb47e6e03cf8b21527c5da06295ff4f"
 SQLITE_TECHNICAL_REVIEW = (
     "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json"
 )
@@ -48,10 +49,6 @@ REVIEWED_SQLITE_PACKAGES = {
     "modernc.org/sqlite/vtab",
 }
 EXCLUDED_SQLITE_PACKAGES = {"modernc.org/sqlite/vec"}
-ROLLDOWN_NOTICE_URL = (
-    "https://raw.githubusercontent.com/rolldown/rolldown/"
-    "v1.1.5/THIRD-PARTY-LICENSE"
-)
 ROLLDOWN_NOTICE_SHA256 = "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c"
 REVIEW_DECISION_SCHEMA_VERSION = 1
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
@@ -118,11 +115,11 @@ GO_TOOLCHAIN_FILES = {
     "PATENTS": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
 }
 NPM_COMPONENTS: dict[tuple[str, str], tuple[str, dict[str, str]]] = {
-    ("react", "19.2.7"): (
+    ("react", "19.2.8"): (
         "browser-runtime",
         {"LICENSE": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"},
     ),
-    ("react-dom", "19.2.7"): (
+    ("react-dom", "19.2.8"): (
         "browser-runtime",
         {"LICENSE": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"},
     ),
@@ -130,17 +127,21 @@ NPM_COMPONENTS: dict[tuple[str, str], tuple[str, dict[str, str]]] = {
         "browser-runtime",
         {"LICENSE": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"},
     ),
-    ("vite", "8.1.4"): (
+    ("vite", "8.2.1"): (
         "browser-injected-runtime",
-        {"LICENSE.md": "b1d741c26b53de1bbc0d4d7d3365b79888f9fe511527544a8a7b8e24dec43147"},
+        {"LICENSE.md": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c"},
     ),
-    ("rolldown", "1.1.5"): (
+    ("rolldown", "1.2.4"): (
         "browser-injected-modulepreload-runtime",
         {
             "LICENSE": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734",
             "THIRD-PARTY-LICENSE": ROLLDOWN_NOTICE_SHA256,
         },
     ),
+}
+TYPE_ONLY_NPM_PACKAGES = {
+    ("@types/node", "24.13.3"),
+    ("undici-types", "7.18.2"),
 }
 
 
@@ -488,16 +489,22 @@ def expected_artifact_sets(manifest: dict[str, Any]) -> None:
             (item["name"], item["version"])
             for item in web_profile["injectedBuildRuntime"]
         }
+        type_only = {
+            (item["name"], item["version"])
+            for item in web_profile["typeOnlyPackages"]
+        }
         if production != {
-            ("react", "19.2.7"),
-            ("react-dom", "19.2.7"),
+            ("react", "19.2.8"),
+            ("react-dom", "19.2.8"),
             ("scheduler", "0.27.0"),
         } or len(web_profile["productionPackages"]) != 3:
             raise VerificationError("manifest production npm set differs from the reviewed bundle")
-        if injected != {("vite", "8.1.4"), ("rolldown", "1.1.5")} or len(
+        if injected != {("vite", "8.2.1"), ("rolldown", "1.2.4")} or len(
             web_profile["injectedBuildRuntime"]
         ) != 2:
             raise VerificationError("manifest injected npm runtime set differs from the reviewed bundle")
+        if type_only != TYPE_ONLY_NPM_PACKAGES or len(web_profile["typeOnlyPackages"]) != 2:
+            raise VerificationError("manifest Node type package set differs from the reviewed build profile")
     except (KeyError, TypeError) as exc:
         raise VerificationError(f"manifest artifact profile is incomplete: {exc}") from exc
 
@@ -547,12 +554,6 @@ def verify_source_mappings(manifest: dict[str, Any], lock: dict[str, Any]) -> se
             raise VerificationError(f"package-lock does not resolve reviewed {name}@{version}")
 
         def npm_source(filename: str, name: str = name, package: dict[str, Any] = package) -> dict[str, Any]:
-            if name == "rolldown" and filename == "THIRD-PARTY-LICENSE":
-                return {
-                    "kind": "fixed-upstream-tag",
-                    "locator": ROLLDOWN_NOTICE_URL,
-                    "reason": "the npm package LICENSE links to this file but omits it",
-                }
             return {
                 "kind": "npm-ci-install",
                 "locator": f"node_modules/{name}/{filename}",
@@ -691,6 +692,20 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
     web_profile = profile.get("web", {})
     if web_profile.get("nodeVersion") != NODE_VERSION:
         raise VerificationError(f"license bundle must remain scoped to Node {NODE_VERSION}")
+    package_json_value = web_profile.get("packageJson")
+    if package_json_value != "web-v2/package.json":
+        raise VerificationError("unexpected package.json path in manifest")
+    if (
+        sha256(REPO / package_json_value) != PACKAGE_JSON_SHA256
+        or web_profile.get("packageJsonSha256") != PACKAGE_JSON_SHA256
+    ):
+        raise VerificationError("package.json changed without regenerating the license bundle")
+    try:
+        package_json = json.loads((REPO / package_json_value).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise VerificationError(f"cannot read package.json: {exc}") from exc
+    if (package_json.get("devDependencies") or {}).get("@types/node") != "24.13.3":
+        raise VerificationError("package.json must align @types/node to Node 24.13.3")
     lock_value = web_profile.get("packageLock")
     if lock_value != "web-v2/package-lock.json":
         raise VerificationError("unexpected package-lock path in manifest")
@@ -700,6 +715,19 @@ def verify_integrity(manifest: dict[str, Any]) -> None:
     ):
         raise VerificationError("package-lock changed without regenerating the license bundle")
     lock = load_package_lock()
+    lock_packages = lock["packages"]
+    type_entries = {
+        ("@types/node", (lock_packages.get("node_modules/@types/node") or {}).get("version")),
+        ("undici-types", (lock_packages.get("node_modules/undici-types") or {}).get("version")),
+    }
+    if type_entries != TYPE_ONLY_NPM_PACKAGES:
+        raise VerificationError("package-lock Node type packages differ from the reviewed build profile")
+    if (lock_packages.get("") or {}).get("devDependencies", {}).get("@types/node") != "24.13.3":
+        raise VerificationError("package-lock root must pin @types/node 24.13.3")
+    if (lock_packages.get("node_modules/@types/node") or {}).get("dependencies", {}).get(
+        "undici-types"
+    ) != "~7.18.0":
+        raise VerificationError("@types/node must retain the reviewed undici-types dependency range")
 
     container = profile.get("container", {})
     if container.get("dockerfileFrontend") != DOCKERFILE_FRONTEND:
@@ -1005,16 +1033,6 @@ def verify_web_sources(manifest: dict[str, Any]) -> None:
         component = by_id[f"npm:{name}@{version}"]
         for record in component["files"]:
             source = record["source"]
-            if source["kind"] == "fixed-upstream-tag":
-                if not (
-                    name == "rolldown"
-                    and version == "1.1.5"
-                    and Path(record["path"]).name == "THIRD-PARTY-LICENSE"
-                    and source["locator"] == ROLLDOWN_NOTICE_URL
-                    and record["sha256"] == ROLLDOWN_NOTICE_SHA256
-                ):
-                    raise VerificationError("unexpected fixed-upstream npm source exception")
-                continue
             if source["kind"] != "npm-ci-install":
                 raise VerificationError(f"unsupported npm license source kind: {source['kind']}")
             local = REPO / "web-v2" / source["locator"]

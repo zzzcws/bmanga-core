@@ -16,9 +16,15 @@ The mapped components are:
 - React, React DOM, and Scheduler in the browser bundle;
 - Vite's injected runtime and Rolldown's injected module-preload polyfill.
 
-Rolldown's npm package refers to, but does not include, its supplemental
-`THIRD-PARTY-LICENSE`. The copy here comes from the versioned upstream `v1.1.5`
-tag; its fixed URL and reviewed SHA-256 are recorded and verified.
+The locked Rolldown 1.2.4 npm package includes both `LICENSE` and the complete
+supplemental `THIRD-PARTY-LICENSE`; both are copied from the exact `npm ci`
+installation and bound to the lock integrity, resolved URL, and reviewed
+SHA-256. The build profile separately binds `@types/node` 24.13.3 and its
+`undici-types` 7.18.2 dependency to match the exact Node.js 24 toolchain.
+These type-only packages, `@vitejs/plugin-react`, TypeScript, PostCSS,
+Lightning CSS, and native build bindings are not copied into the final
+`scratch` image and are therefore not represented as runtime components in
+this artifact inventory.
 
 ## Verification and regeneration
 
@@ -44,9 +50,9 @@ running `npm --prefix web-v2 ci`:
 python tools/update-third-party-licenses.py
 ```
 
-Regeneration fetches only Rolldown's missing supplemental notice from a fixed
-tag and verifies its reviewed SHA-256. All other text comes from the exact Go
-toolchain/module caches and locked npm installation.
+Regeneration is network-free after the exact Go modules and locked npm tree are
+installed: all text comes from the verified Go toolchain/module caches and the
+`npm ci` installation.
 
 ## Review status and fail-closed transitions
 

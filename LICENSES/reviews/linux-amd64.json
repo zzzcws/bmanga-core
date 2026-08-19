@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "cb09b5b775f70e1ff0cfc523a5892b79804fb6a184b344a83a8b344a183936e0",
+  "artifactProfileSha256": "096851bbf82349efae950d207fc3da6c809f72d24db23337b0715f9f4facc4a8",
   "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-19T06:38:07Z",
+  "reviewedAt": "2026-08-19T06:59:22Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
@@ -208,7 +208,7 @@
       ]
     },
     {
-      "id": "npm:react-dom@19.2.7",
+      "id": "npm:react-dom@19.2.8",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -216,13 +216,13 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/react-dom@19.2.7/LICENSE",
+          "path": "LICENSES/npm/react-dom@19.2.8/LICENSE",
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
         }
       ]
     },
     {
-      "id": "npm:react@19.2.7",
+      "id": "npm:react@19.2.8",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -230,13 +230,13 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/react@19.2.7/LICENSE",
+          "path": "LICENSES/npm/react@19.2.8/LICENSE",
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
         }
       ]
     },
     {
-      "id": "npm:rolldown@1.1.5",
+      "id": "npm:rolldown@1.2.4",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -244,11 +244,11 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/rolldown@1.1.5/LICENSE",
+          "path": "LICENSES/npm/rolldown@1.2.4/LICENSE",
           "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734"
         },
         {
-          "path": "LICENSES/npm/rolldown@1.1.5/THIRD-PARTY-LICENSE",
+          "path": "LICENSES/npm/rolldown@1.2.4/THIRD-PARTY-LICENSE",
           "sha256": "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c"
         }
       ]
@@ -268,7 +268,7 @@
       ]
     },
     {
-      "id": "npm:vite@8.1.4",
+      "id": "npm:vite@8.2.1",
       "decision": "approved",
       "licenseConclusion": "MIT AND Apache-2.0 AND BSD-2-Clause AND ISC AND CC0-1.0",
       "obligations": [
@@ -278,8 +278,8 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/vite@8.1.4/LICENSE.md",
-          "sha256": "b1d741c26b53de1bbc0d4d7d3365b79888f9fe511527544a8a7b8e24dec43147"
+          "path": "LICENSES/npm/vite@8.2.1/LICENSE.md",
+          "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c"
         }
       ]
     }
