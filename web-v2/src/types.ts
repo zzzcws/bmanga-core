@@ -197,8 +197,6 @@ export interface WorkDetail extends WorkSummary {
 
 export interface TranslationReference extends ApiRecord {
   translation_group: string;
-  action: string;
-  action_reason: string;
 }
 
 export interface SeriesMembership extends ApiRecord {

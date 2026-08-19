@@ -65,3 +65,9 @@ test("不误伤普通斜杠文本并限制长度", () => {
   assert.equal(sanitizePrivateText("请选择 全部 / 同人 / 漫画（2026）"), "请选择 全部 / 同人 / 漫画（2026）");
   assert.equal(sanitizePrivateText("abcdef", "", 3), "abc");
 });
+
+test("隐私占位文案支持英文和日文且保留同一遮蔽边界", () => {
+  const source = `cache=${windowsFixture("Private Books", "book.cbz")}; source=https://example.test/run`;
+  assert.equal(sanitizePrivateText(source, "", 420, "en"), "cache=Local path; source=External address");
+  assert.equal(sanitizePrivateText(source, "", 420, "ja"), "cache=ローカルパス; source=外部アドレス");
+});

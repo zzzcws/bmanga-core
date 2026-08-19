@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Installation help and questions
+    url: https://github.com/zzzcws/bmanga-core/discussions/categories/q-a
+    about: Ask setup questions without opening a bug report.
   - name: Security report
     url: https://github.com/zzzcws/bmanga-core/security/advisories/new
     about: Report vulnerabilities privately through GitHub Security Advisories.

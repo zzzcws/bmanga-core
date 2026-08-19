@@ -617,16 +617,7 @@ img {
 }
 
 .hero-cover::after {
-  content: "READING";
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  padding: 6px 8px 5px;
-  background: var(--vermilion);
-  color: #fff8ec;
-  font-size: 8px;
-  font-weight: 760;
-  letter-spacing: 1.6px;
+  content: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2395,7 +2386,7 @@ progress::-webkit-progress-value {
 }
 
 .detail-chapters::before {
-  content: "卷 / 话";
+  content: none;
   grid-column: 1 / -1;
   margin-bottom: 4px;
   font-family: var(--serif);
@@ -3178,7 +3169,7 @@ progress::-webkit-progress-value {
   display: block;
   margin-bottom: 16px;
   color: var(--vermilion-dark);
-  content: "END / CONTINUE";
+  content: attr(data-kicker);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 9px;
   font-weight: 700;

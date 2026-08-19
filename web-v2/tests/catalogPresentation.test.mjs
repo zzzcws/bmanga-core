@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  catalogModeOption,
+  catalogModeOptionsFor,
+  catalogSortOptionsFor,
   cleanTitle,
   isSeries,
   itemCoverID,
@@ -69,4 +72,26 @@ test("目录展示标题、页数与类型保持编辑式契约", () => {
   assert.equal(itemContextLabel({ candidate_id: "a", series_title: "系列甲" }, "discover"), "系列 · 系列甲");
   assert.equal(itemContextLabel({ candidate_id: "a", series_title: "系列甲", item_label: "第 4 话" }, "discover"), "系列 · 系列甲；章节 · 第 4 话");
   assert.equal(itemContextLabel({ candidate_id: "a", translation_sources: "汉化组甲" }, "related"), "");
+});
+
+test("目录纯展示文案提供中英日三语且不改写源元数据", () => {
+  assert.equal(itemTitle({}, "en"), "Untitled work");
+  assert.equal(itemTitle({}, "ja"), "無題の作品");
+  assert.equal(pageMeta({ candidate_id: "a", readable_page_count: 1 }, "en"), "1 page");
+  assert.equal(pageMeta({ candidate_id: "a", readable_page_count: 24 }, "ja"), "24 ページ");
+  assert.equal(pageMeta({ group_id: "s", shelf_type: "series", item_count: 8 }, "en"), "8 items");
+  assert.equal(itemKindDisplayLabel({ candidate_id: "a", candidate_type: "doujin" }, "en"), "Doujin work");
+  assert.equal(itemKindDisplayLabel({ candidate_id: "a", candidate_type: "doujin" }, "ja"), "同人誌");
+  assert.equal(
+    itemContextLabel({ candidate_id: "a", translation_sources: "汉化组甲" }, "search", "en"),
+    "Translation · 汉化组甲",
+  );
+  assert.equal(
+    itemContextLabel({ candidate_id: "a", series_title: "系列甲", item_label: "第 4 话" }, "discover", "ja"),
+    "シリーズ · 系列甲 / チャプター · 第 4 话",
+  );
+  assert.equal(catalogModeOption("all", "en").label, "All");
+  assert.equal(catalogModeOptionsFor("ja")[1].description, "単独作品と合本を1冊ずつ閲覧");
+  assert.equal(catalogSortOptionsFor("en")[2].label, "Most pages");
+  assert.equal(catalogSortOptionsFor("ja")[0].label, "最近追加");
 });

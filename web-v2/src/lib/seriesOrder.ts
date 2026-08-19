@@ -4,6 +4,7 @@ import type {
   SeriesSectionGroup,
   WorkSummary,
 } from "../types";
+import { DEFAULT_LOCALE, localizeMessage, type Locale } from "./locale.ts";
 
 export interface SeriesOutlineGroup {
   key: string;
@@ -34,8 +35,12 @@ function numberValue(value: unknown, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function itemTitle(item: WorkSummary): string {
-  return String(item.display_title || item.title || item.relative_path || "未命名条目").trim();
+function itemTitle(item: WorkSummary, locale: Locale): string {
+  return String(item.display_title || item.title || item.relative_path || localizeMessage({
+    "zh-CN": "未命名条目",
+    en: "Untitled item",
+    ja: "無題の項目",
+  }, locale)).trim();
 }
 
 function canonicalItems(data: SeriesDetailResponse): Map<string, WorkSummary> {
@@ -46,6 +51,7 @@ function normalizeGroup(
   group: SeriesSectionGroup,
   canonical: Map<string, WorkSummary>,
   fallbackKey: string,
+  locale: Locale,
 ): SeriesOutlineGroup | null {
   const seen = new Set<string>();
   const items = (group.items || []).flatMap((item) => {
@@ -63,7 +69,7 @@ function normalizeGroup(
   const sequence = Number(group.sequence);
   return {
     key: String(group.key || fallbackKey),
-    label: String(group.label || primary?.item_label || itemTitle(primary || items[0]!)).trim(),
+    label: String(group.label || primary?.item_label || itemTitle(primary || items[0]!, locale)).trim(),
     sort: numberValue(group.sort, Number.MAX_SAFE_INTEGER),
     sequence: Number.isFinite(sequence) ? sequence : Number.POSITIVE_INFINITY,
     items,
@@ -71,10 +77,14 @@ function normalizeGroup(
   };
 }
 
-function fallbackGroups(items: WorkSummary[]): SeriesOutlineGroup[] {
+function fallbackGroups(items: WorkSummary[], locale: Locale): SeriesOutlineGroup[] {
   return items.map((item, index) => ({
     key: `fallback:${item.candidate_id}`,
-    label: String(item.item_label || item.display_title || item.title || `条目 ${index + 1}`),
+    label: String(item.item_label || item.display_title || item.title || localizeMessage({
+      "zh-CN": "条目 {index}",
+      en: "Item {index}",
+      ja: "項目 {index}",
+    }, locale, { index: index + 1 })),
     sort: index,
     sequence: numberValue(item.sequence_number, Number.POSITIVE_INFINITY),
     items: [item],
@@ -82,18 +92,27 @@ function fallbackGroups(items: WorkSummary[]): SeriesOutlineGroup[] {
   }));
 }
 
-export function buildSeriesOutline(data: SeriesDetailResponse): SeriesOutline {
+export function buildSeriesOutline(
+  data: SeriesDetailResponse,
+  locale: Locale = DEFAULT_LOCALE,
+): SeriesOutline {
   const canonical = canonicalItems(data);
   const rawSections = Array.isArray(data.sections) ? data.sections : [];
   const normalized = rawSections.flatMap((section: SeriesSection, sectionIndex) => {
     const groups = (section.groups || []).flatMap((group, groupIndex) => {
-      const normalizedGroup = normalizeGroup(group, canonical, `section:${sectionIndex}:group:${groupIndex}`);
+      const normalizedGroup = normalizeGroup(group, canonical, `section:${sectionIndex}:group:${groupIndex}`, locale);
       return normalizedGroup ? [normalizedGroup] : [];
     });
     if (!groups.length) return [];
+    const sourceTitle = String(section.title || "").trim();
+    const title = sourceTitle || localizeMessage({
+      "zh-CN": "本篇",
+      en: "Main story",
+      ja: "本編",
+    }, locale);
     return [{
-      key: `section:${sectionIndex}:${String(section.title || "本篇")}`,
-      title: String(section.title || "本篇").trim() || "本篇",
+      key: `section:${sectionIndex}:${sourceTitle || "本篇"}`,
+      title,
       sort: numberValue(section.sort, sectionIndex),
       groups,
     }];
@@ -110,16 +129,34 @@ export function buildSeriesOutline(data: SeriesDetailResponse): SeriesOutline {
       if (left.group.sort !== right.group.sort) return left.group.sort - right.group.sort;
       return left.index - right.index;
     });
-    sections = [{ key: "section:continuous", title: "章节目录", sort: 0, groups: stable.map((entry) => entry.group) }];
+    sections = [{
+      key: "section:continuous",
+      title: localizeMessage({
+        "zh-CN": "章节目录",
+        en: "Chapter directory",
+        ja: "章一覧",
+      }, locale),
+      sort: 0,
+      groups: stable.map((entry) => entry.group),
+    }];
   }
 
   if (!sections.length) {
-    sections = [{ key: "section:fallback", title: "章节目录", sort: 0, groups: fallbackGroups(data.items || []) }];
+    sections = [{
+      key: "section:fallback",
+      title: localizeMessage({
+        "zh-CN": "章节目录",
+        en: "Chapter directory",
+        ja: "章一覧",
+      }, locale),
+      sort: 0,
+      groups: fallbackGroups(data.items || [], locale),
+    }];
   }
 
   const included = new Set(sections.flatMap((section) => section.groups.flatMap((group) => group.items.map((item) => item.candidate_id))));
   const missing = (data.items || []).filter((item) => !included.has(item.candidate_id));
-  if (missing.length) sections[sections.length - 1]?.groups.push(...fallbackGroups(missing));
+  if (missing.length) sections[sections.length - 1]?.groups.push(...fallbackGroups(missing, locale));
 
   const entries: WorkSummary[] = [];
   const readingEntries: WorkSummary[] = [];
@@ -147,8 +184,11 @@ export function buildSeriesOutline(data: SeriesDetailResponse): SeriesOutline {
   return { sections, entries, readingEntries, readingGroupIndex, groupIndex };
 }
 
-export function seriesReadingOrder(data: SeriesDetailResponse): WorkSummary[] {
-  return buildSeriesOutline(data).readingEntries;
+export function seriesReadingOrder(
+  data: SeriesDetailResponse,
+  locale: Locale = DEFAULT_LOCALE,
+): WorkSummary[] {
+  return buildSeriesOutline(data, locale).readingEntries;
 }
 
 export function nextSeriesReadableFromOutline(outline: SeriesOutline, candidateID: string): WorkSummary | undefined {
@@ -158,6 +198,10 @@ export function nextSeriesReadableFromOutline(outline: SeriesOutline, candidateI
   return outline.readingEntries.slice(index + 1).find((entry) => entry.can_read);
 }
 
-export function nextSeriesReadable(data: SeriesDetailResponse, candidateID: string): WorkSummary | undefined {
-  return nextSeriesReadableFromOutline(buildSeriesOutline(data), candidateID);
+export function nextSeriesReadable(
+  data: SeriesDetailResponse,
+  candidateID: string,
+  locale: Locale = DEFAULT_LOCALE,
+): WorkSummary | undefined {
+  return nextSeriesReadableFromOutline(buildSeriesOutline(data, locale), candidateID);
 }

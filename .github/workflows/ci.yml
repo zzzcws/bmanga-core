@@ -21,12 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: true
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -103,15 +103,24 @@ jobs:
               raise SystemExit("Dockerfile frontend is not pinned to the reviewed digest")
           for marker in (
               'org.opencontainers.image.source="${SOURCE_URL}"',
-              'org.opencontainers.image.licenses="Apache-2.0"',
+              'org.opencontainers.image.licenses="Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND LicenseRef-SQLite-Public-Domain"',
               "COPY --chown=65532:65532 LICENSE THIRD_PARTY_NOTICES.md /app/",
               "COPY --chown=65532:65532 LICENSES /app/LICENSES",
+              "-X github.com/zzzcws/bmanga-core/internal/prototype.releaseVersion=${VERSION}",
           ):
               if marker not in dockerfile:
                   raise SystemExit(f"Dockerfile is missing release metadata: {marker}")
           PY
-          if git grep -n -E 'OWNER|github\.com/zzzcws/bmanga([^a-zA-Z0-9_-]|$)' -- ':!.github/workflows/ci.yml'; then
-            echo "placeholder or old repository identity remains"
+          if git grep -n -E 'github\.com/zzzcws/bmanga([^a-zA-Z0-9_-]|$)' -- ':!.github/workflows/ci.yml'; then
+            echo "old repository identity remains"
+            exit 1
+          fi
+          if git grep -n -w OWNER -- \
+            ':!.github/workflows/ci.yml' \
+            ':!LICENSE' \
+            ':!LICENSES/**' \
+            ':!THIRD_PARTY_NOTICES.md'; then
+            echo "public project files still contain an OWNER placeholder"
             exit 1
           fi
 
@@ -173,6 +182,13 @@ jobs:
           for marker in ('actual="$(go env goversion)"', '"${actual}" != "go1.26.6"'):
               if dockerfile.count(marker) != 1:
                   found.append(f"missing exact Go toolchain guard: {marker}")
+          if dockerfile.count("arg version=0.0.0-dev") != 2:
+              found.append("release version must be explicit in build and runtime stages")
+          release_version_ldflag = (
+              "-x github.com/zzzcws/bmanga-core/internal/prototype.releaseversion=${version}"
+          )
+          if dockerfile.count(release_version_ldflag) != 2:
+              found.append("both binaries must receive the validated release version")
           compose = Path("compose.yaml").read_text(encoding="utf-8").casefold()
           if any(row.strip().startswith("init:") for row in compose.splitlines()):
               found.append("compose injects docker-init into scratch")
@@ -190,11 +206,11 @@ jobs:
       run:
         working-directory: web-v2
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
           cache: npm
@@ -224,16 +240,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: true
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
 

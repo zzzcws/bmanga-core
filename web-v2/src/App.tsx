@@ -61,6 +61,8 @@ import { AsyncRegionBoundary } from "./components/AsyncRegionBoundary";
 import { RelatedWorks } from "./components/RelatedWorks";
 import { MetadataOverrideEditor } from "./components/MetadataOverrideEditor";
 import { RuntimeDiagnosticsLite } from "./components/RuntimeDiagnosticsLite";
+import { useI18n } from "./i18n";
+import { LOCALE_OPTIONS } from "./lib/locale";
 import { nextSeriesReadable } from "./lib/seriesOrder";
 import { preferredScrollBehavior } from "./lib/motion";
 import { hasDiscoverAuxiliary, mergeDiscoverPayload, planDiscoverRequest } from "./lib/discoverState";
@@ -154,8 +156,8 @@ import {
 } from "./lib/detailProgress";
 import type { PersonalMarkField } from "./lib/userMarks";
 import {
-  catalogModeOptions,
-  catalogSortOptions,
+  catalogModeOptionsFor,
+  catalogSortOptionsFor,
   cleanTitle,
   isSeries,
   itemCoverID,
@@ -212,7 +214,7 @@ import {
   detailHasUnsavedNote,
   detailMatchesTarget,
   detailReaderWarmTarget,
-  discoverModes,
+  discoverModesForLocale,
   favoriteFor,
   focusRelatedSection,
   formatDay,
@@ -224,7 +226,7 @@ import {
   initialBrowseRoute,
   localDateKey,
   markLegacyLibrarySortHandled,
-  navItems,
+  navItemsForLocale,
   numberValue,
   persistBrowseScopes,
   persistLibraryPageScopes,
@@ -243,7 +245,7 @@ import {
   storedLibraryPageScopes,
   storedReaderFit,
   userMarkMatchesPayload,
-  viewLabels,
+  viewLabelsForLocale,
   ReaderPageResponseError,
   loadReaderPageAsset,
   readerPreparationRequest,
@@ -267,6 +269,10 @@ function libraryPageRouteSignature(value: BrowseRouteState): string {
 }
 
 function App() {
+  const { locale, setLocale, tr, number } = useI18n();
+  const localizedDiscoverModes = useMemo(() => discoverModesForLocale(locale), [locale]);
+  const localizedNavItems = useMemo(() => navItemsForLocale(locale), [locale]);
+  const localizedViewLabels = useMemo(() => viewLabelsForLocale(locale), [locale]);
   const initialBrowseRef = useRef<BrowseRouteState | null>(null);
   if (!initialBrowseRef.current) initialBrowseRef.current = initialBrowseRoute(typeof window === "undefined" ? "/v2/" : window.location.href);
   const initialBrowse = initialBrowseRef.current;
@@ -1326,7 +1332,7 @@ function App() {
   const closeDetail = useCallback(() => {
     const current = uiRef.current;
     if (detailHasUnsavedNote(current?.detail || null, current?.noteDraft || "")) {
-      setToast({ message: "私人备注尚未保存。请先保存，或在备注区撤销修改后再关闭。" });
+      setToast({ message: tr("私人备注尚未保存。请先保存，或在备注区撤销修改后再关闭。", "Your private note has not been saved. Save it or undo the draft before closing.", "非公開メモはまだ保存されていません。保存するか、下書きを元に戻してから閉じてください。") });
       return;
     }
     detailLoadAbortRef.current?.abort();
@@ -1555,7 +1561,7 @@ function App() {
       );
       const closesBusyDetail = Boolean(currentDetailID && currentDetailID !== targetDetailID && (noteSavingRef.current || favoriteSavingRef.current.has(currentDetailID)));
       if (closesBusyDetail || closesDirtyDetail) {
-        if (closesDirtyDetail) setToast({ message: "私人备注尚未保存。请先保存，或在备注区撤销修改后再离开。" });
+        if (closesDirtyDetail) setToast({ message: tr("私人备注尚未保存。请先保存，或在备注区撤销修改后再离开。", "Your private note has not been saved. Save it or undo the draft before leaving.", "非公開メモはまだ保存されていません。保存するか、下書きを元に戻してから移動してください。") });
         const returnDistance = historyPositionRef.current - markerPosition;
         if (returnDistance === 0) {
           const active: UiHistoryMarker = {
@@ -1667,7 +1673,7 @@ function App() {
           setContinueTarget(data.target || null);
         })
         .catch((reason) => {
-          if (reason?.name !== "AbortError") setContinueError(apiErrorText(reason));
+          if (reason?.name !== "AbortError") setContinueError(apiErrorText(reason, locale));
         })
         .finally(() => {
           if (!controller.signal.aborted) setContinueLoading(false);
@@ -1678,7 +1684,7 @@ function App() {
           setRecentTotal(numberValue(shelfData.total, shelfData.items?.length || 0));
         })
         .catch((reason) => {
-          if (reason?.name !== "AbortError") setRecentError(apiErrorText(reason));
+          if (reason?.name !== "AbortError") setRecentError(apiErrorText(reason, locale));
         })
         .finally(() => {
           if (!controller.signal.aborted) setRecentLoading(false);
@@ -1691,14 +1697,14 @@ function App() {
           setHistory(historyData.items || []);
         })
         .catch((reason) => {
-          if (reason?.name !== "AbortError") setHistoryError(apiErrorText(reason));
+          if (reason?.name !== "AbortError") setHistoryError(apiErrorText(reason, locale));
         })
         .finally(() => {
           if (!controller.signal.aborted) setHistoryLoading(false);
         });
     }
     return () => controller.abort();
-  }, [dataRevision, view]);
+  }, [dataRevision, locale, view]);
 
   useEffect(() => {
     if (view !== "library" && view !== "search") return;
@@ -1809,7 +1815,7 @@ function App() {
       .then(applyPage)
       .catch((reason) => {
         if (catalogRequestRef.current === session && reason?.name !== "AbortError") {
-          setCatalogError(apiErrorText(reason));
+          setCatalogError(apiErrorText(reason, locale));
           setCatalogSettledKey(catalogRequestKey);
         }
       })
@@ -1822,7 +1828,7 @@ function App() {
       if (catalogActiveRequestRef.current === activeRequest) catalogActiveRequestRef.current = null;
       if (catalogRequestRef.current === session) catalogRequestRef.current += 1;
     };
-  }, [catalogCacheScopeID, catalogMode, catalogRequestKey, catalogRevision, commitBrowseTransition, dataRevision, libraryPageStateReady, offset, searchQuery, sort, view, warmCatalogCovers]);
+  }, [catalogCacheScopeID, catalogMode, catalogRequestKey, catalogRevision, commitBrowseTransition, dataRevision, libraryPageStateReady, locale, offset, searchQuery, sort, view, warmCatalogCovers]);
 
   useEffect(() => {
     if (view !== "discover") return;
@@ -1844,7 +1850,7 @@ function App() {
       .catch((reason) => {
         if (discoverRequestRef.current === session && reason?.name !== "AbortError") {
           setDiscoverErrorKind("batch");
-          setDiscoverError(apiErrorText(reason));
+          setDiscoverError(apiErrorText(reason, locale));
         }
       })
       .finally(() => { if (discoverRequestRef.current === session) setDiscoverLoading(false); });
@@ -1852,7 +1858,7 @@ function App() {
       controller.abort();
       if (discoverRequestRef.current === session) discoverRequestRef.current += 1;
     };
-  }, [dataRevision, discoverMode, discoverRevision, view]);
+  }, [dataRevision, discoverMode, discoverRevision, locale, view]);
 
   useEffect(() => {
     if (view !== "my") return;
@@ -1934,7 +1940,7 @@ function App() {
       .then(applyPage)
       .catch((reason) => {
         if (routeIsCurrent() && reason?.name !== "AbortError") {
-          setFavoritesError(apiErrorText(reason));
+          setFavoritesError(apiErrorText(reason, locale));
           setFavoritesSettledKey(requestKey);
         }
       })
@@ -1947,7 +1953,7 @@ function App() {
       if (favoritesActiveRequestRef.current === activeRequest) favoritesActiveRequestRef.current = null;
       if (favoritesRequestRef.current === session) favoritesRequestRef.current += 1;
     };
-  }, [commitBrowseTransition, favoritesCacheScopeID, favoritesOffset, favoritesRequestKey, favoritesRevision, view]);
+  }, [commitBrowseTransition, favoritesCacheScopeID, favoritesOffset, favoritesRequestKey, favoritesRevision, locale, view]);
 
   useEffect(() => () => {
     if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
@@ -2060,12 +2066,12 @@ function App() {
 
   useEffect(() => {
     const contextTitle = reader
-      ? `阅读 ${cleanTitle(itemTitle(reader.item))}`
+      ? tr("阅读 {title}", "Reading {title}", "{title}を読書中", { title: cleanTitle(itemTitle(reader.item, locale)) })
       : detail
-        ? cleanTitle(itemTitle(detail.kind === "work" ? detail.data.work : detail.data.series))
-        : viewLabels[view];
+        ? cleanTitle(itemTitle(detail.kind === "work" ? detail.data.work : detail.data.series, locale))
+        : localizedViewLabels[view];
     document.title = `${contextTitle} · bmanga`;
-  }, [detail, reader, view]);
+  }, [detail, locale, localizedViewLabels, reader, tr, view]);
 
   useEffect(() => {
     const previous = previousViewRef.current;
@@ -2262,7 +2268,7 @@ function App() {
   const activateView = useCallback((next: View) => {
     const current = uiRef.current;
     if (detailHasUnsavedNote(current?.detail || null, current?.noteDraft || "")) {
-      setToast({ message: "私人备注尚未保存。请先保存，或在备注区撤销修改后再离开。" });
+      setToast({ message: tr("私人备注尚未保存。请先保存，或在备注区撤销修改后再离开。", "Your private note has not been saved. Save it or undo the draft before leaving.", "非公開メモはまだ保存されていません。保存するか、下書きを元に戻してから移動してください。") });
       return;
     }
     if (current?.view === next && !current.detail && !current.reader) {
@@ -2359,7 +2365,7 @@ function App() {
       if (detailSessionRef.current === session && (entry < 0 || historyCurrentRef.current === entry)) {
         if (entry >= 0) retireFailedHistoryEntry(entry, "detail");
         setDetailIntent(null);
-        setDetailError(timedOut ? "作品详情读取超时，请检查网络后重试。" : apiErrorText(reason));
+        setDetailError(timedOut ? tr("作品详情读取超时，请检查网络后重试。", "Loading the work details timed out. Check your connection and try again.", "作品詳細の読み込みがタイムアウトしました。接続を確認して再試行してください。") : apiErrorText(reason, locale));
         closeDetail();
       }
     } finally {
@@ -2367,14 +2373,14 @@ function App() {
       if (detailLoadAbortRef.current === controller) detailLoadAbortRef.current = null;
       if (detailSessionRef.current === session && (entry < 0 || historyCurrentRef.current === entry)) setDetailLoading(false);
     }
-  }, [closeDetail, retireFailedHistoryEntry]);
+  }, [closeDetail, locale, retireFailedHistoryEntry]);
   resumeDetailRef.current = (item, entry) => { void loadDetailForEntry(item, entry); };
 
   const openDetail = useCallback((item: CatalogItem) => {
     const id = itemID(item);
     if (!id) return;
     if (favoriteSavingRef.current.has(id)) {
-      showToast({ message: "收藏状态正在确认，请稍候再打开详情。" });
+      showToast({ message: tr("收藏状态正在确认，请稍候再打开详情。", "The favorite state is still being confirmed. Wait a moment before opening details.", "お気に入り状態を確認中です。少し待ってから詳細を開いてください。") });
       return;
     }
     if (document.activeElement instanceof HTMLElement) detailTriggerRef.current = document.activeElement;
@@ -2406,12 +2412,12 @@ function App() {
     try {
       const response = await getRandomWork({ randomMode: mode }, { signal: controller.signal });
       if (randomRequestRef.current !== request || uiRef.current?.view !== "discover" || discoverModeRef.current !== mode) return;
-      if (!response.item || !itemID(response.item)) throw new Error("当前条件下没有可抽取的作品。");
+      if (!response.item || !itemID(response.item)) throw new Error(tr("当前条件下没有可抽取的作品。", "No work is available for the current filter.", "現在の条件で選べる作品がありません。"));
       openDetail(response.item);
     } catch (reason) {
       if (randomRequestRef.current === request && (reason as { name?: string })?.name !== "AbortError") {
         setDiscoverErrorKind("random");
-        setDiscoverError(apiErrorText(reason));
+        setDiscoverError(apiErrorText(reason, locale));
       }
     } finally {
       if (randomRequestRef.current === request) {
@@ -2419,7 +2425,7 @@ function App() {
         setRandomOpening(false);
       }
     }
-  }, [discoverMode, openDetail, randomOpening]);
+  }, [discoverMode, locale, openDetail, randomOpening]);
 
   const applyFavoriteState = useCallback((item: CatalogItem, favorite: boolean, mark?: UserMark) => {
     const id = itemID(item);
@@ -2493,7 +2499,7 @@ function App() {
     setFavoritesTotal((current) => Math.max(0, current + (favorite ? 1 : -1)));
     try {
       const response = await saveUserMark(queuedPayload);
-      if (!response.mark) throw new Error("收藏保存后未返回可确认的状态。");
+      if (!response.mark) throw new Error(tr("收藏保存后未返回可确认的状态。", "The save response did not include a verifiable favorite state.", "保存応答に確認可能なお気に入り状態が含まれていません。"));
       acknowledgePendingUserMark(queuedPayload);
       const actualFavorite = Boolean(response.mark.favorite);
       const favoriteRejected = Boolean(response.rejected_fields?.includes("favorite"));
@@ -2501,38 +2507,40 @@ function App() {
       if (actualFavorite !== favorite) {
         setFavoritesTotal((current) => Math.max(0, current + (actualFavorite ? 1 : 0) - (favorite ? 1 : 0)));
       }
-      const title = cleanTitle(itemTitle(item));
+      const title = cleanTitle(itemTitle(item, locale));
       showToast({
         kind: favoriteRejected ? "error" : "success",
         message: favoriteRejected
-          ? `《${title}》在其他页面已有更新，服务器保留了较新的收藏状态。`
-          : actualFavorite ? `已收藏《${title}》` : `已将《${title}》移出收藏`,
-        actionLabel: !favoriteRejected && offerUndo && actualFavorite === favorite ? "撤销" : undefined,
+          ? tr("《{title}》在其他页面已有更新，服务器保留了较新的收藏状态。", "{title} was updated on another page; the server kept the newer favorite state.", "{title} は別のページで更新されたため、サーバー上の新しいお気に入り状態を保持しました。", { title })
+          : actualFavorite
+            ? tr("已收藏《{title}》", "Added {title} to favorites", "{title} をお気に入りに追加しました", { title })
+            : tr("已将《{title}》移出收藏", "Removed {title} from favorites", "{title} をお気に入りから外しました", { title }),
+        actionLabel: !favoriteRejected && offerUndo && actualFavorite === favorite ? tr("撤销", "Undo", "元に戻す") : undefined,
         onAction: !favoriteRejected && offerUndo && actualFavorite === favorite ? () => { void changeFavorite(item, previous, favorite, false); } : undefined,
       });
     } catch (reason) {
       try {
         const reconciled = await getUserMark(targetType, id);
-        if (!reconciled.mark) throw new Error("收藏状态暂时无法读取。");
+        if (!reconciled.mark) throw new Error(tr("收藏状态暂时无法读取。", "The favorite state is temporarily unavailable.", "お気に入り状態を一時的に読み取れません。"));
         const actualFavorite = Boolean(reconciled.mark.favorite);
         if (actualFavorite === favorite) {
           acknowledgePendingUserMark(queuedPayload);
           applyFavoriteState(item, actualFavorite, reconciled.mark);
-          showToast({ kind: "success", message: "保存响应曾中断，但收藏状态已经重新核对。" });
+          showToast({ kind: "success", message: tr("保存响应曾中断，但收藏状态已经重新核对。", "The save response was interrupted, but the favorite state has been verified.", "保存応答は中断されましたが、お気に入り状態を再確認しました。") });
         } else if (hasPendingUserMark(queuedPayload)) {
-          showToast({ kind: "error", message: `${apiErrorText(reason)} 收藏操作已在本机暂存，联网后会自动重试。` });
+          showToast({ kind: "error", message: tr("{error} 收藏操作已在本机暂存，联网后会自动重试。", "{error} The favorite change is queued locally and will retry when connected.", "{error} お気に入りの変更をローカルに保留し、接続後に自動再試行します。", { error: apiErrorText(reason, locale) }) });
         } else {
           applyFavoriteState(item, actualFavorite, reconciled.mark);
           setFavoritesTotal((current) => Math.max(0, current + (actualFavorite ? 1 : 0) - (favorite ? 1 : 0)));
-          showToast({ kind: "error", message: `${apiErrorText(reason)} 浏览器无法暂存这次操作，已恢复服务器状态。` });
+          showToast({ kind: "error", message: tr("{error} 浏览器无法暂存这次操作，已恢复服务器状态。", "{error} The browser could not queue this change, so the server state was restored.", "{error} ブラウザーで変更を保留できなかったため、サーバーの状態に戻しました。", { error: apiErrorText(reason, locale) }) });
         }
       } catch {
         if (hasPendingUserMark(queuedPayload)) {
-          showToast({ kind: "error", message: `${apiErrorText(reason)} 收藏操作已在本机暂存，联网后会自动重试。` });
+          showToast({ kind: "error", message: tr("{error} 收藏操作已在本机暂存，联网后会自动重试。", "{error} The favorite change is queued locally and will retry when connected.", "{error} お気に入りの変更をローカルに保留し、接続後に自動再試行します。", { error: apiErrorText(reason, locale) }) });
         } else {
           applyFavoriteState(item, previous);
           setFavoritesTotal((current) => Math.max(0, current + (previous ? 1 : 0) - (favorite ? 1 : 0)));
-          showToast({ kind: "error", message: `${apiErrorText(reason)} 浏览器无法暂存这次操作，页面已恢复原显示。` });
+          showToast({ kind: "error", message: tr("{error} 浏览器无法暂存这次操作，页面已恢复原显示。", "{error} The browser could not queue this change, so the previous display was restored.", "{error} ブラウザーで変更を保留できなかったため、以前の表示に戻しました。", { error: apiErrorText(reason, locale) }) });
         }
       }
     } finally {
@@ -2544,7 +2552,7 @@ function App() {
         return next;
       });
     }
-  }, [applyFavoriteState, showToast]);
+  }, [applyFavoriteState, locale, showToast]);
 
   const applyMarkToDetailSession = useCallback((
     targetType: TargetType,
@@ -2620,7 +2628,7 @@ function App() {
     setPersonalMarkStatus("");
     try {
       const response = await saveUserMark(queuedPayload);
-      if (!response.mark) throw new Error("个人标记保存后未返回可确认的状态。");
+      if (!response.mark) throw new Error(tr("个人标记保存后未返回可确认的状态。", "The save response did not include a verifiable personal mark.", "保存応答に確認可能な個人マークが含まれていません。"));
       acknowledgePendingUserMark(queuedPayload);
       applyMarkToDetailSession(targetType, targetID, response.mark, session, false);
       setHeroDetail((current) => current?.work.candidate_id === targetID ? { ...current, mark: response.mark } : current);
@@ -2631,12 +2639,14 @@ function App() {
       }
       invalidateCatalogPageCache();
       setDataRevision((current) => current + 1);
-      setPersonalMarkStatus(rejected ? "服务器保留了其他页面中较新的值。" : "已保存。");
+      setPersonalMarkStatus(rejected
+        ? tr("服务器保留了其他页面中较新的值。", "The server kept a newer value from another page.", "サーバーは別のページから届いた新しい値を保持しました。")
+        : tr("已保存。", "Saved.", "保存しました。"));
     } catch (reason) {
       let reconciled = false;
       try {
         const latest = await getUserMark(targetType, targetID);
-        if (!latest.mark) throw new Error("个人标记状态暂时无法读取。");
+        if (!latest.mark) throw new Error(tr("个人标记状态暂时无法读取。", "The personal mark is temporarily unavailable.", "個人マークを一時的に読み取れません。"));
         applyMarkToDetailSession(targetType, targetID, latest.mark, session, false);
         setHeroDetail((current) => current?.work.candidate_id === targetID ? { ...current, mark: latest.mark } : current);
         if (targetType === "work" && queuedPayload.read_status === "unread" && latest.mark.read_status === "unread") {
@@ -2651,16 +2661,16 @@ function App() {
       if (reconciled) {
         invalidateCatalogPageCache();
         setDataRevision((current) => current + 1);
-        setPersonalMarkStatus("保存响应曾中断，但服务器状态已经重新核对。");
+        setPersonalMarkStatus(tr("保存响应曾中断，但服务器状态已经重新核对。", "The save response was interrupted, but the server state has been verified.", "保存応答は中断されましたが、サーバーの状態を再確認しました。"));
       } else if (hasPendingUserMark(queuedPayload)) {
-        setPersonalMarkStatus(`保存失败，已在本机暂存，联网后会自动重试：${apiErrorText(reason)}`);
+        setPersonalMarkStatus(tr("保存失败，已在本机暂存，联网后会自动重试：{error}", "Save failed. The change is queued locally and will retry when connected: {error}", "保存に失敗しました。変更をローカルに保留し、接続後に自動再試行します：{error}", { error: apiErrorText(reason, locale) }));
       } else {
-        setPersonalMarkStatus(`保存失败，且浏览器无法暂存这次操作：${apiErrorText(reason)}`);
+        setPersonalMarkStatus(tr("保存失败，且浏览器无法暂存这次操作：{error}", "Save failed, and the browser could not queue this change: {error}", "保存に失敗し、ブラウザーでも変更を保留できませんでした：{error}", { error: apiErrorText(reason, locale) }));
       }
     } finally {
       setPersonalMarkSavingField(null);
     }
-  }, [applyMarkToDetailSession, clearWorkProgressState, invalidateCatalogPageCache, personalMarkSavingField]);
+  }, [applyMarkToDetailSession, clearWorkProgressState, invalidateCatalogPageCache, locale, personalMarkSavingField]);
 
   const savePersonalNote = useCallback(async () => {
     if (!detail || noteSaving) return;
@@ -2677,7 +2687,7 @@ function App() {
     setNoteSaving(true);
     try {
       const response = await saveUserMark(queuedPayload);
-      if (!response.mark) throw new Error("备注保存后未返回可确认的状态。");
+      if (!response.mark) throw new Error(tr("备注保存后未返回可确认的状态。", "The save response did not include a verifiable note state.", "保存応答に確認可能なメモ状態が含まれていません。"));
       acknowledgePendingUserMark(queuedPayload);
       const sameSession = detailSessionRef.current === session;
       applyMarkToDetailSession(targetType, targetID, response.mark, session, false);
@@ -2685,10 +2695,10 @@ function App() {
         const reopenedSession = detailSessionRef.current;
         try {
           const latest = await getUserMark(targetType, targetID);
-          if (!latest.mark) throw new Error("备注状态暂时无法读取。");
+          if (!latest.mark) throw new Error(tr("备注状态暂时无法读取。", "The note state is temporarily unavailable.", "メモ状態を一時的に読み取れません。"));
           applyMarkToDetailSession(targetType, targetID, latest.mark, reopenedSession, true);
         } catch (reason) {
-          showToast({ kind: "error", message: `备注已保存，但重新打开的详情暂时无法刷新：${apiErrorText(reason)}` });
+          showToast({ kind: "error", message: tr("备注已保存，但重新打开的详情暂时无法刷新：{error}", "The note was saved, but the reopened details could not refresh: {error}", "メモは保存されましたが、開き直した詳細を更新できませんでした：{error}", { error: apiErrorText(reason, locale) }) });
           return;
         }
       }
@@ -2696,36 +2706,36 @@ function App() {
       const noteRejected = Boolean(response.rejected_fields?.includes("notes"));
       showToast(noteRejected
         ? { kind: "error", message: sameSession
-          ? "其他页面已经保存了更新的私人备注；这次较早的写入已忽略，当前草稿仍保留。"
-          : "其他页面已经保存了更新的私人备注；这次较早的写入已忽略，详情已显示服务器版本。" }
-        : { message: noteValue.trim() ? "私人备注已保存。" : "私人备注已清空。" });
+          ? tr("其他页面已经保存了更新的私人备注；这次较早的写入已忽略，当前草稿仍保留。", "Another page saved a newer private note. This older write was ignored and your current draft was kept.", "別のページで新しい非公開メモが保存されました。この古い書き込みは無視され、現在の下書きは保持されます。")
+          : tr("其他页面已经保存了更新的私人备注；这次较早的写入已忽略，详情已显示服务器版本。", "Another page saved a newer private note. This older write was ignored and the details now show the server version.", "別のページで新しい非公開メモが保存されました。この古い書き込みは無視され、詳細にはサーバー版を表示しています。") }
+        : { message: noteValue.trim() ? tr("私人备注已保存。", "Private note saved.", "非公開メモを保存しました。") : tr("私人备注已清空。", "Private note cleared.", "非公開メモを消去しました。") });
     } catch (reason) {
       try {
         const reconciled = await getUserMark(targetType, targetID);
-        if (!reconciled.mark) throw new Error("备注状态暂时无法读取。");
+        if (!reconciled.mark) throw new Error(tr("备注状态暂时无法读取。", "The note state is temporarily unavailable.", "メモ状態を一時的に読み取れません。"));
         if (String(reconciled.mark.notes || "") === noteValue) {
           acknowledgePendingUserMark(queuedPayload);
           const currentSession = detailSessionRef.current;
           applyMarkToDetailSession(targetType, targetID, reconciled.mark, currentSession, currentSession !== session);
           setHeroDetail((current) => current?.work.candidate_id === targetID ? { ...current, mark: reconciled.mark } : current);
-          showToast({ message: "保存响应曾中断，但私人备注已经重新核对。" });
+          showToast({ message: tr("保存响应曾中断，但私人备注已经重新核对。", "The save response was interrupted, but the private note has been verified.", "保存応答は中断されましたが、非公開メモを再確認しました。") });
         } else if (hasPendingUserMark(queuedPayload)) {
-          showToast({ kind: "error", message: `${apiErrorText(reason)} 备注已在本机暂存，联网后会自动重试。` });
+          showToast({ kind: "error", message: tr("{error} 备注已在本机暂存，联网后会自动重试。", "{error} The note is queued locally and will retry when connected.", "{error} メモをローカルに保留し、接続後に自動再試行します。", { error: apiErrorText(reason, locale) }) });
         } else {
           const currentSession = detailSessionRef.current;
           applyMarkToDetailSession(targetType, targetID, reconciled.mark, currentSession, true);
           setHeroDetail((current) => current?.work.candidate_id === targetID ? { ...current, mark: reconciled.mark } : current);
-          showToast({ kind: "error", message: `${apiErrorText(reason)} 浏览器无法暂存草稿，已恢复服务器备注。` });
+          showToast({ kind: "error", message: tr("{error} 浏览器无法暂存草稿，已恢复服务器备注。", "{error} The browser could not queue the draft, so the server note was restored.", "{error} ブラウザーで下書きを保留できなかったため、サーバーのメモに戻しました。", { error: apiErrorText(reason, locale) }) });
         }
       } catch {
         showToast({ kind: "error", message: hasPendingUserMark(queuedPayload)
-          ? `${apiErrorText(reason)} 备注已在本机暂存，联网后会自动重试。`
-          : `${apiErrorText(reason)} 浏览器无法暂存草稿，也暂时无法确认服务器状态。` });
+          ? tr("{error} 备注已在本机暂存，联网后会自动重试。", "{error} The note is queued locally and will retry when connected.", "{error} メモをローカルに保留し、接続後に自動再試行します。", { error: apiErrorText(reason, locale) })
+          : tr("{error} 浏览器无法暂存草稿，也暂时无法确认服务器状态。", "{error} The browser could not queue the draft or confirm the server state.", "{error} ブラウザーで下書きを保留できず、サーバーの状態も確認できません。", { error: apiErrorText(reason, locale) }) });
       }
     } finally {
       setNoteSaving(false);
     }
-  }, [applyMarkToDetailSession, detail, noteDraft, noteSaving, showToast]);
+  }, [applyMarkToDetailSession, detail, locale, noteDraft, noteSaving, showToast]);
 
   const applyWorkMetadataUpdate = useCallback((data: WorkDetailResponse) => {
     const candidateID = data.work.candidate_id;
@@ -2789,12 +2799,13 @@ function App() {
     try {
       const readBundle = () => Promise.all([
         readerPreparationRequest(
-          "书页清单",
+          tr("书页清单", "page manifest", "ページ一覧"),
           readerPreparationCacheRef.current
             ? waitForReaderPreparation(readerPreparationCacheRef.current.load(item.candidate_id), controller.signal)
             : getPages(item.candidate_id, { signal: controller.signal }),
+          locale,
         ),
-        readerPreparationRequest("阅读进度", getProgress(item.candidate_id, { signal: controller.signal })),
+        readerPreparationRequest(tr("阅读进度", "reading progress", "読書進捗"), getProgress(item.candidate_id, { signal: controller.signal }), locale),
       ]);
       let [pages, progressData] = await readBundle();
       if (!sameManifest(pages, progressData)) {
@@ -2802,8 +2813,8 @@ function App() {
         [pages, progressData] = await readBundle();
       }
       if (readerSessionRef.current !== session || (entry >= 0 && historyCurrentRef.current !== entry)) return;
-      if (!pages.readable || pages.count < 1) throw new Error("这部作品暂时没有可阅读页面。");
-      if (!sameManifest(pages, progressData)) throw new Error("书页清单正在更新，请稍后重新打开。");
+      if (!pages.readable || pages.count < 1) throw new Error(tr("这部作品暂时没有可阅读页面。", "This work has no readable pages yet.", "この作品にはまだ読めるページがありません。"));
+      if (!sameManifest(pages, progressData)) throw new Error(tr("书页清单正在更新，请稍后重新打开。", "The page manifest is being updated. Reopen the work in a moment.", "ページ一覧を更新中です。少し待ってから作品を開き直してください。"));
       const saved = progressData.progress;
       const progressStatus = String(saved?.progress_status || "normal").trim() || "normal";
       const savedTime = progressTimestamp(saved?.updated_at || saved?.last_read_at);
@@ -2875,7 +2886,7 @@ function App() {
         if (entry >= 0) retireFailedHistoryEntry(entry, "reader");
         setReaderIntent(null);
         setReaderRetryIntent({ item, requestedIndex, ...context });
-        setDetailError(timedOut ? "准备书页超时，请检查网络后重试。" : apiErrorText(reason));
+        setDetailError(timedOut ? tr("准备书页超时，请检查网络后重试。", "Preparing the pages timed out. Check your connection and try again.", "ページの準備がタイムアウトしました。接続を確認して再試行してください。") : apiErrorText(reason, locale));
         closeReader();
       }
     } finally {
@@ -2883,7 +2894,7 @@ function App() {
       if (readerLoadAbortRef.current === controller) readerLoadAbortRef.current = null;
       if (readerSessionRef.current === session && (entry < 0 || historyCurrentRef.current === entry)) setReaderLoading(false);
     }
-  }, [cancelReaderRequests, closeReader, retireFailedHistoryEntry]);
+  }, [cancelReaderRequests, closeReader, locale, retireFailedHistoryEntry]);
   resumeReaderRef.current = (item, requestedIndex, entry, context = {}) => { void loadReaderForEntry(item, requestedIndex, entry, context); };
 
   const openReader = useCallback((item: WorkSummary, requestedIndex?: number, context: ReaderContext = {}) => {
@@ -3040,7 +3051,7 @@ function App() {
       if (response.timestamp_rejected && !options.silent) {
         showToast({
           kind: "error",
-          message: "设备时间与服务器相差过大，这次位置没有写入；校准系统时间后请重试。",
+          message: tr("设备时间与服务器相差过大，这次位置没有写入；校准系统时间后请重试。", "Your device clock differs too much from the server. This position was not saved; correct the clock and try again.", "端末の時刻がサーバーと大きくずれているため、位置を保存しませんでした。時刻を合わせて再試行してください。"),
         });
       }
       if (response.discard_pending && !response.progress) {
@@ -3049,14 +3060,14 @@ function App() {
         if (!options.silent && !response.timestamp_rejected) {
           showToast({
             kind: "error",
-            message: "这次位置早于最近一次阅读状态变更，已安全忽略；重新打开作品即可继续。",
+            message: tr("这次位置早于最近一次阅读状态变更，已安全忽略；重新打开作品即可继续。", "This position predates the latest reading update and was safely ignored. Reopen the work to continue.", "この位置は最新の読書状態より古いため、安全に無視しました。作品を開き直して続けてください。"),
           });
         }
         return null;
       }
-      if (!response.progress) throw new Error("服务器没有返回可确认的阅读位置。");
+      if (!response.progress) throw new Error(tr("服务器没有返回可确认的阅读位置。", "The server did not return a verifiable reading position.", "サーバーから確認可能な読書位置が返されませんでした。"));
       if (options.force && (String(response.progress.progress_status || "") !== "normal" || !sameManifest(response.progress, current.pages))) {
-        throw new Error("服务器尚未确认新的页面清单，请重试。");
+        throw new Error(tr("服务器尚未确认新的页面清单，请重试。", "The server has not confirmed the new page manifest yet. Try again.", "サーバーが新しいページ一覧をまだ確認していません。再試行してください。"));
       }
       let remainingPendingCount = acknowledgePendingProgress(pending.entryID);
       if (options.force && current.stalePending) remainingPendingCount = acknowledgePendingProgress(current.stalePending.entryID);
@@ -3073,7 +3084,7 @@ function App() {
               || (detailRef.current?.kind === "series" && detailRef.current.data.series.group_id === current.seriesID
                 ? detailRef.current.data.series.series_title
                 : "")
-              || itemTitle(current.item),
+              || itemTitle(current.item, locale),
             ),
           }
           : null;
@@ -3092,15 +3103,15 @@ function App() {
         showToast({
           kind: "error",
           message: reason instanceof ApiError && reason.status === 409
-            ? "书页清单已经变化，这次位置已安全留在本机；请退出后重新打开。"
-            : `阅读位置已留在本机，联网后会自动同步：${apiErrorText(reason)}`,
-          actionLabel: options.force ? undefined : "立即重试",
+            ? tr("书页清单已经变化，这次位置已安全留在本机；请退出后重新打开。", "The page manifest changed. This position is safely queued locally; exit and reopen the work.", "ページ一覧が変更されました。この位置は安全にローカル保留されています。終了して作品を開き直してください。")
+            : tr("阅读位置已留在本机，联网后会自动同步：{error}", "The reading position is queued locally and will sync when connected: {error}", "読書位置をローカルに保留し、接続後に自動同期します：{error}", { error: apiErrorText(reason, locale) }),
+          actionLabel: options.force ? undefined : tr("立即重试", "Retry now", "今すぐ再試行"),
           onAction: options.force ? undefined : () => { void flushPendingProgress(); },
         });
       }
       return null;
     }
-  }, [applyProgressState, flushPendingProgress, showToast]);
+  }, [applyProgressState, flushPendingProgress, locale, showToast]);
   persistReaderRef.current = persistReader;
 
   const confirmReaderCalibration = useCallback(async () => {
@@ -3361,10 +3372,21 @@ function App() {
   const readerLiveStatus = !reader || reader.calibration
     ? ""
     : reader.ending
-      ? "本话读完。"
+      ? tr("本话读完。", "Chapter finished.", "この話を読み終えました。")
       : reader.imageLoading
-        ? `正在载入第 ${reader.requestedIndex + 1} 页，共 ${reader.pages.count} 页。`
-        : `第 ${reader.index + 1} 页，共 ${reader.pages.count} 页。${readerSplitWideActive ? (reader.splitPanel === 0 ? "当前为右半页。" : "当前为左半页。") : ""}${pendingProgressTotal ? `有 ${pendingProgressTotal} 条进度待同步。` : "阅读进度已同步。"}`;
+        ? tr("正在载入第 {page} 页，共 {count} 页。", "Loading page {page} of {count}.", "{count}ページ中{page}ページを読み込んでいます。", { page: reader.requestedIndex + 1, count: reader.pages.count })
+        : tr("第 {page} 页，共 {count} 页。{panel}{sync}", "Page {page} of {count}. {panel}{sync}", "{count}ページ中{page}ページ。{panel}{sync}", {
+          page: reader.index + 1,
+          count: reader.pages.count,
+          panel: readerSplitWideActive
+            ? reader.splitPanel === 0
+              ? tr("当前为右半页。", "Showing the right half. ", "右半分を表示中。")
+              : tr("当前为左半页。", "Showing the left half. ", "左半分を表示中。")
+            : "",
+          sync: pendingProgressTotal
+            ? tr("有 {count} 条进度待同步。", "{count} progress update(s) are waiting to sync.", "{count}件の進捗が同期待ちです。", { count: pendingProgressTotal })
+            : tr("阅读进度已同步。", "Reading progress is synced.", "読書進捗は同期済みです。"),
+        });
 
   useEffect(() => {
     setReaderSlowLoadingKey("");
@@ -3440,7 +3462,7 @@ function App() {
 
     const load = async () => {
       try {
-        if (!pageCache) throw new Error("阅读缓存尚未准备好。");
+        if (!pageCache) throw new Error(tr("阅读缓存尚未准备好。", "The reader cache is not ready yet.", "リーダーキャッシュの準備ができていません。"));
         const asset = await pageCache.load(requestedURL);
         if (controller.signal.aborted) return;
         const latest = uiRef.current?.reader;
@@ -3484,12 +3506,12 @@ function App() {
           || latest.requestedIndex !== readerRequestedIndex
           || latest.pageRevision !== readerPageRevision) return;
         const message = reason instanceof ReaderPageCacheTimeoutError
-          ? `第 ${readerRequestedIndex + 1} 页加载超时。`
+          ? tr("第 {page} 页加载超时。", "Page {page} timed out.", "{page}ページの読み込みがタイムアウトしました。", { page: readerRequestedIndex + 1 })
           : reason instanceof ReaderPageResponseError && reason.status === 409
-            ? "书页清单已经变化，请退出后重新打开。"
+            ? tr("书页清单已经变化，请退出后重新打开。", "The page manifest changed. Exit and reopen the work.", "ページ一覧が変更されました。終了して作品を開き直してください。")
             : reason instanceof ReaderPageResponseError
-              ? `第 ${readerRequestedIndex + 1} 页暂时无法读取（HTTP ${reason.status}）。`
-              : apiErrorText(reason);
+              ? tr("第 {page} 页暂时无法读取（HTTP {status}）。", "Page {page} is temporarily unavailable (HTTP {status}).", "{page}ページを一時的に読み取れません（HTTP {status}）。", { page: readerRequestedIndex + 1, status: reason.status })
+              : apiErrorText(reason, locale);
         setReader({
           ...latest,
           imageLoading: false,
@@ -3507,7 +3529,7 @@ function App() {
       if (readerPrefetchTimerRef.current !== null) window.clearTimeout(readerPrefetchTimerRef.current);
       readerPrefetchTimerRef.current = null;
     };
-  }, [readerCandidateID, readerEnding, readerFitMode, readerManifestID, readerPageRevision, readerRequestedIndex, revealReaderChrome]);
+  }, [locale, readerCandidateID, readerEnding, readerFitMode, readerManifestID, readerPageRevision, readerRequestedIndex, revealReaderChrome]);
 
   useLayoutEffect(() => {
     const plan = readerPrefetchPlanRef.current;
@@ -3694,7 +3716,7 @@ function App() {
   const pages = Math.max(1, Math.ceil(catalogPresentationTotal / PAGE_SIZE));
   const favoritesPage = Math.floor(favoritesOffset / FAVORITES_PAGE_SIZE) + 1;
   const favoritesPages = Math.max(1, Math.ceil(favoritesTotal / FAVORITES_PAGE_SIZE));
-  const discoverModeInfo = discoverModes.find((mode) => mode.id === discoverMode) || discoverModes[0]!;
+  const discoverModeInfo = localizedDiscoverModes.find((mode) => mode.id === discoverMode) || localizedDiscoverModes[0]!;
 
   const changeReaderFitPreference = useCallback((mode: ActiveReaderFitMode) => {
     setReaderFitPreference(mode);
@@ -3756,25 +3778,33 @@ function App() {
       const heroPercent = Math.round(heroProgress?.percent || 0);
       const creator = heroCreator(heroDetail);
       const minutes = hero ? remainingMinutes(hero) : null;
-      const lastRead = hero ? formatLastRead(hero) : "";
+      const lastRead = hero ? formatLastRead(hero, locale) : "";
       return (
         <section className="home-view">
           <EditorialMasthead
             className="home-intro"
-            eyebrow="YOUR EVENING SHELF"
-            title={greeting()}
+            eyebrow={tr("今晚的书架", "YOUR EVENING SHELF", "今夜の本棚")}
+            title={greeting(locale)}
             titleID="home-page-title"
-            folio="01 / HOME"
-            meta={<time className="home-date" dateTime={localDateKey()}>{formatDay()}</time>}
+            folio={tr("01 / 首页", "01 / HOME", "01 / ホーム")}
+            meta={<time className="home-date" dateTime={localDateKey()}>{formatDay(locale)}</time>}
           />
-          {homeHeroLoading ? <Status>正在整理今晚的书架…</Status> : homeHeroError ? <Status kind="error">{homeHeroError}</Status> : hero ? (
+          {homeHeroLoading ? <Status>{tr("正在整理今晚的书架…", "Preparing tonight's shelf…", "今夜の本棚を整えています…")}</Status> : homeHeroError ? <Status kind="error">{homeHeroError}</Status> : hero ? (
             <EveningHero
               cover={<Cover item={hero} eager />}
-              eyebrow={heroMode === "continue" ? "CONTINUE READING" : "NEW ON YOUR SHELF"}
-              title={<>{cleanTitle(itemTitle(hero))} <i>·</i> {heroPosition(hero, heroDetail)}{heroProgress ? <> <i>·</i> {heroPercent}%</> : null}</>}
-              subtitle={heroProgress ? `上次读到 ${heroProgress.index + 1} / ${heroProgress.count} 页${creator ? ` · ${creator}` : ""}` : pageMeta(hero)}
+              eyebrow={heroMode === "continue" ? tr("继续阅读", "CONTINUE READING", "続きを読む") : tr("书架新入库", "NEW ON YOUR SHELF", "本棚の新着")}
+              title={<>{cleanTitle(itemTitle(hero, locale))} <i>·</i> {heroPosition(hero, heroDetail, locale)}{heroProgress ? <> <i>·</i> {heroPercent}%</> : null}</>}
+              subtitle={heroProgress
+                ? tr("上次读到 {page} / {count} 页{creator}", "Last read: page {page} of {count}{creator}", "前回：{count}ページ中{page}ページ{creator}", { page: heroProgress.index + 1, count: heroProgress.count, creator: creator ? ` · ${creator}` : "" })
+                : pageMeta(hero, locale)}
               progressPercent={heroProgress ? heroPercent : null}
-              action={heroProgress?.completed ? "重新阅读" : heroMode === "continue" ? "继续阅读" : isSeries(hero) ? "查看系列" : "开始阅读"}
+              action={heroProgress?.completed
+                ? tr("重新阅读", "Read again", "もう一度読む")
+                : heroMode === "continue"
+                  ? tr("继续阅读", "Continue reading", "続きを読む")
+                  : isSeries(hero)
+                    ? tr("查看系列", "View series", "シリーズを見る")
+                    : tr("开始阅读", "Start reading", "読み始める")}
               onAction={() => isSeries(hero) ? openDetail(hero) : openReader(
                 hero as WorkSummary,
                 heroProgress?.completed ? 0 : undefined,
@@ -3783,47 +3813,85 @@ function App() {
                   nextItem: continueTarget.next_item || undefined,
                 } : {},
               )}
-              note={heroNote(hero, heroDetail)}
-              noteLabel={String(heroDetail?.mark?.notes || "").trim() ? "PRIVATE NOTE" : "READING NOTE"}
-              noteMeta={<><span>{minutes === 0 ? "本章已读完" : minutes ? `预计剩余约 ${minutes} 分钟` : "暂无法估算剩余时间"}</span>{lastRead ? <time>{lastRead}</time> : null}</>}
+              note={heroNote(hero, heroDetail, locale)}
+              noteLabel={String(heroDetail?.mark?.notes || "").trim() ? tr("私人备注", "PRIVATE NOTE", "非公開メモ") : tr("阅读提示", "READING NOTE", "読書メモ")}
+              noteMeta={<><span>{minutes === 0
+                ? tr("本章已读完", "Chapter finished", "この章は読了済み")
+                : minutes
+                  ? tr("预计剩余约 {minutes} 分钟", "About {minutes} min left", "残り約{minutes}分", { minutes })
+                  : tr("暂无法估算剩余时间", "Time remaining unavailable", "残り時間を計算できません")}</span>{lastRead ? <time>{lastRead}</time> : null}</>}
               folio={heroProgress ? String(heroProgress.index + 1).padStart(2, "0") : "NEW"}
               coverBadge={heroMode === "continue" ? "READING" : "NEW"}
             />
-          ) : <Status kind="empty">还没有阅读记录，先从书库挑一本吧。</Status>}
-          {continueLoading && hero ? <p className="home-refresh-note" role="status">正在核对最新书签…</p> : null}
-          {continueError ? <div className="catalog-inline-error home-history-error" role="alert"><span>{continueTarget ? "最新书签暂时无法同步，当前保留上次续读位置" : "续读记录暂时没有读取成功，当前先展示新入库作品"}：{continueError}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>重新读取</button></div> : null}
+          ) : <Status kind="empty">{tr("还没有阅读记录，先从书库挑一本吧。", "No reading history yet. Pick something from the library.", "読書履歴はまだありません。ライブラリから一冊選びましょう。")}</Status>}
+          {continueLoading && hero ? <p className="home-refresh-note" role="status">{tr("正在核对最新书签…", "Checking the latest bookmark…", "最新のしおりを確認しています…")}</p> : null}
+          {continueError ? <div className="catalog-inline-error home-history-error" role="alert"><span>{continueTarget
+            ? tr("最新书签暂时无法同步，当前保留上次续读位置：{error}", "The latest bookmark could not sync; keeping the previous position: {error}", "最新のしおりを同期できないため、前回の位置を保持します：{error}", { error: continueError })
+            : tr("续读记录暂时没有读取成功，当前先展示新入库作品：{error}", "Reading history could not load; showing new arrivals for now: {error}", "続きの履歴を読み込めないため、代わりに新着作品を表示します：{error}", { error: continueError })}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>{tr("重新读取", "Reload", "再読み込み")}</button></div> : null}
           <section className="home-section">
-            <SectionHeader title="最近入库" eyebrow="NEW ARRIVALS" action="查看全部" onAction={() => activateView("library")} />
-            {recent.length ? <><div className="book-grid home-book-grid">{recent.slice(0, 6).map((item, index) => <BookCard key={itemID(item)} item={item} index={index} context="new" onOpen={openDetail} />)}</div>{recentLoading ? <p className="catalog-refresh-note" role="status">正在同步最近入库…</p> : null}{recentError ? <div className="catalog-inline-error" role="alert"><span>当前保留上次读取的最近入库作品：{recentError}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>重新读取</button></div> : null}</> : recentLoading ? <CatalogSkeleton count={6} className="home-book-grid" /> : recentError ? <div className="catalog-inline-error" role="alert"><span>{recentError}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>重新读取</button></div> : <Status kind="empty">最近还没有新入库的作品。</Status>}
+            <SectionHeader title={tr("最近入库", "Recently added", "最近追加された作品")} eyebrow={tr("新入库", "NEW ARRIVALS", "新着")} action={tr("查看全部", "View all", "すべて見る")} onAction={() => activateView("library")} />
+            {recent.length ? <><div className="book-grid home-book-grid">{recent.slice(0, 6).map((item, index) => <BookCard key={itemID(item)} item={item} index={index} context="new" onOpen={openDetail} />)}</div>{recentLoading ? <p className="catalog-refresh-note" role="status">{tr("正在同步最近入库…", "Syncing recent arrivals…", "新着作品を同期しています…")}</p> : null}{recentError ? <div className="catalog-inline-error" role="alert"><span>{tr("当前保留上次读取的最近入库作品：{error}", "Keeping the last loaded arrivals: {error}", "前回読み込んだ新着作品を保持します：{error}", { error: recentError })}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>{tr("重新读取", "Reload", "再読み込み")}</button></div> : null}</> : recentLoading ? <CatalogSkeleton count={6} className="home-book-grid" /> : recentError ? <div className="catalog-inline-error" role="alert"><span>{recentError}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>{tr("重新读取", "Reload", "再読み込み")}</button></div> : <Status kind="empty">{tr("最近还没有新入库的作品。", "No recent arrivals yet.", "最近追加された作品はまだありません。")}</Status>}
           </section>
         </section>
       );
     }
 
     if (view === "settings") {
-      const readerFitLabel = readerFitPreference === "fit-page" ? "整页" : readerFitPreference === "fit-width" ? "适宽" : "横页拆分";
+      const readerFitLabel = readerFitPreference === "fit-page"
+        ? tr("整页", "Fit page", "ページ全体")
+        : readerFitPreference === "fit-width"
+          ? tr("适宽", "Fit width", "幅に合わせる")
+          : tr("横页拆分", "Split spreads", "見開きを分割");
       return (
         <section className="workspace-page settings-page">
-          <button className="subpage-back" type="button" onClick={returnToMy}>← 返回我的</button>
+          <button className="subpage-back" type="button" onClick={returnToMy}>← {tr("返回我的", "Back to My shelf", "マイページへ戻る")}</button>
           <EditorialMasthead
             className="settings-masthead"
-            eyebrow="READING SETTINGS"
-            title="阅读偏好"
+            eyebrow={tr("阅读设置", "READING SETTINGS", "読書設定")}
+            title={tr("阅读偏好", "Reading preferences", "読書設定")}
             titleID="settings-page-title"
-            folio="06 / SETTINGS"
+            folio={tr("06 / 设置", "06 / SETTINGS", "06 / 設定")}
             meta={<span>{readerFitLabel}</span>}
           />
-          <p className="page-lead settings-lead">这里保存阅读器布局偏好，并显示只读的本地运行状态；不会运行任何维护任务。单本作品已保存的布局与停留位置仍优先恢复。</p>
-          <section className="settings-reader-card" aria-labelledby="reader-preference-title">
-            <span>READING LAYOUT</span>
-            <h2 id="reader-preference-title">默认阅读布局</h2>
-            <p>用于还没有保存过单本布局的作品。已经读过的作品仍优先恢复它自己的布局和滚动位置。</p>
-            <div className="settings-choice" role="group" aria-label="默认阅读布局">
-              <button type="button" aria-pressed={readerFitPreference === "fit-page"} onClick={() => changeReaderFitPreference("fit-page")}><strong>整页</strong><small>完整看见一页，适合桌面与横图</small></button>
-              <button type="button" aria-pressed={readerFitPreference === "fit-width"} onClick={() => changeReaderFitPreference("fit-width")}><strong>适宽</strong><small>按屏幕宽度放大，适合手机长读</small></button>
-              <button type="button" aria-pressed={readerFitPreference === "split-wide"} onClick={() => changeReaderFitPreference("split-wide")}><strong>横页拆分</strong><small>宽图按日漫顺序先右后左，竖页保持整页</small></button>
+          <p className="page-lead settings-lead">{tr(
+            "这里保存界面和阅读器布局偏好，并显示只读的本地运行状态；不会运行任何维护任务。单本作品已保存的布局与停留位置仍优先恢复。",
+            "Choose the interface language and default reader layout, and view read-only local diagnostics. No maintenance task runs here. A saved layout and position for an individual book still takes priority.",
+            "表示言語と既定のリーダーレイアウトを選び、読み取り専用のローカル診断を確認できます。ここではメンテナンスタスクを実行しません。作品ごとに保存されたレイアウトと位置が引き続き優先されます。",
+          )}</p>
+          <section className="settings-reader-card settings-language-card" aria-labelledby="interface-language-title">
+            <span>{tr("界面语言", "INTERFACE LANGUAGE", "表示言語")}</span>
+            <h2 id="interface-language-title">{tr("界面语言", "Interface language", "表示言語")}</h2>
+            <p>{tr(
+              "只切换应用界面的文字；不会翻译书籍内容、标题、作者或目录元数据。",
+              "This changes interface text only. Book contents, titles, creators, and catalog metadata are not translated.",
+              "切り替わるのは画面表示だけです。作品の内容、タイトル、作者、カタログのメタデータは翻訳されません。",
+            )}</p>
+            <div className="settings-choice settings-language-choice" role="group" aria-label={tr("界面语言", "Interface language", "表示言語")}>
+              {LOCALE_OPTIONS.map((option) => (
+                <button
+                  type="button"
+                  key={option.id}
+                  lang={option.id}
+                  aria-pressed={locale === option.id}
+                  onClick={() => setLocale(option.id)}
+                >
+                  <strong>{option.label}</strong>
+                  <small>{option.id}</small>
+                </button>
+              ))}
             </div>
-            <output aria-live="polite">当前默认：{readerFitPreference === "fit-page" ? "整页显示" : readerFitPreference === "fit-width" ? "适应屏幕宽度" : "横页从右到左拆分"}</output>
+            <output aria-live="polite">{tr("当前界面：{language}", "Interface: {language}", "表示言語：{language}", { language: LOCALE_OPTIONS.find((option) => option.id === locale)?.label || locale })}</output>
+          </section>
+          <section className="settings-reader-card" aria-labelledby="reader-preference-title">
+            <span>{tr("阅读布局", "READING LAYOUT", "読書レイアウト")}</span>
+            <h2 id="reader-preference-title">{tr("默认阅读布局", "Default reader layout", "既定の表示レイアウト")}</h2>
+            <p>{tr("用于还没有保存过单本布局的作品。已经读过的作品仍优先恢复它自己的布局和滚动位置。", "Used for books without a saved layout. Previously opened books still restore their own layout and scroll position first.", "作品ごとのレイアウトが未保存の場合に使います。既読の作品では、その作品のレイアウトとスクロール位置が優先して復元されます。")}</p>
+            <div className="settings-choice" role="group" aria-label={tr("默认阅读布局", "Default reader layout", "既定の表示レイアウト")}>
+              <button type="button" aria-pressed={readerFitPreference === "fit-page"} onClick={() => changeReaderFitPreference("fit-page")}><strong>{tr("整页", "Fit page", "ページ全体")}</strong><small>{tr("完整看见一页，适合桌面与横图", "Show a full page; ideal for desktop and landscape pages", "ページ全体を表示。デスクトップや横長ページ向け")}</small></button>
+              <button type="button" aria-pressed={readerFitPreference === "fit-width"} onClick={() => changeReaderFitPreference("fit-width")}><strong>{tr("适宽", "Fit width", "幅に合わせる")}</strong><small>{tr("按屏幕宽度放大，适合手机长读", "Scale to screen width; ideal for long reading on phones", "画面幅に拡大。スマートフォンでの縦読み向け")}</small></button>
+              <button type="button" aria-pressed={readerFitPreference === "split-wide"} onClick={() => changeReaderFitPreference("split-wide")}><strong>{tr("横页拆分", "Split spreads", "見開きを分割")}</strong><small>{tr("宽图按日漫顺序先右后左，竖页保持整页", "Read wide spreads right half first; portrait pages stay whole", "横長ページは右から左へ分割し、縦長ページは全体表示")}</small></button>
+            </div>
+            <output aria-live="polite">{tr("当前默认：{layout}", "Default: {layout}", "既定：{layout}", { layout: readerFitLabel })}</output>
           </section>
           <RuntimeDiagnosticsLite />
         </section>
@@ -3839,11 +3907,11 @@ function App() {
         <section className="catalog-page discover-view">
           <EditorialMasthead
             className="catalog-header discover-page-header"
-            eyebrow="DISCOVERY ROOM"
-            title="发现一本意外之喜"
+            eyebrow={tr("发现空间", "DISCOVERY ROOM", "発見の部屋")}
+            title={tr("发现一本意外之喜", "Find an unexpected favorite", "思いがけない一冊を見つける")}
             titleID="discover-page-title"
-            folio="03 / DISCOVER"
-            meta={<span>不带维护任务，只保留闲逛的乐趣</span>}
+            folio={tr("03 / 发现", "03 / DISCOVER", "03 / 見つける")}
+            meta={<span>{tr("不带维护任务，只保留闲逛的乐趣", "Browse for pleasure—no maintenance tasks", "メンテナンス作業なしで、気軽に本棚を巡ります")}</span>}
           />
           <DiscoveryLead
             modeLabel={discoverModeInfo.label}
@@ -3856,30 +3924,38 @@ function App() {
           />
           <DiscoveryModeRail
             active={discoverMode}
-            options={discoverModes.map((mode) => ({
+            options={localizedDiscoverModes.map((mode) => ({
               id: mode.id,
               label: mode.label,
-              hint: mode.id === "unread" ? "第一次见" : mode.id === "reading" ? "接着读" : mode.id === "liked" ? "偏好里" : mode.id === "reread" ? "再翻一次" : "全馆抽取",
+              hint: mode.id === "unread"
+                ? tr("第一次见", "First look", "初めて")
+                : mode.id === "reading"
+                  ? tr("接着读", "Continue", "続きから")
+                  : mode.id === "liked"
+                    ? tr("偏好里", "From your likes", "好みから")
+                    : mode.id === "reread"
+                      ? tr("再翻一次", "Open again", "もう一度")
+                      : tr("全馆抽取", "Whole library", "全ライブラリ"),
             }))}
             onChange={changeDiscoverMode}
           />
-              {discoverError ? <div className="catalog-inline-error" role="alert"><span>{discoverError}</span><button type="button" onClick={() => discoverErrorKind === "random" ? void openRandomDiscoverWork() : setDiscoverRevision((current) => current + 1)}>{discoverErrorKind === "random" ? "再抽一本" : "重新载入书架"}</button></div> : null}
+              {discoverError ? <div className="catalog-inline-error" role="alert"><span>{discoverError}</span><button type="button" onClick={() => discoverErrorKind === "random" ? void openRandomDiscoverWork() : setDiscoverRevision((current) => current + 1)}>{discoverErrorKind === "random" ? tr("再抽一本", "Pick another", "もう一冊") : tr("重新载入书架", "Reload shelf", "本棚を再読み込み")}</button></div> : null}
           <div className="discover-shelf" ref={catalogTopRef} aria-busy={discoverLoading}>
-            <SectionHeader title={`${discoverModeInfo.label}书架`} eyebrow={`TONIGHT'S PICKS · ${discoverLoading && !activeDiscover ? "…" : randomItems.length}`} action={activeDiscover ? "再换一批" : undefined} onAction={activeDiscover ? () => setDiscoverRevision((current) => current + 1) : undefined} />
-            {discoverLoading && !activeDiscover ? <CatalogSkeleton count={12} /> : randomItems.length ? <div className="book-grid catalog-grid">{randomItems.map((item, index) => <BookCard key={itemID(item)} item={item} index={index} context="discover" priority={index < 2} onOpen={openDetail} />)}</div> : !discoverError ? <div className="catalog-state empty"><span>NO PICKS TONIGHT</span><h2>这一格暂时没有书</h2><p>换一个发现范围，或让整座书库替你做决定。</p><button type="button" onClick={() => discoverMode === "any" ? setDiscoverRevision((current) => current + 1) : changeDiscoverMode("any")}>{discoverMode === "any" ? "重新抽取" : "改为随缘"}</button></div> : null}
-            {discoverLoading && activeDiscover ? <p className="catalog-refresh-note" role="status">正在从书架深处换一批封面…</p> : null}
+            <SectionHeader title={tr("{mode}书架", "{mode} shelf", "{mode}の本棚", { mode: discoverModeInfo.label })} eyebrow={tr("今晚推荐 · {count}", "TONIGHT'S PICKS · {count}", "今夜のおすすめ · {count}", { count: discoverLoading && !activeDiscover ? "…" : randomItems.length })} action={activeDiscover ? tr("再换一批", "Refresh picks", "選び直す") : undefined} onAction={activeDiscover ? () => setDiscoverRevision((current) => current + 1) : undefined} />
+            {discoverLoading && !activeDiscover ? <CatalogSkeleton count={12} /> : randomItems.length ? <div className="book-grid catalog-grid">{randomItems.map((item, index) => <BookCard key={itemID(item)} item={item} index={index} context="discover" priority={index < 2} onOpen={openDetail} />)}</div> : !discoverError ? <div className="catalog-state empty"><span>{tr("今晚暂无推荐", "NO PICKS TONIGHT", "今夜のおすすめなし")}</span><h2>{tr("这一格暂时没有书", "This shelf is empty for now", "この棚にはまだ本がありません")}</h2><p>{tr("换一个发现范围，或让整座书库替你做决定。", "Choose another discovery filter, or let the whole library decide.", "別の条件を選ぶか、ライブラリ全体に任せてみてください。")}</p><button type="button" onClick={() => discoverMode === "any" ? setDiscoverRevision((current) => current + 1) : changeDiscoverMode("any")}>{discoverMode === "any" ? tr("重新抽取", "Pick again", "選び直す") : tr("改为随缘", "Surprise me", "おまかせにする")}</button></div> : null}
+            {discoverLoading && activeDiscover ? <p className="catalog-refresh-note" role="status">{tr("正在从书架深处换一批封面…", "Finding another set deeper in the shelf…", "本棚の奥から別の作品を探しています…")}</p> : null}
           </div>
           <MetricLedger
             className="discover-stats discover-stats-after-shelf"
-            label="私人阅读概览"
+            label={tr("私人阅读概览", "Private reading overview", "非公開の読書概要")}
             items={[
-              { label: "留下书签", value: stats ? compactNumber(stats.history_count) : "—" },
-              { label: "收藏", value: stats ? compactNumber(stats.favorite_count) : "—" },
-              { label: "喜欢", value: stats ? compactNumber(stats.liked_count) : "—" },
-              { label: "想重读", value: stats ? compactNumber(stats.reread_count) : "—" },
+              { label: tr("留下书签", "Bookmarked", "しおり"), value: stats ? compactNumber(stats.history_count, locale) : "—" },
+              { label: tr("收藏", "Favorites", "お気に入り"), value: stats ? compactNumber(stats.favorite_count, locale) : "—" },
+              { label: tr("喜欢", "Liked", "好き"), value: stats ? compactNumber(stats.liked_count, locale) : "—" },
+              { label: tr("想重读", "Reread", "再読"), value: stats ? compactNumber(stats.reread_count, locale) : "—" },
             ]}
           />
-          {discoverHistory.length ? <section className="discover-history"><SectionHeader title="最近留下书签" eyebrow={`READING TRAIL · ${discoverHistory.length}`} action="查看我的" onAction={() => activateView("my")} /><div className="book-grid compact-grid">{discoverHistory.slice(0, 6).map((item, index) => <BookCard key={itemID(item)} item={item} index={index} onOpen={openDetail} />)}</div></section> : null}
+          {discoverHistory.length ? <section className="discover-history"><SectionHeader title={tr("最近留下书签", "Recent bookmarks", "最近のしおり")} eyebrow={tr("阅读足迹 · {count}", "READING TRAIL · {count}", "読書の足跡 · {count}", { count: discoverHistory.length })} action={tr("查看我的", "View My shelf", "マイページを見る")} onAction={() => activateView("my")} /><div className="book-grid compact-grid">{discoverHistory.slice(0, 6).map((item, index) => <BookCard key={itemID(item)} item={item} index={index} onOpen={openDetail} />)}</div></section> : null}
         </section>
       );
     }
@@ -3892,26 +3968,30 @@ function App() {
         <section className="catalog-page search-view">
           <EditorialMasthead
             className="catalog-header search-page-header"
-            eyebrow="FIND IN LIBRARY"
-            title="搜索全部馆藏"
+            eyebrow={tr("在书库中查找", "FIND IN LIBRARY", "ライブラリを検索")}
+            title={tr("搜索全部馆藏", "Search the whole library", "ライブラリ全体を検索")}
             titleID="search-page-title"
-            folio="04 / SEARCH"
-            meta={hasQuery ? <span>{catalogBusy ? "正在检索" : `${catalogPresentationTotal.toLocaleString("zh-CN")} 个结果`}</span> : <span>标题 · 作者 · 汉化组</span>}
+            folio={tr("04 / 搜索", "04 / SEARCH", "04 / 検索")}
+            meta={hasQuery ? <span>{catalogBusy ? tr("正在检索", "Searching", "検索中") : tr("{count} 个结果", "{count} results", "{count}件", { count: number(catalogPresentationTotal) })}</span> : <span>{tr("标题 · 作者 · 汉化组", "Title · Creator · Translation group", "タイトル · 作者 · 翻訳グループ")}</span>}
           />
           <SearchLead draft={searchDraft} hasQuery={hasQuery} query={searchQuery} onDraftChange={setSearchDraft} onSubmit={submitSearch} />
           {!hasQuery ? <SearchStart onBrowse={() => activateView("library")} onDiscover={() => activateView("discover")} /> : (
             <>
               <div className="library-toolbar search-toolbar">
-                <div className="filter-tabs" role="group" aria-label="结果类型">
-                  {catalogModeOptions.map((option) => <button type="button" className={`filter-chip ${catalogMode === option.id ? "active" : ""}`} aria-pressed={catalogMode === option.id} onClick={() => changeCatalogMode(option.id)} key={option.id}>{option.label}</button>)}
+                <div className="filter-tabs" role="group" aria-label={tr("结果类型", "Result type", "結果の種類")}>
+                  {catalogModeOptionsFor(locale).map((option) => <button type="button" className={`filter-chip ${catalogMode === option.id ? "active" : ""}`} aria-pressed={catalogMode === option.id} onClick={() => changeCatalogMode(option.id)} key={option.id}>{option.label}</button>)}
                 </div>
-                <label className="select-field"><span>排序</span><select value={sort} onChange={(event) => changeCatalogSort(event.target.value as CatalogSort)}>{catalogSortOptions.map((option) => <option value={option.id} key={option.id}>{option.label}</option>)}</select></label>
+                <label className="select-field"><span>{tr("排序", "Sort", "並び順")}</span><select value={sort} onChange={(event) => changeCatalogSort(event.target.value as CatalogSort)}>{catalogSortOptionsFor(locale).map((option) => <option value={option.id} key={option.id}>{option.label}</option>)}</select></label>
               </div>
-              <div className="search-result-line" ref={catalogTopRef} role="status" tabIndex={-1}><span>{catalogBusy ? "正在核对馆藏…" : catalogPresentationTotal ? `显示 ${resultStart}–${resultEnd}，共 ${catalogPresentationTotal.toLocaleString("zh-CN")} 个结果` : `没有找到“${searchQuery}”`}</span><button type="button" onClick={clearSearch}>清除关键词</button></div>
+              <div className="search-result-line" ref={catalogTopRef} role="status" tabIndex={-1}><span>{catalogBusy
+                ? tr("正在核对馆藏…", "Checking the library…", "ライブラリを確認しています…")
+                : catalogPresentationTotal
+                  ? tr("显示 {start}–{end}，共 {count} 个结果", "Showing {start}–{end} of {count} results", "{count}件中{start}～{end}件を表示", { start: number(resultStart), end: number(resultEnd), count: number(catalogPresentationTotal) })
+                  : tr("没有找到“{query}”", "No results for “{query}”", "「{query}」は見つかりませんでした", { query: searchQuery })}</span><button type="button" onClick={clearSearch}>{tr("清除关键词", "Clear search", "検索語を消去")}</button></div>
               <div className="catalog-results" aria-busy={catalogBusy}>
-                {catalogBusy && !catalogHasPresentationPage ? <CatalogSkeleton count={18} /> : catalogVisibleError ? <div className="catalog-state error" role="alert"><span>SEARCH INTERRUPTED</span><h2>这次检索没有完成</h2><p>{catalogVisibleError}</p><button type="button" onClick={retryCatalogPage}>重试</button></div> : catalogPresentationItems.length ? <><div className={`book-grid catalog-grid ${catalogShowingStale ? "is-stale" : ""}`.trim()} aria-hidden={catalogShowingStale ? true : undefined} inert={catalogShowingStale ? true : undefined}>{catalogPresentationItems.map((item, index) => <BookCard key={itemID(item)} item={item} index={index + catalogPresentationOffset} context="search" priority={index < 2} onOpen={openDetail} />)}</div>{catalogShowingStale ? <p className="catalog-refresh-note" role="status">正在载入这一页结果…</p> : null}</> : <div className="catalog-state empty"><span>0 RESULTS</span><h2>没有找到相符的封面</h2><p>试试更短的标题、作者姓氏，或清除类型限制。</p><div><button type="button" onClick={clearSearch}>清除关键词</button><button type="button" onClick={() => activateView("library")}>浏览全部馆藏</button></div></div>}
+                {catalogBusy && !catalogHasPresentationPage ? <CatalogSkeleton count={18} /> : catalogVisibleError ? <div className="catalog-state error" role="alert"><span>{tr("搜索中断", "SEARCH INTERRUPTED", "検索が中断されました")}</span><h2>{tr("这次检索没有完成", "The search did not finish", "検索を完了できませんでした")}</h2><p>{catalogVisibleError}</p><button type="button" onClick={retryCatalogPage}>{tr("重试", "Retry", "再試行")}</button></div> : catalogPresentationItems.length ? <><div className={`book-grid catalog-grid ${catalogShowingStale ? "is-stale" : ""}`.trim()} aria-hidden={catalogShowingStale ? true : undefined} inert={catalogShowingStale ? true : undefined}>{catalogPresentationItems.map((item, index) => <BookCard key={itemID(item)} item={item} index={index + catalogPresentationOffset} context="search" priority={index < 2} onOpen={openDetail} />)}</div>{catalogShowingStale ? <p className="catalog-refresh-note" role="status">{tr("正在载入这一页结果…", "Loading this result page…", "この結果ページを読み込んでいます…")}</p> : null}</> : <div className="catalog-state empty"><span>{tr("0 个结果", "0 RESULTS", "0件")}</span><h2>{tr("没有找到相符的封面", "No matching covers found", "一致する表紙が見つかりません")}</h2><p>{tr("试试更短的标题、作者姓氏，或清除类型限制。", "Try a shorter title, a creator's surname, or remove the type filter.", "タイトルを短くする、作者の姓を使う、または種類の絞り込みを解除してみてください。")}</p><div><button type="button" onClick={clearSearch}>{tr("清除关键词", "Clear search", "検索語を消去")}</button><button type="button" onClick={() => activateView("library")}>{tr("浏览全部馆藏", "Browse all", "すべて閲覧")}</button></div></div>}
               </div>
-              {catalogPageReady && !catalogBusy && catalogPresentationTotal > PAGE_SIZE ? <Pagination page={page} pages={pages} label="搜索结果分页" onPageChange={(nextPage) => changeCatalogPage((nextPage - 1) * PAGE_SIZE)} /> : null}
+              {catalogPageReady && !catalogBusy && catalogPresentationTotal > PAGE_SIZE ? <Pagination page={page} pages={pages} label={tr("搜索结果分页", "Search result pages", "検索結果のページ")} onPageChange={(nextPage) => changeCatalogPage((nextPage - 1) * PAGE_SIZE)} /> : null}
             </>
           )}
         </section>
@@ -3925,50 +4005,50 @@ function App() {
         {view === "library" ? <LibraryMasthead error={Boolean(catalogVisibleError)} loading={catalogBusy} mode={catalogMode} page={page} pages={pages} total={catalogPresentationTotal} /> : (
           <EditorialMasthead
             className="catalog-header personal-page-header"
-            eyebrow="PERSONAL SHELF"
-            title="我的阅读"
+            eyebrow={tr("私人书架", "PERSONAL SHELF", "自分の本棚")}
+            title={tr("我的阅读", "My reading", "マイリーディング")}
             titleID="personal-page-title"
-            folio="05 / PERSONAL"
-            meta={<span>书签、收藏与私人偏好</span>}
+            folio={tr("05 / 我的", "05 / PERSONAL", "05 / マイページ")}
+            meta={<span>{tr("书签、收藏与私人偏好", "Bookmarks, favorites, and private preferences", "しおり、お気に入り、非公開設定")}</span>}
           />
         )}
         {view === "my" ? (
           <>
             <MetricLedger
               className="my-summary personal-ledger"
-              label="私人阅读概览"
+              label={tr("私人阅读概览", "Private reading overview", "非公開の読書概要")}
               tabIndex={-1}
               items={[
-                { label: "收藏", value: favoritesTotal.toLocaleString("zh-CN") },
-                { label: "最近记录", value: history.length.toLocaleString("zh-CN") },
+                { label: tr("收藏", "Favorites", "お気に入り"), value: number(favoritesTotal) },
+                { label: tr("最近记录", "Recent", "最近の履歴"), value: number(history.length) },
               ]}
             />
-            <div className="my-links"><button type="button" onClick={() => activateView("settings")}><strong>阅读设置</strong><small>默认布局与翻页偏好</small><span>→</span></button></div>
+            <div className="my-links"><button type="button" onClick={() => activateView("settings")}><strong>{tr("阅读设置", "Reading settings", "読書設定")}</strong><small>{tr("界面语言、默认布局与翻页偏好", "Interface language, default layout, and page-turning preferences", "表示言語、既定レイアウト、ページ送り設定")}</small><span>→</span></button></div>
             <div className="my-history">
-              <SectionHeader title="阅读足迹" eyebrow={`RECENTLY READ · ${history.length}`} />
-              {historyLoading && !history.length ? <CatalogSkeleton count={6} compact /> : historyError && !history.length ? <div className="catalog-inline-error" role="alert"><span>{historyError}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>重新读取</button></div> : history.length ? <><div className="book-grid compact-grid">{history.slice(0, 6).map((item, index) => <BookCard key={itemID(item)} item={item} index={index} onOpen={openDetail} />)}</div>{historyLoading ? <p className="catalog-refresh-note" role="status">正在同步最新书签…</p> : null}</> : <Status kind="empty">还没有阅读足迹。打开一本书后，阅读位置会自动留在这里。</Status>}
+              <SectionHeader title={tr("阅读足迹", "Reading trail", "読書の足跡")} eyebrow={tr("最近阅读 · {count}", "RECENTLY READ · {count}", "最近読んだ作品 · {count}", { count: history.length })} />
+              {historyLoading && !history.length ? <CatalogSkeleton count={6} compact /> : historyError && !history.length ? <div className="catalog-inline-error" role="alert"><span>{historyError}</span><button type="button" onClick={() => setDataRevision((current) => current + 1)}>{tr("重新读取", "Reload", "再読み込み")}</button></div> : history.length ? <><div className="book-grid compact-grid">{history.slice(0, 6).map((item, index) => <BookCard key={itemID(item)} item={item} index={index} onOpen={openDetail} />)}</div>{historyLoading ? <p className="catalog-refresh-note" role="status">{tr("正在同步最新书签…", "Syncing the latest bookmarks…", "最新のしおりを同期しています…")}</p> : null}</> : <Status kind="empty">{tr("还没有阅读足迹。打开一本书后，阅读位置会自动留在这里。", "No reading trail yet. Open a book and its reading position will appear here automatically.", "読書の足跡はまだありません。作品を開くと、読書位置が自動的にここへ残ります。")}</Status>}
             </div>
-            <SectionHeader title="我的收藏" eyebrow={`FAVORITES · ${favoritesTotal}`} />
+            <SectionHeader title={tr("我的收藏", "My favorites", "お気に入り")} eyebrow={tr("收藏 · {count}", "FAVORITES · {count}", "お気に入り · {count}", { count: favoritesTotal })} />
           </>
         ) : null}
         {view === "library" ? (
           <LibraryToolbar ref={catalogTopRef} disabled={!libraryPageStateReady || !libraryPageStateConfirmed || libraryPageEntryRefreshing} error={Boolean(catalogVisibleError)} loading={catalogBusy} mode={catalogMode} page={page} pages={pages} sort={sort} onModeChange={changeCatalogMode} onSortChange={changeCatalogSort} />
         ) : null}
-        {listLoading ? <CatalogSkeleton count={view === "my" ? 10 : 18} className={view === "library" ? "library-grid" : ""} /> : listError ? <div className="catalog-state error" role="alert"><span>LIBRARY INTERRUPTED</span><h2>书架暂时没有整理好</h2><p>{listError}</p><button type="button" onClick={view === "my" ? retryFavoritesPage : retryCatalogPage}>重试</button></div> : visibleItems.length ? (
+        {listLoading ? <CatalogSkeleton count={view === "my" ? 10 : 18} className={view === "library" ? "library-grid" : ""} /> : listError ? <div className="catalog-state error" role="alert"><span>{tr("书库中断", "LIBRARY INTERRUPTED", "ライブラリが中断されました")}</span><h2>{tr("书架暂时没有整理好", "The shelf is not ready yet", "本棚の準備ができていません")}</h2><p>{listError}</p><button type="button" onClick={view === "my" ? retryFavoritesPage : retryCatalogPage}>{tr("重试", "Retry", "再試行")}</button></div> : visibleItems.length ? (
           <div className={`book-grid catalog-grid ${view === "library" ? "library-grid" : ""} ${view === "library" && catalogShowingStale ? "is-stale" : ""}`.trim()} aria-busy={view === "my" ? favoritesBusy : catalogBusy} aria-hidden={view === "library" && catalogShowingStale ? true : undefined} inert={view === "library" && catalogShowingStale ? true : undefined}>{visibleItems.map((item, index) => <BookCard key={itemID(item)} item={item} index={index + visibleItemsOffset} priority={view === "library" && index < 2} onOpen={openDetail} />)}</div>
-        ) : view === "my" && favoritesBusy ? <Status>正在同步这一页收藏…</Status> : <Status kind="empty">{view === "my" ? "还没有收藏。在作品详情中点“收藏”，它会留在这里。" : "当前条件下还没有作品。"}</Status>}
-        {view === "library" && catalogShowingStale ? <p className="catalog-refresh-note" role="status">正在载入这一页馆藏…</p> : null}
-        {view === "my" && favoritesPageReady && visibleItems.length > 0 && favoritesBusy ? <p className="catalog-refresh-note" role="status">正在同步这一页收藏…</p> : null}
-        {view === "my" && favoritesPageReady && favoritesError ? <div className="catalog-inline-error" role="alert"><span>当前保留上次读取的收藏：{favoritesError}</span><button type="button" onClick={retryFavoritesPage}>重新读取</button></div> : null}
+        ) : view === "my" && favoritesBusy ? <Status>{tr("正在同步这一页收藏…", "Syncing this page of favorites…", "このお気に入りページを同期しています…")}</Status> : <Status kind="empty">{view === "my" ? tr("还没有收藏。在作品详情中点“收藏”，它会留在这里。", "No favorites yet. Select Favorite in a work's details to keep it here.", "お気に入りはまだありません。作品詳細で「お気に入り」を選ぶと、ここに残ります。") : tr("当前条件下还没有作品。", "No works match the current filters.", "現在の条件に一致する作品はありません。")}</Status>}
+        {view === "library" && catalogShowingStale ? <p className="catalog-refresh-note" role="status">{tr("正在载入这一页馆藏…", "Loading this library page…", "このライブラリページを読み込んでいます…")}</p> : null}
+        {view === "my" && favoritesPageReady && visibleItems.length > 0 && favoritesBusy ? <p className="catalog-refresh-note" role="status">{tr("正在同步这一页收藏…", "Syncing this page of favorites…", "このお気に入りページを同期しています…")}</p> : null}
+        {view === "my" && favoritesPageReady && favoritesError ? <div className="catalog-inline-error" role="alert"><span>{tr("当前保留上次读取的收藏：{error}", "Keeping the last loaded favorites: {error}", "前回読み込んだお気に入りを保持します：{error}", { error: favoritesError })}</span><button type="button" onClick={retryFavoritesPage}>{tr("重新读取", "Reload", "再読み込み")}</button></div> : null}
         {view === "library" && catalogPageReady && !catalogBusy && catalogPresentationTotal > PAGE_SIZE ? (
-          <Pagination disabled={!libraryPageStateConfirmed || libraryPageEntryRefreshing} page={page} pages={pages} label="书库分页" kicker="COLLECTION NAVIGATION" onPageChange={(nextPage) => changeCatalogPage((nextPage - 1) * PAGE_SIZE)} />
+          <Pagination disabled={!libraryPageStateConfirmed || libraryPageEntryRefreshing} page={page} pages={pages} label={tr("书库分页", "Library pages", "ライブラリのページ")} kicker={tr("馆藏导航", "COLLECTION NAVIGATION", "コレクション移動")} onPageChange={(nextPage) => changeCatalogPage((nextPage - 1) * PAGE_SIZE)} />
         ) : null}
         {view === "my" && favoritesTotal > FAVORITES_PAGE_SIZE ? (
-          <Pagination page={favoritesPage} pages={favoritesPages} label="收藏分页" onPageChange={(nextPage) => changeFavoritesPage((nextPage - 1) * FAVORITES_PAGE_SIZE)} />
+          <Pagination page={favoritesPage} pages={favoritesPages} label={tr("收藏分页", "Favorite pages", "お気に入りのページ")} onPageChange={(nextPage) => changeFavoritesPage((nextPage - 1) * FAVORITES_PAGE_SIZE)} />
         ) : null}
       </section>
     );
-  }, [activateView, catalogBusy, catalogHasPresentationPage, catalogMode, catalogPageReady, catalogPresentationItems, catalogPresentationOffset, catalogPresentationTotal, catalogShowingStale, catalogVisibleError, changeCatalogMode, changeCatalogPage, changeCatalogSort, changeDiscoverMode, changeFavoritesPage, changeReaderFitPreference, clearSearch, continueError, continueLoading, continueTarget, continuedHero, discover, discoverError, discoverErrorKind, discoverLoading, discoverMode, discoverModeInfo, favorites, favoritesBusy, favoritesError, favoritesLoading, favoritesOffset, favoritesPage, favoritesPageReady, favoritesPages, favoritesTotal, hero, heroDetail, heroMode, history, historyError, historyLoading, homeHeroError, homeHeroLoading, libraryPageEntryRefreshing, libraryPageStateConfirmed, libraryPageStateReady, offset, openDetail, openRandomDiscoverWork, openReader, page, pages, randomOpening, readerFitPreference, recent, recentError, recentLoading, retryCatalogPage, retryFavoritesPage, returnToMy, searchDraft, searchQuery, sort, totalWorks, view, visibleItems, visibleItemsOffset]);
+  }, [activateView, catalogBusy, catalogHasPresentationPage, catalogMode, catalogPageReady, catalogPresentationItems, catalogPresentationOffset, catalogPresentationTotal, catalogShowingStale, catalogVisibleError, changeCatalogMode, changeCatalogPage, changeCatalogSort, changeDiscoverMode, changeFavoritesPage, changeReaderFitPreference, clearSearch, continueError, continueLoading, continueTarget, continuedHero, discover, discoverError, discoverErrorKind, discoverLoading, discoverMode, discoverModeInfo, favorites, favoritesBusy, favoritesError, favoritesLoading, favoritesOffset, favoritesPage, favoritesPageReady, favoritesPages, favoritesTotal, hero, heroDetail, heroMode, history, historyError, historyLoading, homeHeroError, homeHeroLoading, libraryPageEntryRefreshing, libraryPageStateConfirmed, libraryPageStateReady, locale, offset, openDetail, openRandomDiscoverWork, openReader, page, pages, randomOpening, readerFitPreference, recent, recentError, recentLoading, retryCatalogPage, retryFavoritesPage, returnToMy, searchDraft, searchQuery, sort, totalWorks, view, visibleItems, visibleItemsOffset]);
 
   const closeDetailOnBackdrop = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget && !detailBusy) closeDetail();
@@ -3997,121 +4077,123 @@ function App() {
   return (
     <div className="app-shell">
       <div className="app-surface" aria-hidden={reader || readerLoading ? true : undefined} inert={reader || readerLoading ? true : undefined}>
-      <a className="skip-link" href="#main-content" aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>跳到正文</a>
+      <a className="skip-link" href="#main-content" aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>{tr("跳到正文", "Skip to content", "本文へ移動")}</a>
       <aside className="sidebar" aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>
         <Brand />
-        <span className="sidebar-section-label">READING ROOM</span>
-        <nav className="nav" aria-label="主要导航">
-          {navItems.map((item) => <button type="button" className={`nav-item ${item.id === "my" ? "account-entry" : ""} ${view === item.id ? "active" : ""}`} aria-current={view === item.id ? "page" : undefined} onClick={() => activateView(item.id)} key={item.id}><small>{item.index}</small><strong>{item.label}</strong><span className="nav-arrow" aria-hidden="true">›</span></button>)}
+        <span className="sidebar-section-label">{tr("阅读空间", "READING ROOM", "読書スペース")}</span>
+        <nav className="nav" aria-label={tr("主要导航", "Main navigation", "メインナビゲーション")}>
+          {localizedNavItems.map((item) => <button type="button" className={`nav-item ${item.id === "my" ? "account-entry" : ""} ${view === item.id ? "active" : ""}`} aria-current={view === item.id ? "page" : undefined} onClick={() => activateView(item.id)} key={item.id}><small>{item.index}</small><strong>{item.label}</strong><span className="nav-arrow" aria-hidden="true">›</span></button>)}
         </nav>
         <div className="sidebar-spacer" />
-        <span className="sidebar-section-label">PREFERENCES</span>
-        <nav className="nav secondary-nav" aria-label="偏好导航">
-          <button type="button" className={`nav-item ${view === "settings" ? "active" : ""}`} aria-current={view === "settings" ? "page" : undefined} onClick={() => activateView("settings")}><small>↳</small><strong>阅读设置</strong></button>
+        <span className="sidebar-section-label">{tr("偏好", "PREFERENCES", "設定")}</span>
+        <nav className="nav secondary-nav" aria-label={tr("偏好导航", "Preference navigation", "設定ナビゲーション")}>
+          <button type="button" className={`nav-item ${view === "settings" ? "active" : ""}`} aria-current={view === "settings" ? "page" : undefined} onClick={() => activateView("settings")}><small>↳</small><strong>{tr("阅读设置", "Reading settings", "読書設定")}</strong></button>
         </nav>
-        <small className="library-count">{totalWorks > 0 ? `${totalWorks.toLocaleString("zh-CN")} 部作品` : "私人馆藏"}</small>
+        <small className="library-count">{totalWorks > 0 ? tr("{count} 部作品", "{count} works", "{count}作品", { count: number(totalWorks) }) : tr("私人馆藏", "Private library", "非公開ライブラリ")}</small>
       </aside>
 
-      <main ref={mainRef} id="main-content" className="main app-main" tabIndex={-1} aria-label={`${viewLabels[view]}主内容`} aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>
+      <main ref={mainRef} id="main-content" className="main app-main" tabIndex={-1} aria-label={tr("{view}主内容", "{view} content", "{view}のメインコンテンツ", { view: localizedViewLabels[view] })} aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>
         <header className="topbar">
-          <span className="room-title location-label">私人书架</span>
+          <span className="room-title location-label">{tr("私人书架", "Private shelf", "非公開の本棚")}</span>
           <form className="search" role="search" onSubmit={submitSearch}>
-            <input ref={searchRef} value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="搜索作品、作者或汉化组" aria-label="搜索作品、作者或汉化组" />
+            <input ref={searchRef} value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={tr("搜索作品、作者或汉化组", "Search works, creators, or translation groups", "作品、作者、翻訳グループを検索")} aria-label={tr("搜索作品、作者或汉化组", "Search works, creators, or translation groups", "作品、作者、翻訳グループを検索")} />
             <kbd>{searchShortcutLabel}</kbd>
           </form>
-          <span className="local-only">私人部署 <i>漫</i></span>
+          <span className="local-only">{tr("私人部署", "PRIVATE DEPLOYMENT", "非公開環境")} <i>{tr("漫", "BM", "漫")}</i></span>
         </header>
         <div className="page-content">{content}</div>
       </main>
 
-      <nav className="mobile-nav" aria-label="手机导航" aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>
-        {navItems.map((item) => { const active = view === item.id || (item.id === "my" && view === "settings"); return <button type="button" className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => activateView(item.id)} key={item.id}><span>{item.index}</span>{item.label}</button>; })}
+      <nav className="mobile-nav" aria-label={tr("手机导航", "Mobile navigation", "モバイルナビゲーション")} aria-hidden={browseSurfaceInert ? true : undefined} inert={browseSurfaceInert ? true : undefined}>
+        {localizedNavItems.map((item) => { const active = view === item.id || (item.id === "my" && view === "settings"); return <button type="button" className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => activateView(item.id)} key={item.id}><span>{item.index}</span>{item.label}</button>; })}
       </nav>
 
-      {detailLoading && !detail ? <div className="detail-overlay detail-loading-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetail(); }}><section className="detail-loading-card" role="dialog" aria-modal="true" aria-label="正在打开作品"><button ref={detailLoadingCloseRef} type="button" aria-label="取消打开作品" onClick={closeDetail}>×</button><span className="eyebrow">OPENING THE ARCHIVE</span><Status>正在打开作品…</Status><small>按 Esc 可取消</small></section></div> : null}
-      {detailError ? <div className="toast error" role="alert"><span>{detailError}</span>{readerRetryIntent ? <button type="button" onClick={() => { const { item, requestedIndex, ...context } = readerRetryIntent; setDetailError(""); setReaderRetryIntent(null); openReader(item, requestedIndex, context); }}>重试打开</button> : null}<button type="button" onClick={() => { setDetailError(""); setReaderRetryIntent(null); }}>关闭</button></div> : null}
+      {detailLoading && !detail ? <div className="detail-overlay detail-loading-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetail(); }}><section className="detail-loading-card" role="dialog" aria-modal="true" aria-label={tr("正在打开作品", "Opening work", "作品を開いています")}><button ref={detailLoadingCloseRef} type="button" aria-label={tr("取消打开作品", "Cancel opening work", "作品を開くのを中止")} onClick={closeDetail}>×</button><span className="eyebrow">{tr("正在打开馆藏", "OPENING THE ARCHIVE", "アーカイブを開いています")}</span><Status>{tr("正在打开作品…", "Opening work…", "作品を開いています…")}</Status><small>{tr("按 Esc 可取消", "Press Esc to cancel", "Escでキャンセル")}</small></section></div> : null}
+      {detailError ? <div className="toast error" role="alert"><span>{detailError}</span>{readerRetryIntent ? <button type="button" onClick={() => { const { item, requestedIndex, ...context } = readerRetryIntent; setDetailError(""); setReaderRetryIntent(null); openReader(item, requestedIndex, context); }}>{tr("重试打开", "Try opening again", "もう一度開く")}</button> : null}<button type="button" onClick={() => { setDetailError(""); setReaderRetryIntent(null); }}>{tr("关闭", "Close", "閉じる")}</button></div> : null}
       {detail ? (
         <div className="detail-overlay" onMouseDown={closeDetailOnBackdrop}>
           <section ref={detailPanelRef} className="detail-panel" role="dialog" aria-modal="true" aria-hidden={readerLayerOpen ? true : undefined} inert={readerLayerOpen ? true : undefined} aria-labelledby="detail-heading" data-note-dirty={noteDirty ? "true" : "false"}>
-            <DetailHeader ref={detailCloseRef} kind={detail.kind} title={cleanTitle(detail.kind === "work" ? itemTitle(detail.data.work) : itemTitle(detail.data.series))} busy={detailBusy} onClose={closeDetail} />
+            <DetailHeader ref={detailCloseRef} kind={detail.kind} title={cleanTitle(detail.kind === "work" ? itemTitle(detail.data.work, locale) : itemTitle(detail.data.series, locale))} busy={detailBusy} onClose={closeDetail} />
             {detail.kind === "work" ? (
               <div ref={detailScrollRef} className="detail-body detail-work">
                 <div className="detail-work-intro detail-summary">
-                  <DetailCoverFrame kind={`类型 · ${itemKindDisplayLabel(detail.data.work)}`} state={progressFor(detail.data.work) ? `READ ${Math.round(progressFor(detail.data.work)!.percent)}%` : "UNREAD"}>
+                  <DetailCoverFrame kind={tr("类型 · {kind}", "Type · {kind}", "種類 · {kind}", { kind: itemKindDisplayLabel(detail.data.work, locale) })} state={progressFor(detail.data.work) ? `${tr("已读", "READ", "既読")} ${Math.round(progressFor(detail.data.work)!.percent)}%` : tr("未读", "UNREAD", "未読")}>
                     <Cover item={detail.data.work} size={1200} eager />
                   </DetailCoverFrame>
                   <div className="detail-copy">
-                    <span className="eyebrow">CATALOGUE ENTRY</span>
-                    <h1 id="detail-heading">{cleanTitle(itemTitle(detail.data.work))}</h1>
+                    <span className="eyebrow">{tr("馆藏条目", "CATALOGUE ENTRY", "カタログ項目")}</span>
+                    <h1 id="detail-heading">{cleanTitle(itemTitle(detail.data.work, locale))}</h1>
                     {detailWorkCreators.length || detailWorkSeries.length || detailWorkLanguages.length || detailWorkTranslations.length || detailRelatedEditionItems.length ? (
-                      <dl className="detail-identities" aria-label="作品元数据">
-                        {detailRelatedEditionItems.length ? <div><dt>其他版本</dt><dd><button type="button" onClick={() => focusRelatedSection("detail-related-editions-title")}>查看 {detailRelatedEditionItems.length} 本同作品版本</button></dd></div> : null}
-                        {detailWorkCreators.length ? <div><dt>作者／社团</dt><dd><span>{detailWorkCreators.join(" · ")}</span>{detailRelatedCreatorItems.length ? <button type="button" onClick={() => focusRelatedSection("detail-related-creators-title")}>查看同作者作品</button> : null}</dd></div> : null}
-                        {detailWorkSeries.length ? <div><dt>系列</dt><dd><span>{detailWorkSeries.join(" · ")}</span>{detailRelatedSeriesItems.length ? <button type="button" onClick={() => focusRelatedSection("detail-related-series-title")}>查看同系列作品</button> : null}</dd></div> : null}
-                        {detailWorkLanguages.length ? <div><dt>语言</dt><dd><span>{detailWorkLanguages.join(" · ")}</span></dd></div> : null}
-                        {detailWorkTranslations.length ? <div><dt>汉化／翻译</dt><dd><span>{detailWorkTranslations.join(" · ")}</span></dd></div> : null}
+                      <dl className="detail-identities" aria-label={tr("作品元数据", "Work metadata", "作品メタデータ")}>
+                        {detailRelatedEditionItems.length ? <div><dt>{tr("其他版本", "Other editions", "別の版")}</dt><dd><button type="button" onClick={() => focusRelatedSection("detail-related-editions-title")}>{tr("查看 {count} 本同作品版本", "View {count} other edition(s)", "同じ作品の別版を{count}件見る", { count: detailRelatedEditionItems.length })}</button></dd></div> : null}
+                        {detailWorkCreators.length ? <div><dt>{tr("作者／社团", "Creator / circle", "作者／サークル")}</dt><dd><span>{detailWorkCreators.join(" · ")}</span>{detailRelatedCreatorItems.length ? <button type="button" onClick={() => focusRelatedSection("detail-related-creators-title")}>{tr("查看同作者作品", "View works by this creator", "同じ作者の作品を見る")}</button> : null}</dd></div> : null}
+                        {detailWorkSeries.length ? <div><dt>{tr("系列", "Series", "シリーズ")}</dt><dd><span>{detailWorkSeries.join(" · ")}</span>{detailRelatedSeriesItems.length ? <button type="button" onClick={() => focusRelatedSection("detail-related-series-title")}>{tr("查看同系列作品", "View works in this series", "同じシリーズの作品を見る")}</button> : null}</dd></div> : null}
+                        {detailWorkLanguages.length ? <div><dt>{tr("语言", "Language", "言語")}</dt><dd><span>{detailWorkLanguages.join(" · ")}</span></dd></div> : null}
+                        {detailWorkTranslations.length ? <div><dt>{tr("汉化／翻译", "Translation", "翻訳")}</dt><dd><span>{detailWorkTranslations.join(" · ")}</span></dd></div> : null}
                       </dl>
                     ) : null}
                     <MetricLedger
                       className="detail-metric-ledger"
-                      label="作品信息"
+                      label={tr("作品信息", "Work information", "作品情報")}
                       items={[
-                        { label: "可读页数", value: numberValue(detail.data.work.readable_page_count) || "—" },
-                        { label: "馆藏", value: detail.data.work.display_library_name || detail.data.work.library_name || "本地" },
-                        { label: "阅读进度", value: progressFor(detail.data.work) ? `${Math.round(progressFor(detail.data.work)!.percent)}%` : "未读" },
+                        { label: tr("可读页数", "Readable pages", "読めるページ"), value: numberValue(detail.data.work.readable_page_count) ? number(numberValue(detail.data.work.readable_page_count)) : "—" },
+                        { label: tr("馆藏", "Library", "ライブラリ"), value: detail.data.work.display_library_name || detail.data.work.library_name || tr("本地", "Local", "ローカル") },
+                        { label: tr("阅读进度", "Reading progress", "読書進捗"), value: progressFor(detail.data.work) ? `${Math.round(progressFor(detail.data.work)!.percent)}%` : tr("未读", "Unread", "未読") },
                       ]}
                     />
                     <div className="detail-actions">
-                      <button className="button primary" type="button" disabled={!detail.data.work.can_read} onClick={() => openReader(detail.data.work, progressFor(detail.data.work)?.completed ? 0 : undefined, { seriesID: detail.data.series?.[0]?.group_id || undefined })}>{progressFor(detail.data.work)?.completed ? "重新阅读" : progressFor(detail.data.work) ? "继续阅读" : "开始阅读"} <span>→</span></button>
-                      <button className={`button favorite-button ${favoriteFor(detail.data.work, detail.data.mark) ? "active" : ""}`} type="button" aria-pressed={favoriteFor(detail.data.work, detail.data.mark)} disabled={favoriteSavingIDs.has(detail.data.work.candidate_id)} onClick={() => { const current = favoriteFor(detail.data.work, detail.data.mark); void changeFavorite(detail.data.work, !current, current); }}>{favoriteSavingIDs.has(detail.data.work.candidate_id) ? "保存中…" : favoriteFor(detail.data.work, detail.data.mark) ? "已收藏" : "收藏"}</button>
+                      <button className="button primary" type="button" disabled={!detail.data.work.can_read} onClick={() => openReader(detail.data.work, progressFor(detail.data.work)?.completed ? 0 : undefined, { seriesID: detail.data.series?.[0]?.group_id || undefined })}>{progressFor(detail.data.work)?.completed ? tr("重新阅读", "Read again", "もう一度読む") : progressFor(detail.data.work) ? tr("继续阅读", "Continue reading", "続きを読む") : tr("开始阅读", "Start reading", "読み始める")} <span>→</span></button>
+                      <button className={`button favorite-button ${favoriteFor(detail.data.work, detail.data.mark) ? "active" : ""}`} type="button" aria-pressed={favoriteFor(detail.data.work, detail.data.mark)} disabled={favoriteSavingIDs.has(detail.data.work.candidate_id)} onClick={() => { const current = favoriteFor(detail.data.work, detail.data.mark); void changeFavorite(detail.data.work, !current, current); }}>{favoriteSavingIDs.has(detail.data.work.candidate_id) ? tr("保存中…", "Saving…", "保存中…") : favoriteFor(detail.data.work, detail.data.mark) ? tr("已收藏", "Favorited", "お気に入り済み") : tr("收藏", "Favorite", "お気に入り")}</button>
                     </div>
                   </div>
                 </div>
                 <RelatedWorks currentID={detail.data.work.candidate_id} editions={detail.data.related?.editions} series={detail.data.related?.series} creators={detail.data.related?.creators} onOpen={openDetail} />
                 <MetadataOverrideEditor detail={detail.data} disabled={detailBusy} onUpdated={applyWorkMetadataUpdate} />
-                <Suspense fallback={<Status>正在准备个人标记…</Status>}>
+                <Suspense fallback={<Status>{tr("正在准备个人标记…", "Preparing personal marks…", "個人マークを準備しています…")}</Status>}>
                   <PersonalMarkPanel targetType="work" targetID={detail.data.work.candidate_id} mark={detail.data.mark} disabled={detailBusy} savingField={personalMarkSavingField} statusMessage={personalMarkStatus} onPatch={(payload, field) => { void saveDetailPersonalMark(payload, field); }} />
                 </Suspense>
                 <div className="detail-lower-grid">
-                  <PersonalNoteEditor title="私人备注" placeholder="留一句只属于这本书的话…" value={noteDraft} savedValue={String(detail.data.mark?.notes || "")} saving={noteSaving} onChange={setNoteDraft} onReset={() => setNoteDraft(String(detail.data.mark?.notes || ""))} onSave={() => { void savePersonalNote(); }} />
-                  <section className="detail-section detail-about"><span>LOCAL SOURCE</span><h2>关于这本</h2><p>{detail.data.work.relative_path || "本地书库作品"}</p></section>
+                  <PersonalNoteEditor title={tr("私人备注", "Private note", "非公開メモ")} placeholder={tr("留一句只属于这本书的话…", "Write a note just for this book…", "この作品だけのメモを残す…")} value={noteDraft} savedValue={String(detail.data.mark?.notes || "")} saving={noteSaving} onChange={setNoteDraft} onReset={() => setNoteDraft(String(detail.data.mark?.notes || ""))} onSave={() => { void savePersonalNote(); }} />
+                  <section className="detail-section detail-about"><span>{tr("本地来源", "LOCAL SOURCE", "ローカルソース")}</span><h2>{tr("关于这本", "About this work", "この作品について")}</h2><p>{detail.data.work.relative_path || tr("本地书库作品", "Local library work", "ローカルライブラリの作品")}</p></section>
                 </div>
               </div>
             ) : (
               <div ref={detailScrollRef} className="detail-body series-detail">
                 <div className="series-detail-intro">
-                  <DetailCoverFrame kind="SERIES" state={seriesAggregate?.readPages ? `READ ${Math.round(seriesAggregate.percent)}%` : "UNREAD"}>
+                  <DetailCoverFrame kind={tr("系列", "SERIES", "シリーズ")} state={seriesAggregate?.readPages ? `${tr("已读", "READ", "既読")} ${Math.round(seriesAggregate.percent)}%` : tr("未读", "UNREAD", "未読")}>
                     <Cover item={detail.data.series} size={1200} eager />
                   </DetailCoverFrame>
                   <div className="detail-copy">
-                    <span className="eyebrow">CATALOGUE ENTRY · SERIES</span>
-                    <h1 id="detail-heading">{cleanTitle(itemTitle(detail.data.series))}</h1>
+                    <span className="eyebrow">{tr("馆藏条目 · 系列", "CATALOGUE ENTRY · SERIES", "カタログ項目 · シリーズ")}</span>
+                    <h1 id="detail-heading">{cleanTitle(itemTitle(detail.data.series, locale))}</h1>
                     <p>{detail.data.sectioned ? detail.data.section_summary : (detail.data.series.item_summary || detail.data.section_summary)}</p>
                     <MetricLedger
                       className="detail-metric-ledger"
-                      label="系列信息"
+                      label={tr("系列信息", "Series information", "シリーズ情報")}
                       items={[
-                        { label: "条目", value: numberValue(detail.data.series.counted_items, numberValue(detail.data.series.item_count)) || "—" },
-                        { label: "分区", value: numberValue(detail.data.series.section_count) || (detail.data.sectioned ? detail.data.sections.length : 1) },
-                        { label: "馆藏进度", value: seriesAggregate?.readPages ? `${Math.round(seriesAggregate.percent)}%` : "未读" },
+                        { label: tr("条目", "Entries", "項目"), value: number(numberValue(detail.data.series.counted_items, numberValue(detail.data.series.item_count))) || "—" },
+                        { label: tr("分区", "Sections", "セクション"), value: number(numberValue(detail.data.series.section_count) || (detail.data.sectioned ? detail.data.sections.length : 1)) },
+                        { label: tr("馆藏进度", "Library progress", "ライブラリ進捗"), value: seriesAggregate?.readPages ? `${Math.round(seriesAggregate.percent)}%` : tr("未读", "Unread", "未読") },
                       ]}
                     />
                     <div className="detail-actions">
-                      {seriesReaderTarget ? <button className="button primary" type="button" onClick={() => openReader(seriesReaderTarget, seriesReaderProgress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem: seriesReaderNextItem })}>{seriesReaderProgress?.completed ? "重新阅读" : seriesReaderProgress ? "继续阅读" : `从${chapterLabel(seriesReaderTarget)}开始`} <span>→</span></button> : null}
-                      <button className={`button favorite-button ${favoriteFor(detail.data.series, detail.data.mark) ? "active" : ""}`} type="button" aria-pressed={favoriteFor(detail.data.series, detail.data.mark)} disabled={favoriteSavingIDs.has(detail.data.series.group_id)} onClick={() => { const current = favoriteFor(detail.data.series, detail.data.mark); void changeFavorite(detail.data.series, !current, current); }}>{favoriteSavingIDs.has(detail.data.series.group_id) ? "保存中…" : favoriteFor(detail.data.series, detail.data.mark) ? "已收藏系列" : "收藏系列"}</button>
+                      {seriesReaderTarget ? <button className="button primary" type="button" onClick={() => openReader(seriesReaderTarget, seriesReaderProgress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem: seriesReaderNextItem })}>{seriesReaderProgress?.completed ? tr("重新阅读", "Read again", "もう一度読む") : seriesReaderProgress ? tr("继续阅读", "Continue reading", "続きを読む") : tr("从{chapter}开始", "Start with {chapter}", "{chapter}から読む", { chapter: chapterLabel(seriesReaderTarget) })} <span>→</span></button> : null}
+                      <button className={`button favorite-button ${favoriteFor(detail.data.series, detail.data.mark) ? "active" : ""}`} type="button" aria-pressed={favoriteFor(detail.data.series, detail.data.mark)} disabled={favoriteSavingIDs.has(detail.data.series.group_id)} onClick={() => { const current = favoriteFor(detail.data.series, detail.data.mark); void changeFavorite(detail.data.series, !current, current); }}>{favoriteSavingIDs.has(detail.data.series.group_id) ? tr("保存中…", "Saving…", "保存中…") : favoriteFor(detail.data.series, detail.data.mark) ? tr("已收藏系列", "Series favorited", "シリーズをお気に入り済み") : tr("收藏系列", "Favorite series", "シリーズをお気に入り")}</button>
                     </div>
-                    {seriesReaderTarget ? <p className="series-resume-location"><span>{seriesReaderProgress ? `继续位置：${chapterLabel(seriesReaderTarget)} · 第 ${seriesReaderProgress.index + 1}${seriesReaderProgress.count ? ` / ${seriesReaderProgress.count}` : ""} 页` : `阅读起点：${chapterLabel(seriesReaderTarget)}`}</span><button type="button" onClick={() => window.requestAnimationFrame(() => document.getElementById("series-current-entry")?.scrollIntoView({ behavior: preferredScrollBehavior(), block: "center" }))}>在目录中定位</button></p> : null}
+                    {seriesReaderTarget ? <p className="series-resume-location"><span>{seriesReaderProgress
+                      ? tr("继续位置：{chapter} · 第 {page}{count} 页", "Continue at {chapter} · page {page}{count}", "続き：{chapter} · {page}{count}ページ", { chapter: chapterLabel(seriesReaderTarget), page: seriesReaderProgress.index + 1, count: seriesReaderProgress.count ? ` / ${seriesReaderProgress.count}` : "" })
+                      : tr("阅读起点：{chapter}", "Starting point: {chapter}", "開始位置：{chapter}", { chapter: chapterLabel(seriesReaderTarget) })}</span><button type="button" onClick={() => window.requestAnimationFrame(() => document.getElementById("series-current-entry")?.scrollIntoView({ behavior: preferredScrollBehavior(), block: "center" }))}>{tr("在目录中定位", "Locate in directory", "目次で表示")}</button></p> : null}
                   </div>
                 </div>
-                <AsyncRegionBoundary resetKey={`series-directory-${detail.data.series.group_id}`} title="章节目录暂时没有载入" copy="详情仍然保留。可能刚好遇到版本更新或短暂网络中断，请重新加载后再试。">
-                  <Suspense fallback={<div className="series-directory-loading" role="status">正在排印章节目录…</div>}>
+                <AsyncRegionBoundary resetKey={`series-directory-${detail.data.series.group_id}`} title={tr("章节目录暂时没有载入", "The chapter directory did not load", "章の目次を読み込めませんでした")} copy={tr("详情仍然保留。可能刚好遇到版本更新或短暂网络中断，请重新加载后再试。", "The details remain available. A version update or brief network interruption may have occurred; reload and try again.", "詳細はそのままです。更新や一時的なネットワーク中断の可能性があります。再読み込みしてお試しください。")}>
+                  <Suspense fallback={<div className="series-directory-loading" role="status">{tr("正在排印章节目录…", "Preparing the chapter directory…", "章の目次を準備しています…")}</div>}>
                     <SeriesDirectory key={detail.data.series.group_id} data={detail.data} activeCandidateID={seriesReaderTarget?.candidate_id} onOpen={(item, nextItem) => { const progress = progressFor(item); openReader(item, progress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem }); }} />
                   </Suspense>
                 </AsyncRegionBoundary>
-                <Suspense fallback={<Status>正在准备系列标记…</Status>}>
+                <Suspense fallback={<Status>{tr("正在准备系列标记…", "Preparing series marks…", "シリーズのマークを準備しています…")}</Status>}>
                   <PersonalMarkPanel targetType="series" targetID={detail.data.series.group_id} mark={detail.data.mark} disabled={detailBusy} savingField={personalMarkSavingField} statusMessage={personalMarkStatus} onPatch={(payload, field) => { void saveDetailPersonalMark(payload, field); }} />
                 </Suspense>
-                <PersonalNoteEditor title="系列备注" placeholder="记录这个系列值得记住的地方…" value={noteDraft} savedValue={String(detail.data.mark?.notes || "")} saving={noteSaving} onChange={setNoteDraft} onReset={() => setNoteDraft(String(detail.data.mark?.notes || ""))} onSave={() => { void savePersonalNote(); }} />
+                <PersonalNoteEditor title={tr("系列备注", "Series note", "シリーズメモ")} placeholder={tr("记录这个系列值得记住的地方…", "Record what you want to remember about this series…", "このシリーズで覚えておきたいことを記録…")} value={noteDraft} savedValue={String(detail.data.mark?.notes || "")} saving={noteSaving} onChange={setNoteDraft} onReset={() => setNoteDraft(String(detail.data.mark?.notes || ""))} onSave={() => { void savePersonalNote(); }} />
               </div>
             )}
           </section>
@@ -4120,15 +4202,15 @@ function App() {
 
       </div>
 
-      {toast ? <div className={`toast action-toast ${toast.kind === "error" ? "error" : "success"}`} role={toast.kind === "error" ? "alert" : "status"} aria-live="polite"><span>{toast.message}</span>{toast.actionLabel && toast.onAction ? <button type="button" onClick={() => { const action = toast.onAction; setToast(null); action?.(); }}>{toast.actionLabel}</button> : null}<button type="button" aria-label="关闭提示" onClick={() => setToast(null)}>×</button></div> : null}
+      {toast ? <div className={`toast action-toast ${toast.kind === "error" ? "error" : "success"}`} role={toast.kind === "error" ? "alert" : "status"} aria-live="polite"><span>{toast.message}</span>{toast.actionLabel && toast.onAction ? <button type="button" onClick={() => { const action = toast.onAction; setToast(null); action?.(); }}>{toast.actionLabel}</button> : null}<button type="button" aria-label={tr("关闭提示", "Dismiss notification", "通知を閉じる")} onClick={() => setToast(null)}>×</button></div> : null}
 
-      {readerLoading ? <section className="reader reader-loading" role="dialog" aria-modal="true" aria-label="正在准备阅读"><button ref={readerLoadingCloseRef} type="button" className="reader-loading-close" autoFocus onClick={closeReader} aria-label="取消并退出阅读">×</button><Status>正在整理这本书的页序…</Status></section> : null}
+      {readerLoading ? <section className="reader reader-loading" role="dialog" aria-modal="true" aria-label={tr("正在准备阅读", "Preparing the reader", "リーダーを準備しています")}><button ref={readerLoadingCloseRef} type="button" className="reader-loading-close" autoFocus onClick={closeReader} aria-label={tr("取消并退出阅读", "Cancel and exit the reader", "キャンセルしてリーダーを閉じる")}>×</button><Status>{tr("正在整理这本书的页序…", "Preparing this book's page order…", "この作品のページ順を準備しています…")}</Status></section> : null}
       {reader ? (
-        <section ref={readerDialogRef} className={`reader ${reader.fitMode} ${readerSplitWideActive ? "split-wide-active" : ""} ${reader.chromeVisible || reader.calibration || reader.ending ? "" : "reader-chrome-hidden"}`} role="dialog" aria-modal="true" aria-label={`正在阅读 ${itemTitle(reader.item)}`} data-candidate-id={reader.item.candidate_id} data-next-candidate-id={reader.nextItem?.candidate_id || ""} data-split-wide-active={readerSplitWideActive ? "true" : "false"} data-split-panel={reader.splitPanel} onMouseMove={handleReaderPointerMove}>
+        <section ref={readerDialogRef} className={`reader ${reader.fitMode} ${readerSplitWideActive ? "split-wide-active" : ""} ${reader.chromeVisible || reader.calibration || reader.ending ? "" : "reader-chrome-hidden"}`} role="dialog" aria-modal="true" aria-label={tr("正在阅读《{title}》", "Reading “{title}”", "『{title}』を読んでいます", { title: itemTitle(reader.item, locale) })} data-candidate-id={reader.item.candidate_id} data-next-candidate-id={reader.nextItem?.candidate_id || ""} data-split-wide-active={readerSplitWideActive ? "true" : "false"} data-split-panel={reader.splitPanel} onMouseMove={handleReaderPointerMove}>
           <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{readerLiveStatus}</span>
           <ReaderTopbar
             ref={readerCloseRef}
-            title={cleanTitle(itemTitle(reader.item))}
+            title={cleanTitle(itemTitle(reader.item, locale))}
             kind={reader.seriesID ? "SERIES" : itemKindLabel(reader.item)}
             currentIndex={reader.index}
             requestedIndex={reader.requestedIndex}
@@ -4138,7 +4220,7 @@ function App() {
             onClose={closeReader}
             onReveal={() => revealReaderChrome()}
           />
-          {reader.calibration ? <aside ref={readerCalibrationRef} className="reader-calibration" role="alertdialog" aria-modal="true" aria-busy={reader.calibrationSaving} aria-labelledby="reader-calibration-title" aria-describedby="reader-calibration-copy" tabIndex={-1}><span>READING POSITION CHECK</span><strong id="reader-calibration-title">旧书签需要重新确认</strong><p id="reader-calibration-copy">旧记录在第 {reader.calibration.oldIndex + 1} / {reader.calibration.oldCount || "?"} 页。当前显示第 {reader.index + 1} / {reader.pages.count} 页；你可以先微调页码，确认前不会覆盖原有进度。</p><span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{reader.calibrationSaving ? "正在确认阅读位置，请稍候。" : reader.imageLoading ? `正在载入第 ${reader.requestedIndex + 1} 页，共 ${reader.pages.count} 页。` : `当前是第 ${reader.index + 1} 页，共 ${reader.pages.count} 页。`}</span>{reader.error ? <div className="reader-calibration-error" role="alert"><span>{reader.error}</span><button type="button" onClick={retryReaderPage}>重试当前页</button></div> : null}<div className="reader-calibration-pages"><button type="button" disabled={reader.calibrationSaving || reader.requestedIndex <= 0} onClick={() => goToReaderPage(reader.requestedIndex - 1)}>← 前一页</button><button type="button" disabled={reader.calibrationSaving || reader.requestedIndex >= reader.pages.count - 1} onClick={() => goToReaderPage(reader.requestedIndex + 1)}>后一页 →</button></div><div><button type="button" disabled={reader.calibrationSaving} onClick={closeReader}>先退出</button><button ref={readerCalibrationPrimaryRef} type="button" className="primary" disabled={reader.calibrationSaving || reader.imageLoading || Boolean(reader.error)} onClick={() => { void confirmReaderCalibration(); }}>{reader.calibrationSaving ? "正在确认…" : "以当前页继续"}</button></div></aside> : null}
+          {reader.calibration ? <aside ref={readerCalibrationRef} className="reader-calibration" role="alertdialog" aria-modal="true" aria-busy={reader.calibrationSaving} aria-labelledby="reader-calibration-title" aria-describedby="reader-calibration-copy" tabIndex={-1}><span>{tr("阅读位置确认", "READING POSITION CHECK", "読書位置の確認")}</span><strong id="reader-calibration-title">{tr("旧书签需要重新确认", "Confirm the old bookmark", "以前のしおりを確認してください")}</strong><p id="reader-calibration-copy">{tr("旧记录在第 {oldPage} / {oldCount} 页。当前显示第 {page} / {count} 页；你可以先微调页码，确认前不会覆盖原有进度。", "The old bookmark was on page {oldPage} of {oldCount}. Page {page} of {count} is shown now. You can adjust the page first; the old progress will not be replaced until you confirm.", "以前のしおりは {oldCount} ページ中 {oldPage} ページ目でした。現在は {count} ページ中 {page} ページ目を表示しています。先にページを調整でき、確認するまでは以前の進捗を上書きしません。", { oldPage: number(reader.calibration.oldIndex + 1), oldCount: reader.calibration.oldCount ? number(reader.calibration.oldCount) : "?", page: number(reader.index + 1), count: number(reader.pages.count) })}</p><span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{reader.calibrationSaving ? tr("正在确认阅读位置，请稍候。", "Confirming the reading position. Please wait.", "読書位置を確認しています。しばらくお待ちください。") : reader.imageLoading ? tr("正在载入第 {page} 页，共 {count} 页。", "Loading page {page} of {count}.", "全 {count} ページ中 {page} ページ目を読み込んでいます。", { page: number(reader.requestedIndex + 1), count: number(reader.pages.count) }) : tr("当前是第 {page} 页，共 {count} 页。", "Page {page} of {count} is currently shown.", "現在、全 {count} ページ中 {page} ページ目です。", { page: number(reader.index + 1), count: number(reader.pages.count) })}</span>{reader.error ? <div className="reader-calibration-error" role="alert"><span>{reader.error}</span><button type="button" onClick={retryReaderPage}>{tr("重试当前页", "Retry this page", "このページを再試行")}</button></div> : null}<div className="reader-calibration-pages"><button type="button" disabled={reader.calibrationSaving || reader.requestedIndex <= 0} onClick={() => goToReaderPage(reader.requestedIndex - 1)}>{tr("← 前一页", "← Previous page", "← 前のページ")}</button><button type="button" disabled={reader.calibrationSaving || reader.requestedIndex >= reader.pages.count - 1} onClick={() => goToReaderPage(reader.requestedIndex + 1)}>{tr("后一页 →", "Next page →", "次のページ →")}</button></div><div><button type="button" disabled={reader.calibrationSaving} onClick={closeReader}>{tr("先退出", "Exit for now", "いったん閉じる")}</button><button ref={readerCalibrationPrimaryRef} type="button" className="primary" disabled={reader.calibrationSaving || reader.imageLoading || Boolean(reader.error)} onClick={() => { void confirmReaderCalibration(); }}>{reader.calibrationSaving ? tr("正在确认…", "Confirming…", "確認中…") : tr("以当前页继续", "Continue from this page", "このページから続ける")}</button></div></aside> : null}
           <div
             ref={readerStageRef}
             className={`reader-stage ${reader.fitMode} ${readerSplitWideActive ? "split-wide-active" : ""} ${readerVisualLoading ? "is-loading" : ""}`}
@@ -4148,7 +4230,7 @@ function App() {
             aria-busy={reader.imageLoading}
             aria-hidden={reader.calibration ? true : undefined}
             inert={reader.calibration ? true : undefined}
-            aria-label="漫画页面。左右方向键翻页，上下方向键滚动或翻页，按 Tab 进入阅读控制。"
+            aria-label={tr("漫画页面。左右方向键翻页，上下方向键滚动或翻页，按 Tab 进入阅读控制。", "Comic page. Use Left and Right to turn pages, Up and Down to scroll or turn pages, and Tab to enter the reader controls.", "漫画ページです。左右キーでページを移動し、上下キーでスクロールまたはページ移動、Tabキーでリーダー操作へ移動します。")}
             onClick={handleReaderStageClick}
             onScroll={handleReaderScroll}
             onTouchStart={(event) => {
@@ -4181,16 +4263,16 @@ function App() {
             onTouchCancel={() => { readerTouchStartRef.current = null; }}
           >
             {reader.ending ? (
-              <article ref={readerEndingRef} className="reader-ending-card" tabIndex={-1}>
-                <h2>本话读完</h2>
-                <p>{reader.nextItem ? `下一话是《${cleanTitle(itemTitle(reader.nextItem))}》，可以直接接着读。` : "这已经是当前目录里最后一个可读条目。"}</p>
-                <div className="reader-ending-actions"><button type="button" onClick={() => moveReader(-1)}>返回末页</button>{reader.nextItem ? <button className="primary" type="button" onClick={() => openNextReader()}>阅读下一话</button> : null}<button type="button" onClick={closeReader}>退出阅读</button></div>
+              <article ref={readerEndingRef} className="reader-ending-card" data-kicker={tr("本话结束 / 继续", "END / CONTINUE", "終了 / 続ける")} tabIndex={-1}>
+                <h2>{tr("本话读完", "Chapter finished", "この話を読み終えました")}</h2>
+                <p>{reader.nextItem ? tr("下一话是《{title}》，可以直接接着读。", "Next is “{title}”. You can continue right away.", "次は『{title}』です。このまま続けて読めます。", { title: cleanTitle(itemTitle(reader.nextItem, locale)) }) : tr("这已经是当前目录里最后一个可读条目。", "This is the last readable entry in the current directory.", "現在の目次で読める最後の項目です。")}</p>
+                <div className="reader-ending-actions"><button type="button" onClick={() => moveReader(-1)}>{tr("返回末页", "Return to last page", "最後のページに戻る")}</button>{reader.nextItem ? <button className="primary" type="button" onClick={() => openNextReader()}>{tr("阅读下一话", "Read next chapter", "次の話を読む")}</button> : null}<button type="button" onClick={closeReader}>{tr("退出阅读", "Exit reader", "リーダーを閉じる")}</button></div>
               </article>
             ) : (
               <>
-                {reader.imageURL ? <img key={reader.imageURL} className={`reader-image ${readerSplitWideActive ? "is-split-wide" : ""}`} src={reader.imageURL} alt={`第 ${reader.index + 1} 页${readerSplitWideActive ? reader.splitPanel === 0 ? "右半页" : "左半页" : ""}`} draggable={false} style={readerSplitImageStyle} /> : null}
-                {readerVisualLoading ? <div className="reader-loading-layer"><span>正在显影第 {reader.requestedIndex + 1} 页…</span></div> : null}
-                {reader.error ? <div className="reader-error-layer" role="alert"><div><h3>这一页没有顺利打开</h3><p>{reader.error}</p><div className="reader-error-actions"><button type="button" onClick={retryReaderPage}>重试本页</button>{reader.requestedIndex > 0 ? <button type="button" onClick={() => moveReader(-1)}>上一页</button> : null}{reader.requestedIndex < reader.pages.count - 1 ? <button type="button" onClick={() => moveReader(1)}>下一页</button> : null}<button type="button" onClick={closeReader}>退出</button></div></div></div> : null}
+                {reader.imageURL ? <img key={reader.imageURL} className={`reader-image ${readerSplitWideActive ? "is-split-wide" : ""}`} src={reader.imageURL} alt={readerSplitWideActive ? reader.splitPanel === 0 ? tr("第 {page} 页右半页", "Page {page}, right half", "{page} ページ目、右半分", { page: number(reader.index + 1) }) : tr("第 {page} 页左半页", "Page {page}, left half", "{page} ページ目、左半分", { page: number(reader.index + 1) }) : tr("第 {page} 页", "Page {page}", "{page} ページ目", { page: number(reader.index + 1) })} draggable={false} style={readerSplitImageStyle} /> : null}
+                {readerVisualLoading ? <div className="reader-loading-layer"><span>{tr("正在显影第 {page} 页…", "Rendering page {page}…", "{page} ページ目を表示しています…", { page: number(reader.requestedIndex + 1) })}</span></div> : null}
+                {reader.error ? <div className="reader-error-layer" role="alert"><div><h3>{tr("这一页没有顺利打开", "This page did not open", "このページを開けませんでした")}</h3><p>{reader.error}</p><div className="reader-error-actions"><button type="button" onClick={retryReaderPage}>{tr("重试本页", "Retry this page", "このページを再試行")}</button>{reader.requestedIndex > 0 ? <button type="button" onClick={() => moveReader(-1)}>{tr("上一页", "Previous page", "前のページ")}</button> : null}{reader.requestedIndex < reader.pages.count - 1 ? <button type="button" onClick={() => moveReader(1)}>{tr("下一页", "Next page", "次のページ")}</button> : null}<button type="button" onClick={closeReader}>{tr("退出", "Exit", "閉じる")}</button></div></div></div> : null}
               </>
             )}
           </div>
@@ -4212,7 +4294,7 @@ function App() {
             onFirst={() => goToReaderPage(0, false, 0)}
             onLast={() => goToReaderPage(reader.pages.count - 1, false, 0)}
             onOpenNextItem={reader.nextItem ? () => openNextReader() : undefined}
-            nextItemLabel={reader.nextItem ? readerNextItemLabel(reader.nextItem) : undefined}
+            nextItemLabel={reader.nextItem ? readerNextItemLabel(reader.nextItem, locale) : undefined}
             onFitChange={changeReaderFit}
             onPageDraftChange={setReaderPageDraft}
             onPageDraftCommit={commitReaderPageDraft}

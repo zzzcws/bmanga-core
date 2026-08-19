@@ -1,8 +1,10 @@
 # Support
 
-Use GitHub issues for reproducible bugs and feature proposals. Search existing
-issues first and include the bmanga revision, operating system, deployment mode,
-and a minimal reproduction using synthetic data.
+Use [GitHub Discussions](https://github.com/zzzcws/bmanga-core/discussions) for
+installation questions and early-tester feedback. Use GitHub issues for
+reproducible bugs and feature proposals. Search existing reports first and
+include the bmanga revision, operating system, deployment mode, and a minimal
+reproduction using synthetic data.
 
 Please do not post:
 

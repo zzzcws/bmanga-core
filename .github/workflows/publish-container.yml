@@ -1,0 +1,383 @@
+name: publish-container
+
+"on":
+  push:
+    tags:
+      - "v*.*.*-alpha.*"
+
+permissions: {}
+
+concurrency:
+  group: publish-container-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GOFLAGS: -mod=readonly
+  IMAGE: ghcr.io/zzzcws/bmanga-core
+
+jobs:
+  gate:
+    name: Release gates
+    if: github.repository == 'zzzcws/bmanga-core'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: release
+        name: Validate immutable alpha tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]; then
+            echo "unsupported release tag: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-list -n 1 "${GITHUB_REF_NAME}")" = "${GITHUB_SHA}"
+          git merge-base --is-ancestor "${GITHUB_SHA}" origin/main
+          echo "version=${GITHUB_REF_NAME#v}" >> "${GITHUB_OUTPUT}"
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web-v2/package-lock.json
+
+      - name: Verify publication and license gates
+        run: |
+          python tools/check-github-upload-safety.py --strict-paths --json
+          python -m unittest tools.check_github_upload_safety_test
+          python -m unittest tools.check_third_party_licenses_test
+          python tools/check-third-party-licenses.py --verify --verify-go-linkage
+          python tools/check-third-party-licenses.py --release-readiness
+
+      - name: Test and vet Go code
+        run: |
+          go test ./...
+          go vet ./...
+          go run golang.org/x/vuln/cmd/govulncheck@v1.7.0 ./...
+
+      - name: Scan source and reachable Git history
+        run: |
+          go run github.com/zricethezav/gitleaks/v8@v8.30.1 dir --redact --no-banner --max-target-megabytes 2 .
+          go run github.com/zricethezav/gitleaks/v8@v8.30.1 git --redact --no-banner .
+
+      - name: Test locked browser artifact
+        run: |
+          npm --prefix web-v2 ci
+          python tools/check-third-party-licenses.py --verify --verify-web-sources
+          npm --prefix web-v2 audit --audit-level=high
+          npm --prefix web-v2 test
+          npm --prefix web-v2 run typecheck
+          node tools/build-web-assets.mjs
+
+  container:
+    name: Build, inspect, attest, and publish
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Reconfirm release readiness
+        run: |
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          python tools/check-third-party-licenses.py --verify --verify-go-linkage
+          python tools/check-third-party-licenses.py --release-readiness
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: build
+        name: Build and push immutable commit candidate
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}:sha-${{ github.sha }}
+          build-args: |
+            VERSION=${{ needs.gate.outputs.version }}
+            REVISION=${{ github.sha }}
+            SOURCE_URL=https://github.com/zzzcws/bmanga-core
+          provenance: false
+          sbom: false
+
+      - name: Pull and inspect the exact digest
+        id: inspect
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ needs.gate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          ref="${IMAGE}@${DIGEST}"
+          docker pull "${ref}"
+          docker image inspect "${ref}" > artifacts/image-inspect.json
+          python - "${DIGEST}" "${VERSION}" "${GITHUB_SHA}" <<'PY'
+          import json, sys
+          image = json.load(open("artifacts/image-inspect.json", encoding="utf-8"))[0]
+          digest, version, revision = sys.argv[1:]
+          config = image["Config"]
+          labels = config.get("Labels") or {}
+          expected_license = "Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND LicenseRef-SQLite-Public-Domain"
+          checks = {
+              "architecture": image.get("Architecture") == "amd64",
+              "os": image.get("Os") == "linux",
+              "user": config.get("User") == "65532:65532",
+              "entrypoint": config.get("Entrypoint") == ["/app/bmanga"],
+              "version": labels.get("org.opencontainers.image.version") == version,
+              "revision": labels.get("org.opencontainers.image.revision") == revision,
+              "source": labels.get("org.opencontainers.image.source") == "https://github.com/zzzcws/bmanga-core",
+              "licenses": labels.get("org.opencontainers.image.licenses") == expected_license,
+          }
+          failed = [name for name, passed in checks.items() if not passed]
+          if failed:
+              raise SystemExit(f"image metadata checks failed: {failed}")
+          json.dump({"digest": digest, "version": version, "revision": revision, "checks": checks}, open("artifacts/image-metadata-check.json", "w", encoding="utf-8"), indent=2)
+          PY
+          docker image save "${ref}" -o artifacts/image.tar
+
+      - name: Validate and inventory the final root filesystem
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path, PurePosixPath
+          import json, tarfile
+
+          root = Path("artifacts/rootfs")
+          root.mkdir(parents=True, exist_ok=False)
+          exact = {
+              "app/bmanga",
+              "app/bmanga-scan",
+              "app/LICENSE",
+              "app/THIRD_PARTY_NOTICES.md",
+          }
+          prefixes = ("app/web/v2/", "app/LICENSES/")
+          forbidden_suffixes = (".db", ".sqlite", ".sqlite3", ".log", ".pem", ".key", ".p12", ".map")
+          files = {}
+          modes = {}
+          with tarfile.open("artifacts/image.tar", mode="r:*") as image:
+              manifest_stream = image.extractfile("manifest.json")
+              if manifest_stream is None:
+                  raise SystemExit("docker image archive has no manifest.json")
+              manifest = json.load(manifest_stream)
+              if len(manifest) != 1 or not manifest[0].get("Layers"):
+                  raise SystemExit("docker image archive must contain exactly one layered image")
+              for layer_name in manifest[0]["Layers"]:
+                  layer_stream = image.extractfile(layer_name)
+                  if layer_stream is None:
+                      raise SystemExit(f"docker image archive is missing layer: {layer_name}")
+                  with tarfile.open(fileobj=layer_stream, mode="r|*") as layer:
+                      for member in layer:
+                          raw = member.name.removeprefix("./")
+                          rel = PurePosixPath(raw)
+                          if not raw or rel.is_absolute() or ".." in rel.parts:
+                              raise SystemExit(f"unsafe image-layer path: {raw!r}")
+                          if any(part.startswith(".wh.") for part in rel.parts):
+                              raise SystemExit(f"unexpected image-layer whiteout: {raw}")
+                          if member.isdir():
+                              continue
+                          if not member.isreg():
+                              raise SystemExit(f"unexpected image-layer file type: {raw}")
+                          if not rel.parts or rel.parts[0] != "app":
+                              raise SystemExit(f"unexpected image-layer file: {raw}")
+                          stream = layer.extractfile(member)
+                          if stream is None:
+                              raise SystemExit(f"image-layer file is unreadable: {raw}")
+                          files[rel.as_posix()] = stream.read()
+                          modes[rel.as_posix()] = member.mode & 0o777
+
+          inventory = []
+          for rel in sorted(files):
+              if rel not in exact and not rel.startswith(prefixes):
+                  raise SystemExit(f"unexpected rootfs file: {rel}")
+              if rel.casefold().endswith(forbidden_suffixes):
+                  raise SystemExit(f"forbidden rootfs file: {rel}")
+              data = files[rel]
+              path = root / rel
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(data)
+              path.chmod(modes[rel])
+              inventory.append({"path": rel, "bytes": len(data), "sha256": sha256(data).hexdigest()})
+          missing = sorted(exact - {item["path"] for item in inventory})
+          if missing:
+              raise SystemExit(f"missing rootfs files: {missing}")
+          Path("artifacts/rootfs-inventory.json").write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
+          PY
+          rm artifacts/image.tar
+          go version -m artifacts/rootfs/app/bmanga > artifacts/bmanga-go-version.txt
+          go version -m artifacts/rootfs/app/bmanga-scan > artifacts/bmanga-scan-go-version.txt
+          file artifacts/rootfs/app/bmanga artifacts/rootfs/app/bmanga-scan > artifacts/binary-file-types.txt
+          grep -q "statically linked" artifacts/binary-file-types.txt
+          if ldd artifacts/rootfs/app/bmanga > artifacts/bmanga-ldd.txt 2>&1; then
+            echo "bmanga unexpectedly has a dynamic loader" >&2
+            exit 1
+          fi
+          if ldd artifacts/rootfs/app/bmanga-scan > artifacts/bmanga-scan-ldd.txt 2>&1; then
+            echo "bmanga-scan unexpectedly has a dynamic loader" >&2
+            exit 1
+          fi
+          sha256sum \
+            artifacts/rootfs/app/bmanga \
+            artifacts/rootfs/app/bmanga-scan \
+            LICENSES/manifest.json \
+            LICENSES/reviews/linux-amd64.json \
+            > artifacts/checksums.txt
+
+      - name: Smoke-test the exact digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ needs.gate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="${IMAGE}@${DIGEST}"
+          name="bmanga-release-smoke"
+          identity="bmanga"
+          proof="$(printf '%s' "${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}:bmanga-release-smoke" | sha256sum | cut -c1-32)"
+          cleanup() { docker rm -f "${name}" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          docker run -d --name "${name}" \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,noexec,nosuid,nodev,mode=1777 \
+            --tmpfs /app/data:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            --tmpfs /app/cache:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            --tmpfs /app/.cache:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            --tmpfs /app/runs:rw,noexec,nosuid,nodev,uid=65532,gid=65532,mode=0700 \
+            -e "BMANGA_AUTH_""USER=${identity}" \
+            -e "BMANGA_AUTH_""PASSWORD=${proof}" \
+            -p 127.0.0.1:18765:8765 \
+            "${ref}"
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+              --user "${identity}:${proof}" \
+              http://127.0.0.1:18765/api/health > artifacts/health.json; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+            --user "${identity}:${proof}" \
+            http://127.0.0.1:18765/api/runtime-diagnostics > artifacts/runtime-diagnostics.json
+          curl --fail --silent --show-error --connect-timeout 2 --max-time 5 \
+            --user "${identity}:${proof}" \
+            http://127.0.0.1:18765/v2/ > artifacts/v2-index.html
+          grep -qi '<!doctype html>' artifacts/v2-index.html
+          python - "${VERSION}" <<'PY'
+          import json, sys
+          health = json.load(open("artifacts/health.json", encoding="utf-8"))
+          diagnostics = json.load(open("artifacts/runtime-diagnostics.json", encoding="utf-8"))
+          if not health.get("ok"):
+              raise SystemExit("health response is not ok")
+          if diagnostics.get("version") != sys.argv[1]:
+              raise SystemExit(f"runtime version mismatch: {diagnostics.get('version')!r}")
+          if diagnostics.get("database", {}).get("status") != "healthy":
+              raise SystemExit("runtime database is not healthy")
+          PY
+          docker stop --time 10 "${name}"
+          test "$(docker inspect -f '{{.State.ExitCode}}' "${name}")" = "0"
+          docker inspect --format \
+            '{"exit_code":{{.State.ExitCode}},"oom_killed":{{.State.OOMKilled}},"readonly_rootfs":{{.HostConfig.ReadonlyRootfs}},"user":"{{.Config.User}}"}' \
+            "${name}" > artifacts/smoke-container-check.json
+          docker logs "${name}" > artifacts/smoke.log 2>&1
+
+      - name: Generate final image SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          format: cyclonedx-json
+          output-file: artifacts/bmanga-core-image.cdx.json
+          artifact-name: bmanga-core-image-sbom
+          dependency-snapshot: false
+          upload-artifact: false
+          upload-release-assets: false
+          github-token: ""
+
+      - name: Record immutable release coordinates
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ needs.gate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "${DIGEST}" > artifacts/image-digest.txt
+          printf '%s\n' "${GITHUB_SHA}" > artifacts/source-revision.txt
+          printf '%s\n' "${VERSION}" > artifacts/version.txt
+          sha256sum artifacts/*.json artifacts/*.txt artifacts/*.html artifacts/*.log > artifacts/evidence-sha256.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest image SBOM
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: artifacts/bmanga-core-image.cdx.json
+          push-to-registry: true
+
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+
+      - name: Sign the immutable digest with GitHub OIDC
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Promote the inspected digest to the alpha version
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          VERSION: ${{ needs.gate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create --prefer-index=false --tag "${IMAGE}:${VERSION}" "${IMAGE}@${DIGEST}"
+          promoted="sha256:$(docker buildx imagetools inspect "${IMAGE}:${VERSION}" --raw | sha256sum | cut -d' ' -f1)"
+          test "${promoted}" = "${DIGEST}"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-evidence-${{ needs.gate.outputs.version }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90

@@ -106,6 +106,69 @@ func TestRunCreatesReadableCatalogFromSyntheticLibrary(t *testing.T) {
 	).Scan(&archiveID); err != nil {
 		t.Fatal(err)
 	}
+	var folderID string
+	if err := db.QueryRow(
+		"SELECT candidate_id FROM work_candidates WHERE source_kind = 'image_folder' LIMIT 1",
+	).Scan(&folderID); err != nil {
+		t.Fatal(err)
+	}
+	var unexpectedCoverAssetColumn int
+	if err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM pragma_table_info('cover_assets')
+		WHERE name = 'source_relative_path'
+	`).Scan(&unexpectedCoverAssetColumn); err != nil {
+		t.Fatal(err)
+	}
+	if unexpectedCoverAssetColumn != 0 {
+		t.Fatalf("cover_assets source_relative_path columns = %d, want 0", unexpectedCoverAssetColumn)
+	}
+	if _, err := db.Exec(
+		"INSERT INTO translation_items (candidate_id, translation_group) VALUES (?, ?)",
+		folderID,
+		"Synthetic translation group",
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	detail := httptest.NewRecorder()
+	server.Routes().ServeHTTP(
+		detail,
+		httptest.NewRequest(http.MethodGet, "/api/work?id="+folderID, nil),
+	)
+	if detail.Code != http.StatusOK {
+		t.Fatalf("work detail status = %d; body = %s", detail.Code, detail.Body.String())
+	}
+	var detailPayload map[string]any
+	if err := json.Unmarshal(detail.Body.Bytes(), &detailPayload); err != nil {
+		t.Fatal(err)
+	}
+	translations, ok := detailPayload["translations"].([]any)
+	if !ok || len(translations) != 1 {
+		t.Fatalf("work detail translations = %#v; body = %s", detailPayload["translations"], detail.Body.String())
+	}
+	translation, ok := translations[0].(map[string]any)
+	if !ok {
+		t.Fatalf("work detail translation = %#v, want object", translations[0])
+	}
+	if len(translation) != 1 || translation["translation_group"] != "Synthetic translation group" {
+		t.Fatalf("work detail translation = %#v, want only translation_group", translation)
+	}
+
+	cover := httptest.NewRecorder()
+	server.Routes().ServeHTTP(
+		cover,
+		httptest.NewRequest(http.MethodGet, "/cover?id="+folderID+"&size=640", nil),
+	)
+	if cover.Code != http.StatusOK {
+		t.Fatalf("cover status = %d; body = %s", cover.Code, cover.Body.String())
+	}
+	if contentType := cover.Header().Get("Content-Type"); contentType != "image/jpeg" {
+		t.Fatalf("cover content type = %q, want image/jpeg", contentType)
+	}
+	if cover.Body.Len() == 0 {
+		t.Fatal("cover body is empty")
+	}
 
 	pages := httptest.NewRecorder()
 	server.Routes().ServeHTTP(

@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 1,
+  "artifactProfileSha256": "a32c3782f3d09590cc934f518d43bc1c06574deb934cf7c922d90d1fbb104545",
+  "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
+  "reviewedAt": "2026-08-17T11:42:17Z",
+  "components": [
+    {
+      "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
+      "decision": "approved",
+      "licenseConclusion": "MIT",
+      "obligations": [
+        "Retain the mapped copyright notice, MIT license terms, and disclaimer in binary and container distributions."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/github.com/dustin/go-humanize@v1.0.1/LICENSE",
+          "sha256": "a973b4498c13eb74baa2a8e5c351426a6826f2fcdd909916dbe53ee2e755fd71"
+        }
+      ]
+    },
+    {
+      "id": "go-module:github.com/google/uuid@v1.6.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause",
+      "obligations": [
+        "Reproduce the mapped copyright notice, BSD-3-Clause conditions, and disclaimer in distribution materials.",
+        "Do not use Google or contributor names to endorse or promote derived products without specific prior written permission."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/github.com/google/uuid@v1.6.0/LICENSE",
+          "sha256": "0a8d61ed3cbfd5312326e8126c31ce9c627a283adc99131b56896d29ada04b2d"
+        }
+      ]
+    },
+    {
+      "id": "go-module:github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause",
+      "obligations": [
+        "Reproduce the mapped copyright notice, BSD-3-Clause conditions, and disclaimer in distribution materials.",
+        "Do not use rights-holder or contributor names to endorse or promote derived products without specific prior written permission."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec/LICENSE",
+          "sha256": "dd26a7abddd02e2d0aba97805b31f248ef7835d9e10da289b22e3b8ab78b324d"
+        }
+      ]
+    },
+    {
+      "id": "go-module:golang.org/x/image@v0.45.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
+      "obligations": [
+        "Distribute the mapped LICENSE and PATENTS texts.",
+        "Reproduce the copyright notice, conditions, and disclaimer, and do not use Google or contributor names for endorsement.",
+        "Observe the patent-litigation termination condition when relying on the additional patent grant."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/golang.org/x/image@v0.45.0/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "LICENSES/go/golang.org/x/image@v0.45.0/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "id": "go-module:golang.org/x/sys@v0.47.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
+      "obligations": [
+        "Distribute the mapped LICENSE and PATENTS texts.",
+        "Reproduce the copyright notice, conditions, and disclaimer, and do not use Google or contributor names for endorsement.",
+        "Observe the patent-litigation termination condition when relying on the additional patent grant."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/golang.org/x/sys@v0.47.0/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "LICENSES/go/golang.org/x/sys@v0.47.0/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "id": "go-module:golang.org/x/text@v0.41.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
+      "obligations": [
+        "Distribute the mapped LICENSE and PATENTS texts.",
+        "Reproduce the copyright notice, conditions, and disclaimer, and do not use Google or contributor names for endorsement.",
+        "Observe the patent-litigation termination condition when relying on the additional patent grant."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/golang.org/x/text@v0.41.0/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "LICENSES/go/golang.org/x/text@v0.41.0/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/libc@v1.72.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause AND MIT AND BSD-2-Clause with documented public-domain portions",
+      "obligations": [
+        "Distribute the mapped LICENSE and complete LICENSE-3RD-PARTY.md.",
+        "Reproduce all applicable copyright notices, license conditions, and disclaimers from the mapped texts.",
+        "Observe applicable BSD non-endorsement conditions."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE",
+          "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600"
+        },
+        {
+          "path": "LICENSES/go/modernc.org/libc@v1.72.0/LICENSE-3RD-PARTY.md",
+          "sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c"
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/mathutil@v1.7.1",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause",
+      "obligations": [
+        "Reproduce the mapped copyright notice, conditions, and disclaimer.",
+        "Do not use rights-holder or contributor names for endorsement without specific prior written permission."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/mathutil@v1.7.1/LICENSE",
+          "sha256": "bfa9bf72a72ca009fd62a8f84fca3dca67e51d93af96352723646599898b6cf5"
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/memory@v1.11.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause",
+      "obligations": [
+        "Distribute the mapped LICENSE, LICENSE-GO, and LICENSE-MMAP-GO texts.",
+        "Reproduce their copyright notices, conditions, and disclaimers, and observe applicable non-endorsement conditions."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE",
+          "sha256": "59895e669f48f168b6b858358f6005779cdf40a265f7828813061b56af67b496"
+        },
+        {
+          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-GO",
+          "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
+        },
+        {
+          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-MMAP-GO",
+          "sha256": "c2eba69f20d05414538c3a5df7694dde392e065ff70882e1625e90f5d6659fff"
+        }
+      ]
+    },
+    {
+      "id": "go-module:modernc.org/sqlite@v1.50.0",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause with documented SQLite public-domain dedication",
+      "obligations": [
+        "Distribute the mapped modernc BSD LICENSE and SQLITE-LICENSE public-domain provenance statement.",
+        "Reproduce the BSD copyright notice, conditions, and disclaimer, and observe its non-endorsement condition."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/LICENSE",
+          "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"
+        },
+        {
+          "path": "LICENSES/go/modernc.org/sqlite@v1.50.0/SQLITE-LICENSE",
+          "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0"
+        }
+      ]
+    },
+    {
+      "id": "go-toolchain-1.26.6",
+      "decision": "approved",
+      "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
+      "obligations": [
+        "Distribute the mapped Go LICENSE and PATENTS texts.",
+        "Reproduce the copyright notice, conditions, and disclaimer, and do not use Google or contributor names for endorsement.",
+        "Observe the patent-litigation termination condition when relying on the additional patent grant."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/go/toolchain-go1.26.6/LICENSE",
+          "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+        },
+        {
+          "path": "LICENSES/go/toolchain-go1.26.6/PATENTS",
+          "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
+        }
+      ]
+    },
+    {
+      "id": "npm:react-dom@19.2.7",
+      "decision": "approved",
+      "licenseConclusion": "MIT",
+      "obligations": [
+        "Retain the mapped Meta copyright notice, MIT license terms, and disclaimer in distributions."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/npm/react-dom@19.2.7/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "id": "npm:react@19.2.7",
+      "decision": "approved",
+      "licenseConclusion": "MIT",
+      "obligations": [
+        "Retain the mapped Meta copyright notice, MIT license terms, and disclaimer in distributions."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/npm/react@19.2.7/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "id": "npm:rolldown@1.1.5",
+      "decision": "approved",
+      "licenseConclusion": "MIT",
+      "obligations": [
+        "Distribute the mapped Rolldown LICENSE and complete THIRD-PARTY-LICENSE, including the Rollup and esbuild copyright notices and MIT terms."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/npm/rolldown@1.1.5/LICENSE",
+          "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734"
+        },
+        {
+          "path": "LICENSES/npm/rolldown@1.1.5/THIRD-PARTY-LICENSE",
+          "sha256": "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c"
+        }
+      ]
+    },
+    {
+      "id": "npm:scheduler@0.27.0",
+      "decision": "approved",
+      "licenseConclusion": "MIT",
+      "obligations": [
+        "Retain the mapped Meta copyright notice, MIT license terms, and disclaimer in distributions."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/npm/scheduler@0.27.0/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        }
+      ]
+    },
+    {
+      "id": "npm:vite@8.1.4",
+      "decision": "approved",
+      "licenseConclusion": "MIT AND Apache-2.0 AND BSD-2-Clause AND ISC AND CC0-1.0",
+      "obligations": [
+        "Distribute the complete mapped Vite LICENSE.md containing bundled dependency notices, license terms, and disclaimers.",
+        "Retain applicable attribution and modification notices; the reviewed npm package contains no separate NOTICE file.",
+        "Observe the patent-litigation termination condition when relying on Apache-2.0 patent grants."
+      ],
+      "files": [
+        {
+          "path": "LICENSES/npm/vite@8.1.4/LICENSE.md",
+          "sha256": "b1d741c26b53de1bbc0d4d7d3365b79888f9fe511527544a8a7b8e24dec43147"
+        }
+      ]
+    }
+  ]
+}

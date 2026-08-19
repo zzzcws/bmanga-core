@@ -62,7 +62,7 @@ func (s *Server) handleWork(w http.ResponseWriter, r *http.Request) {
 	recordTiming("workMeta")
 
 	translations, err := s.query(`
-		SELECT translation_group, action, action_reason
+		SELECT translation_group
 		FROM translation_items
 		WHERE candidate_id = ?
 		ORDER BY translation_group
@@ -82,24 +82,30 @@ func (s *Server) handleWork(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	recordTiming("workSeries")
-	doujinSeries, err := s.query(`
-		SELECT group_id, creator_display, series_title, sequence_label, sequence_kind
-		FROM doujin_series_items
-		WHERE candidate_id = ?
-	`, candidateID)
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
-		return
+	doujinSeries := []map[string]any{}
+	if s.localTableExists("doujin_series_items") {
+		doujinSeries, err = s.query(`
+			SELECT group_id, creator_display, series_title, sequence_label, sequence_kind
+			FROM doujin_series_items
+			WHERE candidate_id = ?
+		`, candidateID)
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	recordTiming("workDoujinSeries")
-	creators, err := s.query(`
-		SELECT creator_group_id, creator_display, parsed_title, event, parody
-		FROM doujin_creator_items
-		WHERE candidate_id = ?
-	`, candidateID)
-	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
-		return
+	creators := []map[string]any{}
+	if s.localTableExists("doujin_creator_items") {
+		creators, err = s.query(`
+			SELECT creator_group_id, creator_display, parsed_title, event, parody
+			FROM doujin_creator_items
+			WHERE candidate_id = ?
+		`, candidateID)
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	recordTiming("workCreators")
 	mark, err := s.getWorkUserMark(work)

@@ -117,3 +117,27 @@ test("series directory range labels expose both numeric and chapter bounds", () 
   assert.equal(seriesDirectoryRangeLabel(labels, 0), "第 1–50 组 · 第 1 卷 — 第 50 卷");
   assert.equal(seriesDirectoryRangeLabel(labels, 1), "第 51–87 组 · 第 51 卷 — 第 87 卷");
 });
+
+test("series outline fallbacks and range chrome support English and Japanese", () => {
+  const item = { candidate_id: "untitled", can_read: true, readable_page_count: 1 };
+  const data = {
+    series: { group_id: "series" },
+    items: [item],
+    sectioned: false,
+    sections: [],
+    cover_candidates: [],
+    mark: null,
+  };
+  const english = buildSeriesOutline(data, "en");
+  const japanese = buildSeriesOutline(data, "ja");
+  assert.equal(english.sections[0].title, "Chapter directory");
+  assert.equal(english.sections[0].groups[0].label, "Item 1");
+  assert.equal(japanese.sections[0].title, "章一覧");
+  assert.equal(japanese.sections[0].groups[0].label, "項目 1");
+
+  const labels = ["Volume 1", "Volume 2"];
+  assert.equal(seriesDirectoryRangeLabel(labels, 0, SERIES_DIRECTORY_RANGE_SIZE, "en"), "Groups 1–2 · Volume 1 — Volume 2");
+  assert.equal(seriesDirectoryRangeLabel(labels, 0, SERIES_DIRECTORY_RANGE_SIZE, "ja"), "グループ 1–2 · Volume 1 — Volume 2");
+  assert.equal(seriesDirectoryRangeLabel([], 0, SERIES_DIRECTORY_RANGE_SIZE, "en"), "No items");
+  assert.equal(seriesDirectoryRangeLabel([], 0, SERIES_DIRECTORY_RANGE_SIZE, "ja"), "項目なし");
+});
