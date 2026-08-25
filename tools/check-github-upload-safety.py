@@ -142,6 +142,7 @@ ALLOWED_URL_HOSTS = {
     "opencollective.com",
     "raw.githubusercontent.com",
     "registry.npmjs.org",
+    "token.actions.githubusercontent.com",
     "tidelift.com",
     "www.apache.org",
 }
