@@ -9,7 +9,7 @@
 [GHCR で5分間試す](#5-minute-ghcr-trial) ·
 [不具合を報告][bug-report] · [質問する][discussions]
 
-[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)
+[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.4)
 [![CI](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml)
 [![Container](https://img.shields.io/badge/GHCR-linux%2Famd64-2496ED?logo=docker&logoColor=white)](https://github.com/zzzcws/bmanga-core/pkgs/container/bmanga-core)
 [![License](https://img.shields.io/github/license/zzzcws/bmanga-core)](LICENSE)
@@ -19,7 +19,7 @@
 > **Linux/amd64 のみ** をサポートしています。インターネットに直接公開しないでください。
 
 > [!NOTE]
-> 公開中の `v0.1.0-alpha.3` イメージでは、English / 简体中文 / 日本語 の
+> 公開中の `v0.1.0-alpha.4` イメージでは、English / 简体中文 / 日本語 の
 > インターフェースを選択できます。この設定で切り替わるのは UI の文言のみで、
 > 書籍の内容やカタログのメタデータは翻訳されません。明示的に選択するまでは、
 > 簡体字中国語が安全な既定値です。
@@ -83,7 +83,7 @@ cp config/libraries.example.json config/libraries.json
 Git で追跡されない `.env` ファイルを編集し、少なくとも次の値を設定します。
 
 ```dotenv
-BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.3
+BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.4
 BMANGA_AUTH_USER=bmanga
 BMANGA_AUTH_PASSWORD=<a-long-random-password>
 BMANGA_SESSION_SECRET=<a-different-long-random-value>
@@ -108,7 +108,7 @@ docker compose --env-file .env down
 ```
 
 Alpha 期間中は、意図的に `latest` タグを公開しません。固定バージョンを更新する前に
-[リリースノート](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)
+[リリースノート](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.4)
 を確認してください。
 
 ## 早期テスターを募集中

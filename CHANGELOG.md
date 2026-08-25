@@ -6,6 +6,8 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+## [0.1.0-alpha.4] - 2026-08-25
+
 ### Changed
 
 - The reviewed frontend build chain now uses exact Node.js 24.19.0 from a
@@ -14,6 +16,8 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 - Frontend dependencies now use Vite 8.2.1, React 19.2.8, and Node 24-aligned
   type definitions; the reviewed browser artifact component set remains
   explicit and separate from type-only build inputs.
+- GitHub checkout, Go, Node.js, Python, and artifact-upload actions now use
+  reviewed major-version updates pinned to full commit SHAs.
 
 ### Security
 
