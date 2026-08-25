@@ -26,8 +26,8 @@ GO_VERSION = "1.26.6"
 NODE_VERSION = "24.19.0"
 GO_MOD_SHA256 = "40074b892b43b4fd4e6e97f2dae1bbe39d2bf3e8c6e44c6702e89daee36d0d4f"
 GO_SUM_SHA256 = "bfb24c4b1829ebf9b9c64751bfc27a089c756609ddb1a01f7bd699b80f0d7234"
-PACKAGE_JSON_SHA256 = "95eec68b5cae0e48454a8f2eb7c1b42080e67ab42908885e061daa761dbd5db7"
-PACKAGE_LOCK_SHA256 = "4d0bebbe7c97d2369da450762839f51a5eb47e6e03cf8b21527c5da06295ff4f"
+PACKAGE_JSON_SHA256 = "b2fe32e7fc95b22ba8ee4b6d3905faf982585586ddb8a8536c17b89d274a28a7"
+PACKAGE_LOCK_SHA256 = "1dbdeb0196518add8e93f10eef18e120b6ac06d51064f05e452b7b6a57a24732"
 SQLITE_TECHNICAL_REVIEW = (
     "LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json"
 )
@@ -153,7 +153,7 @@ NPM_COMPONENTS: list[tuple[str, str, str, list[tuple[str, str]]]] = [
     ),
     (
         "vite",
-        "8.2.1",
+        "8.2.2",
         "browser-injected-runtime",
         [("LICENSE.md", "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c")],
     ),
@@ -528,7 +528,7 @@ def generate() -> None:
                     {"name": "scheduler", "version": "0.27.0"},
                 ],
                 "injectedBuildRuntime": [
-                    {"name": "vite", "version": "8.2.1"},
+                    {"name": "vite", "version": "8.2.2"},
                     {"name": "rolldown", "version": "1.2.4"},
                 ],
                 "typeOnlyPackages": [
