@@ -8,7 +8,7 @@
 [5 分钟体验](#5-分钟体验ghcr) ·
 [报告问题][bug-report] · [参与讨论][discussions]
 
-[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)
+[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.4)
 [![CI](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml)
 [![Container](https://img.shields.io/badge/GHCR-linux%2Famd64-2496ED?logo=docker&logoColor=white)](https://github.com/zzzcws/bmanga-core/pkgs/container/bmanga-core)
 [![License](https://img.shields.io/github/license/zzzcws/bmanga-core)](LICENSE)
@@ -18,7 +18,7 @@
 > **Linux/amd64**，请勿将服务直接暴露到公网。
 
 > [!NOTE]
-> 当前发布的 `v0.1.0-alpha.3` 镜像提供 English / 简体中文 / 日本語 界面选择。
+> 当前发布的 `v0.1.0-alpha.4` 镜像提供 English / 简体中文 / 日本語 界面选择。
 > 该选择只切换界面文字，不会自动翻译书籍内容或书库元数据；在用户明确选择前，
 > 简体中文仍是安全默认语言。
 
@@ -72,7 +72,7 @@ cp config/libraries.example.json config/libraries.json
 编辑未跟踪的 `.env`，至少设置以下项目：
 
 ```dotenv
-BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.3
+BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.4
 BMANGA_AUTH_USER=bmanga
 BMANGA_AUTH_PASSWORD=<足够长的随机密码>
 BMANGA_SESSION_SECRET=<另一个足够长的随机值>
@@ -95,7 +95,7 @@ docker compose --env-file .env down
 ```
 
 Alpha 阶段不会发布 `latest` 标签。更新固定版本前，请先阅读
-[发布说明](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.3)。
+[发布说明](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.4)。
 
 ## 邀请早期测试者
 
