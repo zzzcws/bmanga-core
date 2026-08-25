@@ -24,15 +24,15 @@ REPO = Path(__file__).resolve().parents[1]
 LICENSES = REPO / "LICENSES"
 GO_VERSION = "1.26.6"
 NODE_VERSION = "24.19.0"
-GO_MOD_SHA256 = "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792"
-GO_SUM_SHA256 = "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc"
+GO_MOD_SHA256 = "40074b892b43b4fd4e6e97f2dae1bbe39d2bf3e8c6e44c6702e89daee36d0d4f"
+GO_SUM_SHA256 = "bfb24c4b1829ebf9b9c64751bfc27a089c756609ddb1a01f7bd699b80f0d7234"
 PACKAGE_JSON_SHA256 = "95eec68b5cae0e48454a8f2eb7c1b42080e67ab42908885e061daa761dbd5db7"
 PACKAGE_LOCK_SHA256 = "4d0bebbe7c97d2369da450762839f51a5eb47e6e03cf8b21527c5da06295ff4f"
 SQLITE_TECHNICAL_REVIEW = (
-    "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json"
+    "LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json"
 )
 SQLITE_TECHNICAL_REVIEW_SHA256 = (
-    "d1e3318b4fb1d28d9fd5bbf18681f7110689762168e005f2b32cad47cb813dcd"
+    "9d2ebd298da913fbe33f70dc98b82de9606b4067cc15f96919ad4f2c05a6f36d"
 )
 REVIEWED_SQLITE_PACKAGES = {
     "modernc.org/sqlite",
@@ -40,6 +40,9 @@ REVIEWED_SQLITE_PACKAGES = {
     "modernc.org/sqlite/vtab",
 }
 EXCLUDED_SQLITE_PACKAGES = {"modernc.org/sqlite/vec"}
+SQLITE_VEC_LICENSE_SHA256 = (
+    "6ce72bbe12d975bd5286e5ab0a064c069693300c47bccbc57bec18485f1621ea"
+)
 GO_LICENSE_HASH = "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
 GO_PATENTS_HASH = "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
 DOCKERFILE_FRONTEND = (
@@ -117,11 +120,11 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "modernc.org/sqlite",
-        "v1.56.0",
+        "v1.57.0",
         [
             ("LICENSE", "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"),
             (
-                "SQLITE-LICENSE",
+                "LICENSE-SQLITE",
                 "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
             ),
         ],
@@ -325,8 +328,8 @@ def generate() -> None:
         raise RuntimeError("SQLite technical review evidence is not valid UTF-8 JSON") from exc
     expected_subject = {
         "module": "modernc.org/sqlite",
-        "fromVersion": "v1.50.0",
-        "toVersion": "v1.56.0",
+        "fromVersion": "v1.56.0",
+        "toVersion": "v1.57.0",
         "requiredTransitiveModule": "modernc.org/libc",
         "requiredTransitiveVersion": "v1.74.4",
     }
@@ -380,6 +383,11 @@ def generate() -> None:
     verify_env.update({"GOWORK": "off", "GOFLAGS": ""})
     if run("go", "mod", "verify", env=verify_env) != "all modules verified":
         raise RuntimeError("Go module cache verification did not complete cleanly")
+    read_checked(
+        module_dir(modcache, "modernc.org/sqlite", "v1.57.0")
+        / "LICENSE-SQLITE_VEC",
+        SQLITE_VEC_LICENSE_SHA256,
+    )
     linkage = build_linkage()
 
     lock_path = REPO / "web-v2" / "package-lock.json"
