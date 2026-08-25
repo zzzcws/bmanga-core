@@ -339,6 +339,19 @@ class PublicationSafetyTest(unittest.TestCase):
         )
         self.assertEqual(blockers, [])
 
+    def test_reviewed_github_oidc_issuer_is_allowed_but_not_lookalikes(self):
+        issuer = "https://token.actions.githubusercontent.com"
+        blockers, _ = self.scan(
+            {"workflow.yml": f'issuer: "{issuer}"\n'}
+        )
+        self.assertEqual(blockers, [])
+
+        lookalike = issuer + ".unreviewed.org"
+        blockers, _ = self.scan(
+            {"workflow.yml": f'issuer: "{lookalike}"\n'}
+        )
+        self.assertIn("unreviewed_url_host", {row["key"] for row in blockers})
+
     def test_original_license_text_preserves_attribution_hosts(self):
         attribution = "https" + "://" + "historical-project" + ".example.org/license\n"
         blockers, _ = self.scan(
