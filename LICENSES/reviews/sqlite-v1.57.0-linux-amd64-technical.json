@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "reviewType": "dependency-upgrade-artifact-boundary",
   "reviewedBy": "OpenAI Codex technical dependency review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-19T06:16:47Z",
+  "reviewedAt": "2026-08-25T14:20:42Z",
   "subject": {
     "module": "modernc.org/sqlite",
-    "fromVersion": "v1.50.0",
-    "toVersion": "v1.56.0",
+    "fromVersion": "v1.56.0",
+    "toVersion": "v1.57.0",
     "requiredTransitiveModule": "modernc.org/libc",
     "requiredTransitiveVersion": "v1.74.4"
   },
@@ -26,8 +26,8 @@
     "runtimeBase": "scratch"
   },
   "integrityEvidence": {
-    "goModSha256": "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792",
-    "goSumSha256": "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc",
+    "goModSha256": "40074b892b43b4fd4e6e97f2dae1bbe39d2bf3e8c6e44c6702e89daee36d0d4f",
+    "goSumSha256": "bfb24c4b1829ebf9b9c64751bfc27a089c756609ddb1a01f7bd699b80f0d7234",
     "moduleChecksums": [
       {
         "module": "modernc.org/libc",
@@ -37,8 +37,8 @@
       },
       {
         "module": "modernc.org/sqlite",
-        "version": "v1.56.0",
-        "sum": "h1:/D8e2RfFqoy/Zc6PuC76U28zFwmI/sYx1Kjm4yEn9e0=",
+        "version": "v1.57.0",
+        "sum": "h1:qNQP6xnx5M0ISNtlnxoOX0+cD5bJ0/gr9aMmndFczzg=",
         "goModSum": "h1:yCJ2cmAaIkHQ25oXWrF8H4O1lIfPYPR26yCEDj2P3pQ="
       }
     ],
@@ -62,7 +62,7 @@
       "modernc.org/libc@v1.74.4",
       "modernc.org/mathutil@v1.7.1",
       "modernc.org/memory@v1.11.0",
-      "modernc.org/sqlite@v1.56.0"
+      "modernc.org/sqlite@v1.57.0"
     ],
     "importedSqlitePackages": [
       "modernc.org/sqlite",
@@ -73,6 +73,8 @@
       {
         "package": "modernc.org/sqlite/vec",
         "upstreamPayload": "sqlite-vec v0.1.9",
+        "licenseFile": "LICENSE-SQLITE_VEC",
+        "licenseSha256": "6ce72bbe12d975bd5286e5ab0a064c069693300c47bccbc57bec18485f1621ea",
         "presentInDownloadedModule": true,
         "requiresExplicitSideEffectImport": true,
         "importedByEntrypoints": false,
@@ -96,14 +98,15 @@
   "decision": {
     "status": "approved",
     "rationale": [
-      "The upgrade incorporates modernc.org/sqlite v1.56.0's journal-rollback corruption fix and its required modernc.org/libc v1.74.4 pin.",
-      "The reviewed modernc.org/sqlite and modernc.org/libc license originals are byte-identical to the previously approved texts, but remain versioned and mapped to the exact new module versions.",
+      "The upgrade adopts modernc.org/sqlite v1.57.0 while retaining modernc.org/libc v1.74.4; its new defensive-mode behavior is opt-in and the project does not construct custom Driver instances.",
+      "The reviewed BSD LICENSE and SQLite public-domain statement are byte-identical to the prior version, while the renamed LICENSE-SQLITE file is mapped to the exact new module version.",
       "The combined artifact profile retains the digest-pinned Node.js 24.19.0 frontend builder from main and a Node-free scratch runtime image.",
-      "The optional modernc.org/sqlite/vec package exists in the downloaded module but is not imported, linked, or copied into the scratch runtime artifact."
+      "The optional modernc.org/sqlite/vec package and its separately hashed MIT license exist in the downloaded module but are not imported, linked, or copied into the scratch runtime artifact."
     ],
     "residualRisks": [
-      "Importing modernc.org/sqlite/vec in the future would add sqlite-vec code and require its upstream license text, a new artifact review, and regenerated evidence before release.",
-      "Version 1.55.0 began interpreting mattn/go-sqlite3-compatible DSN aliases that 1.50.0 ignored. This project generates only the pre-existing _pragma form, whose accepted semantics are unchanged, and the complete test suite passed; any future externally supplied DSN using those aliases requires compatibility review.",
+      "Importing modernc.org/sqlite/vec in the future would add sqlite-vec code and require the separately recorded LICENSE-SQLITE_VEC text, a new artifact review, and regenerated evidence before release.",
+      "The new _defensive=1 mode rejects journal_mode=OFF, but this project does not enable _defensive and continues to generate only its reviewed _pragma DSN form.",
+      "The new Driver registration API has a narrow behavior change for caller-constructed Driver values combined with vtab.RegisterModule; this project blank-imports the default driver and uses sql.Open instead.",
       "Passing the checked tests and vulnerability scan reduces but does not eliminate regression risk in the upgraded database engine."
     ]
   }

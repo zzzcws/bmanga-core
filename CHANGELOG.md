@@ -6,6 +6,13 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+### Changed
+
+- Upgrade `modernc.org/sqlite` from 1.56.0 to 1.57.0 with regenerated
+  Linux/amd64 linkage, license, and artifact-boundary evidence. The optional
+  `modernc.org/sqlite/vec` payload remains excluded from both shipped binaries
+  and the scratch image.
+
 ## [0.1.0-alpha.4] - 2026-08-25
 
 ### Changed

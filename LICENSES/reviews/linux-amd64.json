@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "096851bbf82349efae950d207fc3da6c809f72d24db23337b0715f9f4facc4a8",
+  "artifactProfileSha256": "92a78b902de31b1f59a266beb7e63437abf4e85773eeaadf4b033645a814d021",
   "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-19T06:59:22Z",
+  "reviewedAt": "2026-08-25T14:26:38Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
@@ -167,22 +167,22 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/sqlite@v1.56.0",
+      "id": "go-module:modernc.org/sqlite@v1.57.0",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with documented SQLite public-domain dedication",
       "obligations": [
-        "Distribute the mapped modernc BSD LICENSE and SQLITE-LICENSE public-domain provenance statement.",
+        "Distribute the mapped modernc BSD LICENSE and LICENSE-SQLITE public-domain provenance statement.",
         "Reproduce the BSD copyright notice, conditions, and disclaimer, and observe its non-endorsement condition.",
         "This approval covers only the imported modernc.org/sqlite, modernc.org/sqlite/lib, and modernc.org/sqlite/vtab packages in the reviewed binaries.",
         "Do not import or distribute the optional modernc.org/sqlite/vec package without adding its sqlite-vec license text and completing a new artifact review."
       ],
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE",
           "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"
         },
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/SQLITE-LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE-SQLITE",
           "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0"
         }
       ]

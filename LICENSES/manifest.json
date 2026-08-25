@@ -11,11 +11,11 @@
       "goos": "linux",
       "goarch": "amd64",
       "cgoEnabled": false,
-      "goModSha256": "f90facd6da9381f3db114824b348080a54831a752b907a896996325897047792",
-      "goSumSha256": "a31d8099e84002ca17503d057548b3c239a09d870df1433aaa2dd19a8a27d8cc",
+      "goModSha256": "40074b892b43b4fd4e6e97f2dae1bbe39d2bf3e8c6e44c6702e89daee36d0d4f",
+      "goSumSha256": "bfb24c4b1829ebf9b9c64751bfc27a089c756609ddb1a01f7bd699b80f0d7234",
       "technicalReviewEvidence": {
-        "path": "LICENSES/reviews/sqlite-v1.56.0-linux-amd64-technical.json",
-        "sha256": "d1e3318b4fb1d28d9fd5bbf18681f7110689762168e005f2b32cad47cb813dcd"
+        "path": "LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json",
+        "sha256": "9d2ebd298da913fbe33f70dc98b82de9606b4067cc15f96919ad4f2c05a6f36d"
       },
       "binaryLinkage": [
         {
@@ -59,7 +59,7 @@
             },
             {
               "module": "modernc.org/sqlite",
-              "version": "v1.56.0"
+              "version": "v1.57.0"
             }
           ]
         },
@@ -104,7 +104,7 @@
             },
             {
               "module": "modernc.org/sqlite",
-              "version": "v1.56.0"
+              "version": "v1.57.0"
             }
           ]
         }
@@ -192,7 +192,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -218,7 +218,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -244,7 +244,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -280,7 +280,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -316,7 +316,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -352,7 +352,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -388,7 +388,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -414,7 +414,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -460,13 +460,13 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
-      "id": "go-module:modernc.org/sqlite@v1.56.0",
+      "id": "go-module:modernc.org/sqlite@v1.57.0",
       "name": "modernc.org/sqlite",
-      "version": "v1.56.0",
+      "version": "v1.57.0",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -474,29 +474,29 @@
       "reviewStatus": "human-reviewed",
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE",
           "bytes": 1489,
           "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/sqlite@v1.56.0/LICENSE",
+            "locator": "modernc.org/sqlite@v1.57.0/LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.56.0/SQLITE-LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE-SQLITE",
           "bytes": 1506,
           "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/sqlite@v1.56.0/SQLITE-LICENSE",
+            "locator": "modernc.org/sqlite@v1.57.0/LICENSE-SQLITE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -532,7 +532,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -558,7 +558,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -584,7 +584,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -621,7 +621,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -647,7 +647,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     },
     {
@@ -673,7 +673,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "1a4170185a4e9f3b02fb09c89cd5e6d6613389b20014dfba901e8bacab798f27"
+        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
       }
     }
   ]
