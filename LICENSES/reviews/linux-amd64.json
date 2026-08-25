@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "92a78b902de31b1f59a266beb7e63437abf4e85773eeaadf4b033645a814d021",
+  "artifactProfileSha256": "ab4cff56c5b4ff3bd5fe913290b32ef0a30533e25cc6b546e8ce5227c2278c25",
   "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-25T14:26:38Z",
+  "reviewedAt": "2026-08-25T14:37:14Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
@@ -268,7 +268,7 @@
       ]
     },
     {
-      "id": "npm:vite@8.2.1",
+      "id": "npm:vite@8.2.2",
       "decision": "approved",
       "licenseConclusion": "MIT AND Apache-2.0 AND BSD-2-Clause AND ISC AND CC0-1.0",
       "obligations": [
@@ -278,7 +278,7 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/vite@8.2.1/LICENSE.md",
+          "path": "LICENSES/npm/vite@8.2.2/LICENSE.md",
           "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c"
         }
       ]

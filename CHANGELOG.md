@@ -12,6 +12,9 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
   Linux/amd64 linkage, license, and artifact-boundary evidence. The optional
   `modernc.org/sqlite/vec` payload remains excluded from both shipped binaries
   and the scratch image.
+- Upgrade Vite from 8.2.1 to 8.2.2 and `@vitejs/plugin-react` from 6.0.5 to
+  6.1.0 with regenerated browser-source and license evidence. The reviewed
+  production web output remains byte-identical.
 
 ## [0.1.0-alpha.4] - 2026-08-25
 

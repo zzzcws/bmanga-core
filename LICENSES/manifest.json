@@ -113,9 +113,9 @@
     "web": {
       "nodeVersion": "24.19.0",
       "packageJson": "web-v2/package.json",
-      "packageJsonSha256": "95eec68b5cae0e48454a8f2eb7c1b42080e67ab42908885e061daa761dbd5db7",
+      "packageJsonSha256": "b2fe32e7fc95b22ba8ee4b6d3905faf982585586ddb8a8536c17b89d274a28a7",
       "packageLock": "web-v2/package-lock.json",
-      "packageLockSha256": "4d0bebbe7c97d2369da450762839f51a5eb47e6e03cf8b21527c5da06295ff4f",
+      "packageLockSha256": "1dbdeb0196518add8e93f10eef18e120b6ac06d51064f05e452b7b6a57a24732",
       "productionPackages": [
         {
           "name": "react",
@@ -133,7 +133,7 @@
       "injectedBuildRuntime": [
         {
           "name": "vite",
-          "version": "8.2.1"
+          "version": "8.2.2"
         },
         {
           "name": "rolldown",
@@ -192,7 +192,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -218,7 +218,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -244,7 +244,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -280,7 +280,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -316,7 +316,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -352,7 +352,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -388,7 +388,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -414,7 +414,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -460,7 +460,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -496,7 +496,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -532,7 +532,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -558,7 +558,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -584,7 +584,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -621,7 +621,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
@@ -647,33 +647,33 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     },
     {
-      "id": "npm:vite@8.2.1",
+      "id": "npm:vite@8.2.2",
       "name": "vite",
-      "version": "8.2.1",
+      "version": "8.2.2",
       "artifactRoles": [
         "browser-injected-runtime"
       ],
       "reviewStatus": "human-reviewed",
       "files": [
         {
-          "path": "LICENSES/npm/vite@8.2.1/LICENSE.md",
+          "path": "LICENSES/npm/vite@8.2.2/LICENSE.md",
           "bytes": 112425,
           "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c",
           "source": {
             "kind": "npm-ci-install",
             "locator": "node_modules/vite/LICENSE.md",
-            "lockIntegrity": "sha512-EU/eS7BH3XROHh2YnBefjM6DBKA6ZeMZEYQbj7NLWg5wHYlhB8B/Mayd5XsgWq+NFYccDOTemRpdETWR6Ka/lw==",
-            "lockResolved": "https://registry.npmjs.org/vite/-/vite-8.2.1.tgz"
+            "lockIntegrity": "sha512-cFKLV/PRgAUlIRm5WjMjJ86jrftzpqcgH+Us+DS8mI3CDNiH30Whrz8uHL3+MOLPAgqbMBAqWdAHAphOAM+z/Q==",
+            "lockResolved": "https://registry.npmjs.org/vite/-/vite-8.2.2.tgz"
           }
         }
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "f6f808a0f986b8e57d06e6c2e0f3b04058507b4a26db2c3762c79290ab76e6d7"
+        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
       }
     }
   ]

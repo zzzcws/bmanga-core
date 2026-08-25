@@ -55,7 +55,7 @@ evidence is recorded in
 `LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json`.
 
 The browser production tree contains React 19.2.8, React DOM 19.2.8, and
-Scheduler 0.27.0. The built bundle additionally contains Vite 8.2.1 injected
+Scheduler 0.27.0. The built bundle additionally contains Vite 8.2.2 injected
 runtime code and Rolldown 1.2.4's module-preload polyfill, so their complete
 published license files are included. Rolldown 1.2.4's npm archive includes
 both `LICENSE` and `THIRD-PARTY-LICENSE`; the inventory copies both files from
