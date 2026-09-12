@@ -4,10 +4,13 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 SOURCE_REPO = Path(__file__).resolve().parents[1]
@@ -325,6 +328,128 @@ class ThirdPartyLicenseGateTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(CHECKER.VerificationError, "Node toolchain guard"):
             CHECKER.verify_integrity(self.manifest)
+
+
+class GoLinkageColdCacheTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory(prefix="bmanga-go-cold-cache-test-")
+        self.addCleanup(self.temp.cleanup)
+        self.repo = Path(self.temp.name)
+        for name in ("go.mod", "go.sum"):
+            shutil.copy2(SOURCE_REPO / name, self.repo / name)
+        self.manifest = json.loads((SOURCE_REPO / "LICENSES/manifest.json").read_text(encoding="utf-8"))
+        self.modcache = self.repo / "empty-module-cache"
+        self.license = self.modcache / "modernc.org/sqlite@v1.58.0/LICENSE-SQLITE_VEC"
+        self.license_bytes = b"synthetic optional-license fixture\n"
+        self.events: list[str] = []
+        self.commands: list[tuple[str, ...]] = []
+        self.materialize = True
+        self.corrupt_license = False
+        self.fail_download = False
+        self.change_sum = False
+        self.verify_result = "all modules verified"
+        self.original_sha = CHECKER.sha256
+        for context in (
+            patch.object(CHECKER, "REPO", self.repo),
+            patch.object(CHECKER, "SQLITE_VEC_LICENSE_SHA256", hashlib.sha256(self.license_bytes).hexdigest()),
+            patch.object(CHECKER, "run", side_effect=self.run_go),
+            patch.object(CHECKER, "verify_original_copy"),
+            patch.object(CHECKER, "sha256", side_effect=self.sha),
+            patch.dict(os.environ, {"GOMODCACHE": str(self.modcache)}),
+        ):
+            context.start()
+            self.addCleanup(context.stop)
+
+    def sha(self, path: Path) -> str:
+        if path == self.license:
+            self.events.append("license-read")
+        return self.original_sha(path)
+
+    def run_go(self, *args: str, env: dict[str, str] | None = None) -> str:
+        self.commands.append(args)
+        if args == ("go", "version"):
+            return f"go version go{CHECKER.GO_VERSION} linux/amd64"
+        self.assertIsNotNone(env)
+        self.assertEqual(env["GOWORK"], "off")
+        self.assertEqual(env["GOFLAGS"], "-mod=readonly")
+        self.assertEqual(env["GOMODCACHE"], str(self.modcache))
+        self.assertEqual((env["GOOS"], env["GOARCH"], env["CGO_ENABLED"]), ("linux", "amd64", "0"))
+        if args == ("go", "mod", "download"):
+            self.events.append("download")
+            if self.fail_download:
+                raise subprocess.CalledProcessError(1, args)
+            if self.change_sum:
+                with (self.repo / "go.sum").open("ab") as target:
+                    target.write(b"unexpected change\n")
+            if self.materialize:
+                self.license.parent.mkdir(parents=True)
+                self.license.write_bytes(b"changed" if self.corrupt_license else self.license_bytes)
+            return ""
+        if args == ("go", "mod", "verify"):
+            self.events.append("verify")
+            return self.verify_result
+        if args == ("go", "env", "GOROOT"):
+            return str(self.repo / "go-root")
+        if args == ("go", "env", "GOMODCACHE"):
+            return str(self.modcache)
+        if args[:2] == ("go", "list"):
+            return "\n".join(sorted(CHECKER.REVIEWED_SQLITE_PACKAGES))
+        if args[:2] == ("go", "build"):
+            self.assertIn("-mod=readonly", args)
+            return ""
+        if args[:3] == ("go", "version", "-m"):
+            package = "cmd/" + Path(args[3]).name
+            entry = next(item for item in self.manifest["artifactProfile"]["go"]["binaryLinkage"] if item["package"] == package)
+            return f"binary: go{CHECKER.GO_VERSION}\n" + "\n".join(
+                f"\tdep\t{item['module']}\t{item['version']}\th1:fixture" for item in entry["externalModules"]
+            )
+        if args[:3] == ("go", "tool", "nm"):
+            return ""
+        self.fail(f"unexpected Go command: {args}")
+
+    def test_empty_cache_download_precedes_verify_and_source_read(self) -> None:
+        self.assertFalse(self.modcache.exists())
+        before = {name: (self.repo / name).read_bytes() for name in ("go.mod", "go.sum")}
+        CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.events, ["download", "verify", "license-read"])
+        self.assertEqual(before, {name: (self.repo / name).read_bytes() for name in before})
+
+    def test_failed_download_cannot_verify_read_or_build(self) -> None:
+        self.fail_download = True
+        with self.assertRaises(subprocess.CalledProcessError):
+            CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.events, ["download"])
+        self.assertEqual(self.commands, [("go", "version"), ("go", "mod", "download")])
+
+    def test_failed_cache_verification_cannot_read_or_build(self) -> None:
+        self.verify_result = "not verified"
+        with self.assertRaisesRegex(CHECKER.VerificationError, "cache verification"):
+            CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.events, ["download", "verify"])
+
+    def test_missing_and_changed_source_are_distinct(self) -> None:
+        self.materialize = False
+        with self.assertRaisesRegex(CHECKER.VerificationError, "source is missing after module download"):
+            CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.events, ["download", "verify"])
+        self.events.clear()
+        self.materialize = True
+        self.corrupt_license = True
+        with self.assertRaisesRegex(CHECKER.VerificationError, "license source changed"):
+            CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.events, ["download", "verify", "license-read"])
+
+    def test_changed_module_input_rejected_before_download(self) -> None:
+        (self.repo / "go.mod").write_bytes(b"unreviewed module\n")
+        with self.assertRaisesRegex(CHECKER.VerificationError, "reviewed go.mod changed"):
+            CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.commands, [("go", "version")])
+
+    def test_download_must_not_change_pinned_module_inputs(self) -> None:
+        self.change_sum = True
+        with self.assertRaisesRegex(CHECKER.VerificationError, "reviewed go.sum changed"):
+            CHECKER.verify_go_linkage(self.manifest)
+        self.assertEqual(self.events, ["download"])
 
 
 if __name__ == "__main__":

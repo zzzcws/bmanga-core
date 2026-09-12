@@ -6,7 +6,18 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
-## [0.1.0-alpha.5] - 2026-09-12
+## [0.1.0-alpha.6] - 2026-09-12
+
+### Fixed
+
+- Materialize the exact locked Go dependency graph before verifying source
+  license hashes, so release checks work in a genuinely empty module cache.
+  Keep all checksum and license checks fail-closed and add regression tests.
+- Include the maintenance changes below. The immutable alpha.5 source tag
+  was stopped by this gate before image construction; no alpha.5 container
+  or GitHub release was published. That tag is retained for the audit trail.
+
+## [0.1.0-alpha.5] - 2026-09-12 (candidate; not published)
 
 ### Changed
 
