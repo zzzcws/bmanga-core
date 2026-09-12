@@ -23,6 +23,22 @@ export interface ReaderScrollAnchor {
   y: number;
 }
 
+/** The cache decodes a separate Image object. A newly mounted visible image
+ * can still have no intrinsic size, even when that cache request is complete. */
+export function readerImageReadyForScroll(
+  image: { complete: boolean; src: string; naturalWidth: number; naturalHeight: number } | null,
+  expected: { loading: boolean; url: string; width: number; height: number },
+): boolean {
+  return !expected.loading
+    && Boolean(expected.url)
+    && expected.width > 0
+    && expected.height > 0
+    && Boolean(image?.complete
+      && image.src === expected.url
+      && image.naturalWidth === expected.width
+      && image.naturalHeight === expected.height);
+}
+
 function finitePositive(value: number, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }

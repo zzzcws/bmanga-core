@@ -150,6 +150,7 @@ import {
   type ReaderScrollAnchor,
   type ReaderScrollGeometry,
   readerImageIsLongStrip,
+  readerImageReadyForScroll,
   readerScrollAnchorForGeometry,
   readerScrollablePageFinished,
   readerScrollPositionForAnchor,
@@ -288,6 +289,15 @@ function readerStageScrollGeometry(stage: HTMLElement): ReaderScrollGeometry {
     scrollTop: Math.max(0, stage.scrollTop),
     scrollWidth: Math.max(0, stage.scrollWidth),
   };
+}
+
+function readerStageImageReady(stage: HTMLElement, current: ReaderState): boolean {
+  return readerImageReadyForScroll(stage.querySelector<HTMLImageElement>(".reader-image"), {
+    loading: current.imageLoading,
+    url: current.imageURL,
+    width: current.imageNaturalWidth,
+    height: current.imageNaturalHeight,
+  });
 }
 
 function libraryPageRouteSignature(value: BrowseRouteState): string {
@@ -1450,7 +1460,8 @@ function App() {
 
   const readerWithLiveScroll = useCallback((current: ReaderState): ReaderState => {
     const stage = readerStageRef.current;
-    if (!stage || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return current;
+    if (!stage || current.restoreScroll || !readerStageImageReady(stage, current)
+      || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return current;
     const liveGeometry = readerStageScrollGeometry(stage);
     const previousGeometry = readerScrollGeometryRef.current;
     readerScrollGeometryRef.current = previousGeometry && readerResizeAnchorRef.current
@@ -3150,13 +3161,15 @@ function App() {
     const manifestID = String(current.pages.page_manifest_id || current.pages.manifest_hash || "unknown");
     const saveKey = `${candidateID}\u0000${manifestID}`;
     const stage = readerStageRef.current;
-    const liveGeometry = stage ? readerStageScrollGeometry(stage) : null;
+    const liveGeometry = stage && !current.restoreScroll && readerStageImageReady(stage, current)
+      ? readerStageScrollGeometry(stage) : null;
     const scrollableWidthLayout = readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight);
     const liveScrollTop = scrollableWidthLayout && liveGeometry ? Math.max(0, Math.round(liveGeometry.scrollTop)) : Math.max(0, Math.round(current.stageScrollTop));
     const liveScrollLeft = scrollableWidthLayout && liveGeometry ? Math.max(0, Math.round(liveGeometry.scrollLeft)) : Math.max(0, Math.round(current.stageScrollLeft));
     const currentSplitWide = splitWideActive(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight);
     const completed = current.index >= current.pages.count - 1
       && !current.imageLoading
+      && (!current.restoreScroll || current.ending)
       && !current.error
       && (!currentSplitWide || current.splitPanel >= 1)
       && readerScrollablePageFinished(scrollableWidthLayout, current.ending, liveGeometry);
@@ -3436,8 +3449,10 @@ function App() {
       imageLoading: true,
       error: "",
     };
+    // This is the user's explicit fit change, not deferred work that may run
+    // after a later image/fit has already been scrolled.
+    readerStageRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setReader(next);
-    window.requestAnimationFrame(() => readerStageRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" }));
     void persistReaderRef.current(next, { silent: true });
     revealReaderChrome();
   }, [revealReaderChrome]);
@@ -3445,7 +3460,8 @@ function App() {
   const handleReaderScroll = useCallback(() => {
     const current = uiRef.current?.reader;
     const stage = readerStageRef.current;
-    if (!current || !stage || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return;
+    if (!current || !stage || current.restoreScroll || !readerStageImageReady(stage, current)
+      || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return;
     const liveGeometry = readerStageScrollGeometry(stage);
     const previousGeometry = readerScrollGeometryRef.current;
     readerScrollGeometryRef.current = previousGeometry && readerResizeAnchorRef.current
@@ -3455,7 +3471,8 @@ function App() {
     readerScrollTimerRef.current = window.setTimeout(() => {
       const latest = uiRef.current?.reader;
       const latestStage = readerStageRef.current;
-      if (!latest || !latestStage || !readerUsesScrollableWidthLayout(latest.fitMode, latest.imageNaturalWidth, latest.imageNaturalHeight)) return;
+      if (!latest || !latestStage || latest.restoreScroll || !readerStageImageReady(latestStage, latest)
+        || !readerUsesScrollableWidthLayout(latest.fitMode, latest.imageNaturalWidth, latest.imageNaturalHeight)) return;
       const scrolled = {
         ...latest,
         stageScrollTop: Math.max(0, Math.round(latestStage.scrollTop)),
@@ -3721,11 +3738,12 @@ function App() {
       if (disposed) return;
       const current = uiRef.current?.reader;
       const plan = readerDisplayedImagePlanRef.current;
-      if (!current || !plan || current.ending) {
+      if (!current || !plan || current.ending || current.error) {
         readerResizeAnchorRef.current = null;
         return;
       }
-      if (current.imageLoading) {
+      const stage = readerStageRef.current;
+      if (current.imageLoading || current.restoreScroll || !stage || !readerStageImageReady(stage, current)) {
         readerResizeTimerRef.current = window.setTimeout(reconcileWidthBucket, 180);
         return;
       }
@@ -3736,7 +3754,6 @@ function App() {
         readerResizeAnchorRef.current = null;
         return;
       }
-      const stage = readerStageRef.current;
       const storedResizeAnchor = readerResizeAnchorRef.current;
       const resizeAnchor = storedResizeAnchor
         && storedResizeAnchor.candidateID === current.item.candidate_id
@@ -3794,6 +3811,8 @@ function App() {
       if (current
         && stage
         && !current.imageLoading
+        && !current.restoreScroll
+        && readerStageImageReady(stage, current)
         && current.index === current.requestedIndex
         && !readerResizeAnchorRef.current
         && readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) {
@@ -3869,36 +3888,48 @@ function App() {
   }, [reader?.imageURL, reader?.index, reader?.item.candidate_id]);
 
   useLayoutEffect(() => {
-    if (!reader?.imageURL || !reader.restoreScroll) return undefined;
-    const latest = uiRef.current?.reader;
+    if (!reader?.imageURL || !reader.restoreScroll || reader.imageLoading || reader.ending) return undefined;
     const stage = readerStageRef.current;
-    if (!latest || !stage || latest.imageURL !== reader.imageURL) return undefined;
-    const scrollableWidthLayout = readerUsesScrollableWidthLayout(latest.fitMode, latest.imageNaturalWidth, latest.imageNaturalHeight);
-    const storedResizeAnchor = scrollableWidthLayout ? readerResizeAnchorRef.current : null;
-    const resizeAnchor = storedResizeAnchor
-      && storedResizeAnchor.candidateID === latest.item.candidate_id
-      && storedResizeAnchor.index === latest.index
-      ? storedResizeAnchor
-      : null;
-    const anchoredPosition = resizeAnchor
-      ? readerScrollPositionForAnchor(resizeAnchor, readerStageScrollGeometry(stage))
-      : null;
-    const top = scrollableWidthLayout ? anchoredPosition?.top ?? latest.stageScrollTop : 0;
-    const left = scrollableWidthLayout ? anchoredPosition?.left ?? latest.stageScrollLeft : 0;
-    stage.scrollTo({ top, left, behavior: "auto" });
-    readerResizeAnchorRef.current = null;
-    const settledGeometry = readerStageScrollGeometry(stage);
-    readerScrollGeometryRef.current = settledGeometry;
-    const settled = {
-      ...latest,
-      stageScrollTop: Math.max(0, Math.round(settledGeometry.scrollTop)),
-      stageScrollLeft: Math.max(0, Math.round(settledGeometry.scrollLeft)),
-      restoreScroll: false,
+    const image = stage?.querySelector<HTMLImageElement>(".reader-image");
+    if (!stage || !image) return undefined;
+    const restore = () => {
+      const latest = uiRef.current?.reader;
+      if (!latest || !latest.restoreScroll || latest.ending || readerStageRef.current !== stage
+        || latest.item.candidate_id !== reader.item.candidate_id
+        || latest.index !== reader.index || latest.pageRevision !== reader.pageRevision
+        || latest.fitMode !== reader.fitMode || latest.imageURL !== reader.imageURL
+        || !readerStageImageReady(stage, latest)) return;
+      const scrollableWidthLayout = readerUsesScrollableWidthLayout(latest.fitMode, latest.imageNaturalWidth, latest.imageNaturalHeight);
+      const storedResizeAnchor = scrollableWidthLayout ? readerResizeAnchorRef.current : null;
+      const resizeAnchor = storedResizeAnchor
+        && storedResizeAnchor.candidateID === latest.item.candidate_id
+        && storedResizeAnchor.index === latest.index
+        ? storedResizeAnchor
+        : null;
+      const anchoredPosition = resizeAnchor
+        ? readerScrollPositionForAnchor(resizeAnchor, readerStageScrollGeometry(stage))
+        : null;
+      const top = scrollableWidthLayout ? anchoredPosition?.top ?? latest.stageScrollTop : 0;
+      const left = scrollableWidthLayout ? anchoredPosition?.left ?? latest.stageScrollLeft : 0;
+      stage.scrollTo({ top, left, behavior: "auto" });
+      readerResizeAnchorRef.current = null;
+      const settledGeometry = readerStageScrollGeometry(stage);
+      readerScrollGeometryRef.current = settledGeometry;
+      const settled = {
+        ...latest,
+        stageScrollTop: Math.max(0, Math.round(settledGeometry.scrollTop)),
+        stageScrollLeft: Math.max(0, Math.round(settledGeometry.scrollLeft)),
+        restoreScroll: false,
+      };
+      setReader(settled);
+      void persistReaderRef.current(settled, { silent: true });
     };
-    setReader(settled);
-    void persistReaderRef.current(settled, { silent: true });
-    return undefined;
-  }, [reader?.fitMode, reader?.imageURL, reader?.restoreScroll]);
+    // The cache's decoded Image is not the newly mounted DOM image. Keep the
+    // anchor pending until this exact visible image has intrinsic dimensions.
+    image.addEventListener("load", restore);
+    restore();
+    return () => image.removeEventListener("load", restore);
+  }, [reader?.fitMode, reader?.imageURL, reader?.restoreScroll, reader?.imageLoading, reader?.ending, reader?.item.candidate_id, reader?.index, reader?.pageRevision]);
 
   useEffect(() => {
     if (!reader) {
@@ -4590,7 +4621,7 @@ function App() {
               </article>
             ) : (
               <>
-                {reader.imageURL ? <img key={reader.imageURL} className={`reader-image ${readerSplitWideActive ? "is-split-wide" : ""}`} src={reader.imageURL} alt={readerSplitWideActive ? reader.splitPanel === 0 ? tr("第 {page} 页右半页", "Page {page}, right half", "{page} ページ目、右半分", { page: number(reader.index + 1) }) : tr("第 {page} 页左半页", "Page {page}, left half", "{page} ページ目、左半分", { page: number(reader.index + 1) }) : tr("第 {page} 页", "Page {page}", "{page} ページ目", { page: number(reader.index + 1) })} draggable={false} style={readerSplitImageStyle} /> : null}
+                {reader.imageURL ? <img key={reader.imageURL} className={`reader-image ${readerSplitWideActive ? "is-split-wide" : ""}`} src={reader.imageURL} alt={readerSplitWideActive ? reader.splitPanel === 0 ? tr("第 {page} 页右半页", "Page {page}, right half", "{page} ページ目、右半分", { page: number(reader.index + 1) }) : tr("第 {page} 页左半页", "Page {page}, left half", "{page} ページ目、左半分", { page: number(reader.index + 1) }) : tr("第 {page} 页", "Page {page}", "{page} ページ目", { page: number(reader.index + 1) })} draggable={false} width={reader.imageNaturalWidth || undefined} height={reader.imageNaturalHeight || undefined} style={readerSplitImageStyle} /> : null}
                 {readerVisualLoading ? <div className="reader-loading-layer"><span>{tr("正在显影第 {page} 页…", "Rendering page {page}…", "{page} ページ目を表示しています…", { page: number(reader.requestedIndex + 1) })}</span></div> : null}
                 {reader.error ? <div className="reader-error-layer" role="alert"><div><h3>{tr("这一页没有顺利打开", "This page did not open", "このページを開けませんでした")}</h3><p>{reader.error}</p><div className="reader-error-actions"><button type="button" onClick={retryReaderPage}>{tr("重试本页", "Retry this page", "このページを再試行")}</button>{reader.requestedIndex > 0 ? <button type="button" onClick={() => moveReader(-1)}>{tr("上一页", "Previous page", "前のページ")}</button> : null}{reader.requestedIndex < reader.pages.count - 1 ? <button type="button" onClick={() => moveReader(1)}>{tr("下一页", "Next page", "次のページ")}</button> : null}<button type="button" onClick={closeReader}>{tr("退出", "Exit", "閉じる")}</button></div></div></div> : null}
               </>

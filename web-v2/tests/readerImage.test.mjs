@@ -7,6 +7,7 @@ import {
   readerImageCacheBucket,
   readerImageMaxForViewport,
   readerImageIsLongStrip,
+  readerImageReadyForScroll,
   readerUsesScrollableWidthLayout,
   readerScrollAtEnd,
   readerScrollablePageFinished,
@@ -74,6 +75,7 @@ test("a single tall page is finished only after reaching its bottom", () => {
   assert.equal(readerScrollablePageFinished(true, false, { ...page, scrollTop: 7200 }), true);
   assert.equal(readerScrollablePageFinished(false, false, page), true);
   assert.equal(readerScrollablePageFinished(true, true, page), true);
+  assert.equal(readerScrollablePageFinished(true, true, null), true);
   assert.equal(readerScrollAtEnd(7192, 8000, 800), true);
   assert.equal(readerScrollAtEnd(7191, 8000, 800), false);
   assert.equal(readerScrollAtEnd(0, 500, 800), true);
@@ -88,6 +90,39 @@ test("resizing width preserves the content anchor and end position", () => {
   const horizontallyScrolled = { ...page, scrollWidth: 780, scrollLeft: 100 };
   assert.ok(Math.abs(readerScrollPositionForAnchor(readerScrollAnchorForGeometry(horizontallyScrolled), { ...larger, scrollWidth: 1560 }).left - 200) < 1e-9);
   assert.deepEqual(readerScrollPositionForAnchor(anchor, { ...page, scrollHeight: 100 }), { left: 0, top: 0 });
+});
+
+test("scroll restoration waits for the matching visible image, not the decoded cache entry", () => {
+  const expected = { loading: false, url: "blob:synthetic-new-width", width: 1200, height: 9600 };
+  const ready = { complete: true, src: expected.url, naturalWidth: 1200, naturalHeight: 9600 };
+  assert.equal(readerImageReadyForScroll(null, expected), false);
+  assert.equal(readerImageReadyForScroll({ ...ready, complete: false, naturalWidth: 0, naturalHeight: 0 }, expected), false);
+  assert.equal(readerImageReadyForScroll({ ...ready, naturalHeight: 0 }, expected), false);
+  assert.equal(readerImageReadyForScroll({ ...ready, src: "blob:synthetic-old-width" }, expected), false);
+  assert.equal(readerImageReadyForScroll({ ...ready, naturalWidth: 300, naturalHeight: 2400 }, expected), false);
+  assert.equal(readerImageReadyForScroll(ready, { ...expected, loading: true }), false);
+  assert.equal(readerImageReadyForScroll(ready, expected), true);
+});
+
+test("a pending visible-image load does not consume the source-content anchor on collapsed layout", () => {
+  const before = { clientHeight: 844, clientWidth: 370, scrollHeight: 2960, scrollWidth: 370, scrollTop: 1000, scrollLeft: 0 };
+  const anchor = readerScrollAnchorForGeometry(before);
+  const expected = { loading: false, url: "blob:synthetic-new-width", width: 1200, height: 9600 };
+  let pending = anchor;
+  const image = { complete: false, src: expected.url, naturalWidth: 0, naturalHeight: 0 };
+  let restored = null;
+  const restore = (geometry) => {
+    if (!pending || !readerImageReadyForScroll(image, expected)) return;
+    restored = readerScrollPositionForAnchor(pending, geometry);
+    pending = null;
+  };
+  restore({ ...before, clientWidth: 580, scrollWidth: 580, scrollHeight: 844, scrollTop: 0 });
+  assert.equal(restored, null);
+  assert.equal(pending, anchor);
+  Object.assign(image, { complete: true, naturalWidth: 1200, naturalHeight: 9600 });
+  restore({ ...before, clientWidth: 580, scrollWidth: 580, scrollHeight: 4640, scrollTop: 0 });
+  assert.equal(pending, null);
+  assert.ok(Math.abs(restored.top / 4640 - 1000 / 2960) < 1e-9);
 });
 
 test("split-wide regression styles never interpolate the persistent crop transform", async () => {

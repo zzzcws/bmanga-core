@@ -18,9 +18,11 @@ node tests/webtoon-ui-smoke.mjs
 ```
 
 On Windows set `BMANGA_UI_SMOKE_TOOL_ROOT` to the separate tooling directory.
-The harness can use installed Chrome/Edge, or `BMANGA_UI_SMOKE_BROWSER` can point
-to a chosen Chromium executable. Without that override it also supports
-Playwright's installed Chromium (including Linux CI). No package/lockfile edits
+The harness prefers `BMANGA_UI_SMOKE_BROWSER`, then Playwright's installed
+Chromium matching the test-tool version (also used in Linux CI), and only then
+system Chrome/Edge. Set `PLAYWRIGHT_BROWSERS_PATH` when using a separate browser
+cache. Prefer the matching Chromium for final regression checks so that an older
+system browser cannot mask a browser-specific race. No package/lockfile edits
 or runtime browser dependency are needed.
 
 Coverage includes directory-first loading behind a deliberately held progress
@@ -29,7 +31,8 @@ fencing, genuine queued-progress ACKs, personal-mark responses, deliberate
 directory collapse, preserved unsaved notes/focus/scroll across visibility and
 resize, and 320px detail layout. The reader test uses three 1200×9600 synthetic
 strips, checks page order and decoded one-pixel contrast, longest-edge to
-width-quality refetch, explicit fit changes, width/height resize anchors, and
+width-quality refetch (including a deliberately delayed replacement), explicit
+fit changes, settled width/height resize anchors, and
 absence of premature completion.
 
 This validates Chromium rendering and request contracts with synthetic responses.

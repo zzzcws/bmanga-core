@@ -75,9 +75,9 @@ export async function syntheticUI({ routeAPI, viewport = { width: 390, height: 8
   assert(existsSync(viteEntry), "Run npm ci in web-v2 before the synthetic UI smoke");
   const { chromium } = createRequire(join(toolRoot, "package.json"))("playwright-core");
   const executablePath = [process.env.BMANGA_UI_SMOKE_BROWSER,
+    chromium.executablePath(),
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
-    "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-    chromium.executablePath()].find((path) => path && existsSync(path));
+    "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"].find((path) => path && existsSync(path));
   assert(executablePath, "Set BMANGA_UI_SMOKE_BROWSER to an installed Chromium browser");
   const listener = createServer();
   await new Promise((resolveListen, reject) => {
