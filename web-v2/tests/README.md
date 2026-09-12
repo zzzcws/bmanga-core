@@ -33,7 +33,9 @@ resize, and 320px detail layout. The reader test uses three 1200×9600 synthetic
 strips, checks page order and decoded one-pixel contrast, longest-edge to
 width-quality refetch (including a deliberately delayed replacement), explicit
 fit changes, settled width/height resize anchors, and
-absence of premature completion.
+absence of premature completion, and a positive completion acknowledgement after
+explicitly finishing the last strip. Settlement does not depend on the expected
+scroll position; a fully decoded but incorrectly reset image still fails.
 
 This validates Chromium rendering and request contracts with synthetic responses.
 It does not claim real Safari/iOS, arbitrary comic files, source-site availability,

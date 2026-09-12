@@ -32,7 +32,7 @@ const ui = await syntheticUI({ routeAPI: async ({ request, route, url, json }) =
     const width = maxWidth ? Math.min(1200, maxWidth) : max ? Math.min(1200, Math.floor(max / 8)) : 1200;
     const height = width * 8;
     served.push({ index, width, height, maxWidth, max });
-    if (resizeResponseGate && maxWidth > 1200) {
+    if (resizeResponseGate && index === 0 && maxWidth > 1200) {
       resizeRequestStarted = true;
       await resizeResponseGate.promise;
     }
@@ -147,12 +147,17 @@ try {
   await assertStrip(0);
   await page.locator(".reader-stage").evaluate((stage) => { stage.scrollTop = 1000; });
   const anchorBefore = await page.locator(".reader-stage").evaluate((stage) => stage.scrollTop / stage.scrollHeight);
+  const sourceBeforeResize = await page.evaluate(() => window.__readerGeometry().source);
   resizeResponseGate = ui.gate();
   await page.setViewportSize({ width: 600, height: 844 });
   for (let attempt = 0; !resizeRequestStarted && attempt < 100; attempt++) await delay(25);
   assert(resizeRequestStarted, "Width resize must exercise the new physical-pixel request bucket");
   await delay(220); // Deliberately slow the new bucket; this is fixture latency, not settlement.
   resizeResponseGate.release(); resizeResponseGate = null;
+  await page.waitForFunction((oldSource) => {
+    const geometry = window.__readerGeometry();
+    return geometry?.complete && geometry.source !== oldSource;
+  }, sourceBeforeResize);
   await waitForReaderSettled("Auto");
   const anchorAfter = await page.locator(".reader-stage").evaluate((stage) => stage.scrollTop / stage.scrollHeight);
   assert(Math.abs(anchorBefore - anchorAfter) < 0.02, `Width resize lost source-content anchor: ${anchorBefore} -> ${anchorAfter}`);
