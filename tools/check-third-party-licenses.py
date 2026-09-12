@@ -916,9 +916,23 @@ def verify_go_linkage(manifest: dict[str, Any]) -> None:
             "GOARCH": "amd64",
             "CGO_ENABLED": "0",
             "GOWORK": "off",
-            "GOFLAGS": "",
+            "GOFLAGS": "-mod=readonly",
         }
     )
+    # `go mod verify` checks modules that are already cached; it does not
+    # populate a fresh runner's cache. Materialize only the pinned module
+    # graph before inspecting any original license files. Never use get/tidy
+    # or permit this verification step to silently change the reviewed inputs.
+    def verify_module_inputs() -> None:
+        for name, expected in (("go.mod", GO_MOD_SHA256), ("go.sum", GO_SUM_SHA256)):
+            if sha256(REPO / name) != expected:
+                raise VerificationError(f"reviewed {name} changed during linkage verification")
+
+    verify_module_inputs()
+    try:
+        run("go", "mod", "download", env=build_env)
+    finally:
+        verify_module_inputs()
     if run("go", "mod", "verify", env=build_env) != "all modules verified":
         raise VerificationError("Go module cache verification did not complete cleanly")
     goroot = Path(run("go", "env", "GOROOT", env=build_env))
@@ -929,10 +943,9 @@ def verify_go_linkage(manifest: dict[str, Any]) -> None:
         / "sqlite@v1.58.0"
         / "LICENSE-SQLITE_VEC"
     )
-    if (
-        not sqlite_vec_license.is_file()
-        or sha256(sqlite_vec_license) != SQLITE_VEC_LICENSE_SHA256
-    ):
+    if not sqlite_vec_license.is_file():
+        raise VerificationError("reviewed optional sqlite-vec license source is missing after module download")
+    if sha256(sqlite_vec_license) != SQLITE_VEC_LICENSE_SHA256:
         raise VerificationError("reviewed optional sqlite-vec license source changed")
     with tempfile.TemporaryDirectory(prefix="bmanga-license-verify-") as temp:
         for package, expected in expected_by_package.items():
