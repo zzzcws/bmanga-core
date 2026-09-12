@@ -23,7 +23,7 @@ import {
   getReadingHistory,
   getSeries,
   getSeriesDetail,
-  getSeriesProgress,
+  getSeriesProgressSummary,
   getShelf,
   getUserMark,
   getWork,
@@ -146,8 +146,20 @@ import {
   waitForReaderPreparation,
 } from "./lib/readerPreparationCache";
 import { splitWideActive, splitWidePanelStep } from "./lib/readerSpread";
-import { readerUsesSourceQuality, snapReaderPixel } from "./lib/readerImage";
 import {
+  type ReaderScrollAnchor,
+  type ReaderScrollGeometry,
+  readerImageIsLongStrip,
+  readerImageReadyForScroll,
+  readerScrollAnchorForGeometry,
+  readerScrollablePageFinished,
+  readerScrollPositionForAnchor,
+  readerUsesScrollableWidthLayout,
+  readerUsesSourceQuality,
+  snapReaderPixel,
+} from "./lib/readerImage";
+import {
+  applySeriesProgressSummary,
   patchCatalogItemProgress,
   patchContinueTargetProgress,
   patchDetailProgress,
@@ -263,6 +275,31 @@ type LibraryPageStartupMutationStage = {
   notBefore: number;
 };
 
+type ReaderResizeAnchor = ReaderScrollAnchor & {
+  candidateID: string;
+  index: number;
+};
+
+function readerStageScrollGeometry(stage: HTMLElement): ReaderScrollGeometry {
+  return {
+    clientHeight: Math.max(0, stage.clientHeight),
+    clientWidth: Math.max(0, stage.clientWidth),
+    scrollHeight: Math.max(0, stage.scrollHeight),
+    scrollLeft: Math.max(0, stage.scrollLeft),
+    scrollTop: Math.max(0, stage.scrollTop),
+    scrollWidth: Math.max(0, stage.scrollWidth),
+  };
+}
+
+function readerStageImageReady(stage: HTMLElement, current: ReaderState): boolean {
+  return readerImageReadyForScroll(stage.querySelector<HTMLImageElement>(".reader-image"), {
+    loading: current.imageLoading,
+    url: current.imageURL,
+    width: current.imageNaturalWidth,
+    height: current.imageNaturalHeight,
+  });
+}
+
 function libraryPageRouteSignature(value: BrowseRouteState): string {
   const route = sanitizeBrowseRoute(value);
   return `${route.sort}\u0000${route.catalogMode}\u0000${route.offset}`;
@@ -363,6 +400,8 @@ function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailIntent, setDetailIntent] = useState<CatalogItem | null>(null);
   const [detailError, setDetailError] = useState("");
+  const [detailProgressRevision, setDetailProgressRevision] = useState(0);
+  const [directoryLocateRevision, setDirectoryLocateRevision] = useState(0);
   const [reader, setReader] = useState<ReaderState | null>(null);
   const [readerLoading, setReaderLoading] = useState(false);
   const [readerIntent, setReaderIntent] = useState<ReaderIntent | null>(null);
@@ -379,6 +418,14 @@ function App() {
   const pendingDetailScrollTopRef = useRef<number | null>(null);
   const detailLoadingCloseRef = useRef<HTMLButtonElement | null>(null);
   const detailLoadAbortRef = useRef<AbortController | null>(null);
+  const detailProgressReadRef = useRef<{
+    id: string;
+    session: number;
+    controller: AbortController;
+    result: Promise<{ progress: ReadingProgress | null; error: string }>;
+    acknowledgements: Map<string, ReadingProgress>;
+    acceptingAcknowledgements: boolean;
+  } | null>(null);
   const readerSessionRef = useRef(0);
   const detailCloseRef = useRef<HTMLButtonElement | null>(null);
   const detailTriggerRef = useRef<HTMLElement | null>(null);
@@ -410,9 +457,13 @@ function App() {
   }
   const readerImageCacheKeyRef = useRef("");
   const readerImageURLRef = useRef("");
+  const readerDisplayedImagePlanRef = useRef<ReaderPagePrefetchPlan | null>(null);
   const readerPrefetchPlanRef = useRef<ReaderPagePrefetchPlan | null>(null);
   const readerPrefetchTimerRef = useRef<number | null>(null);
   const readerScrollTimerRef = useRef<number | null>(null);
+  const readerResizeTimerRef = useRef<number | null>(null);
+  const readerScrollGeometryRef = useRef<ReaderScrollGeometry | null>(null);
+  const readerResizeAnchorRef = useRef<ReaderResizeAnchor | null>(null);
   const readerChromeTimerRef = useRef<number | null>(null);
   const readerPointerMoveAtRef = useRef(0);
   const readerTouchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -682,6 +733,32 @@ function App() {
     detailScrollTop: detail && detailScrollRef.current ? Math.max(0, Math.round(detailScrollRef.current.scrollTop)) : 0,
   };
 
+  const readDetailProgress = useCallback((id: string, session: number) => {
+    const existing = detailProgressReadRef.current;
+    if (existing?.id === id && existing.session === session && !existing.controller.signal.aborted) return existing;
+    existing?.controller.abort();
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = window.setTimeout(() => { timedOut = true; controller.abort(); }, 20_000);
+    const result = getSeriesProgressSummary(id, { signal: controller.signal })
+      .then((response) => {
+        if (response.group_id !== id) throw new Error(tr("阅读进度与当前系列不匹配。", "Reading progress does not match this series.", "読書進捗がこのシリーズと一致しません。"));
+        return { progress: response.progress, error: "" };
+      })
+      .catch((reason) => ({
+        progress: null,
+        error: timedOut
+          ? tr("阅读进度核对超时，请重试。", "The reading progress check timed out. Please retry.", "読書進捗の確認がタイムアウトしました。再試行してください。")
+          : apiErrorText(reason, locale),
+      }))
+      .finally(() => window.clearTimeout(timer));
+    const request = { id, session, controller, result, acknowledgements: new Map<string, ReadingProgress>(), acceptingAcknowledgements: true };
+    detailProgressReadRef.current = request;
+    return request;
+  }, [locale, tr]);
+
+  useEffect(() => () => { detailProgressReadRef.current?.controller.abort(); }, []);
+
   const captureUiSnapshot = useCallback((overrides: Partial<UiSnapshot> = {}): UiSnapshot => {
     const current = uiRef.current;
     if (!current) throw new Error("bmanga V2 history is not ready");
@@ -697,8 +774,15 @@ function App() {
 
   const applyUiSnapshot = useCallback((snapshot: UiSnapshot) => {
     pendingDetailScrollTopRef.current = snapshot.detail ? Math.max(0, snapshot.detailScrollTop || 0) : null;
+    if (!snapshot.reader && !snapshot.readerLoading) {
+      detailProgressReadRef.current?.controller.abort();
+      detailProgressReadRef.current = null;
+      setDetailProgressRevision((revision) => revision + 1);
+    }
     setView(snapshot.view);
-    setDetail(snapshot.detail);
+    setDetail(snapshot.detail?.kind === "series" && !snapshot.reader && !snapshot.readerLoading
+      ? { ...snapshot.detail, progressState: "loading", progressError: "" }
+      : snapshot.detail);
     setDetailLoading(snapshot.detailLoading);
     setDetailIntent(snapshot.detailIntent);
     setReader(snapshot.reader);
@@ -1337,6 +1421,8 @@ function App() {
     }
     detailLoadAbortRef.current?.abort();
     detailLoadAbortRef.current = null;
+    detailProgressReadRef.current?.controller.abort();
+    detailProgressReadRef.current = null;
     requestHistoryBack(() => {
       detailSessionRef.current += 1;
       setDetailLoading(false);
@@ -1351,16 +1437,21 @@ function App() {
     readerPageAbortRef.current?.abort();
     readerPageAbortRef.current = null;
     if (readerScrollTimerRef.current !== null) window.clearTimeout(readerScrollTimerRef.current);
+    if (readerResizeTimerRef.current !== null) window.clearTimeout(readerResizeTimerRef.current);
     if (readerChromeTimerRef.current !== null) window.clearTimeout(readerChromeTimerRef.current);
     if (readerSuppressClickTimerRef.current !== null) window.clearTimeout(readerSuppressClickTimerRef.current);
     readerScrollTimerRef.current = null;
+    readerResizeTimerRef.current = null;
     readerChromeTimerRef.current = null;
     readerPointerMoveAtRef.current = 0;
     readerSuppressClickTimerRef.current = null;
     readerSuppressClickRef.current = false;
     if (readerPrefetchTimerRef.current !== null) window.clearTimeout(readerPrefetchTimerRef.current);
     readerPrefetchTimerRef.current = null;
+    readerDisplayedImagePlanRef.current = null;
     readerPrefetchPlanRef.current = null;
+    readerScrollGeometryRef.current = null;
+    readerResizeAnchorRef.current = null;
     readerImageCacheKeyRef.current = "";
     readerImageURLRef.current = "";
     readerPageCacheRef.current?.setPinnedKey("");
@@ -1369,11 +1460,17 @@ function App() {
 
   const readerWithLiveScroll = useCallback((current: ReaderState): ReaderState => {
     const stage = readerStageRef.current;
-    if (!stage || current.fitMode !== "fit-width") return current;
+    if (!stage || current.restoreScroll || !readerStageImageReady(stage, current)
+      || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return current;
+    const liveGeometry = readerStageScrollGeometry(stage);
+    const previousGeometry = readerScrollGeometryRef.current;
+    readerScrollGeometryRef.current = previousGeometry && readerResizeAnchorRef.current
+      ? { ...previousGeometry, scrollTop: liveGeometry.scrollTop, scrollLeft: liveGeometry.scrollLeft }
+      : liveGeometry;
     return {
       ...current,
-      stageScrollTop: Math.max(0, Math.round(stage.scrollTop)),
-      stageScrollLeft: Math.max(0, Math.round(stage.scrollLeft)),
+      stageScrollTop: Math.max(0, Math.round(liveGeometry.scrollTop)),
+      stageScrollLeft: Math.max(0, Math.round(liveGeometry.scrollLeft)),
     };
   }, []);
 
@@ -1990,6 +2087,7 @@ function App() {
           pages.page_manifest_id,
           readerImageMax(detailWarmTarget.fitMode, detailWarmTarget.preserveSource),
           detailWarmTarget.preserveSource,
+          detailWarmTarget.fitMode === "fit-width",
         );
         void pageCache.load(warmedPageURL).catch(() => undefined);
       }).catch(() => undefined);
@@ -2026,7 +2124,7 @@ function App() {
     const item = continueTarget?.item;
     if (!item || item.candidate_id !== continueWarmCandidateID) return undefined;
     const preferredFit = String(continueWarmProgress?.reader_fit_mode || "");
-    const fitMode = preferredFit === "fit-page" || preferredFit === "fit-width" || preferredFit === "split-wide"
+    const fitMode = preferredFit === "auto" || preferredFit === "fit-page" || preferredFit === "fit-width" || preferredFit === "split-wide"
       ? preferredFit
       : readerFitPreference;
     const preserveSource = readerUsesSourceQuality(item.candidate_type);
@@ -2043,6 +2141,7 @@ function App() {
           pages.page_manifest_id,
           readerImageMax(fitMode, preserveSource),
           preserveSource,
+          fitMode === "fit-width",
         );
         void pageCache.load(warmedPageURL).catch(() => undefined);
       }).catch(() => undefined);
@@ -2086,20 +2185,20 @@ function App() {
   useEffect(() => {
     if (!detailLayerOpen) return undefined;
     return () => {
-      if (detailTriggerRef.current?.isConnected) detailTriggerRef.current.focus();
+      if (detailTriggerRef.current?.isConnected) detailTriggerRef.current.focus({ preventScroll: true });
     };
   }, [detailLayerOpen]);
 
   useEffect(() => {
     if (!detailLoading || detail) return undefined;
-    const timer = window.setTimeout(() => detailLoadingCloseRef.current?.focus(), 0);
+    const timer = window.setTimeout(() => detailLoadingCloseRef.current?.focus({ preventScroll: true }), 0);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         closeDetail();
       } else if (event.key === "Tab") {
         event.preventDefault();
-        detailLoadingCloseRef.current?.focus();
+        detailLoadingCloseRef.current?.focus({ preventScroll: true });
       }
     };
     window.addEventListener("keydown", onKey);
@@ -2109,9 +2208,17 @@ function App() {
     };
   }, [closeDetail, detail, detailLoading]);
 
+  // Focus once per opened work, not on progress/mark refreshes. Re-focusing the
+  // header after a background refresh can scroll a mobile detail view to its top.
+  const detailFocusIdentity = detail ? `${detail.kind}:${detail.kind === "series" ? detail.data.series.group_id : detail.data.work.candidate_id}` : "";
+  useEffect(() => {
+    if (!detailFocusIdentity) return undefined;
+    const timer = window.setTimeout(() => detailCloseRef.current?.focus({ preventScroll: true }), 0);
+    return () => window.clearTimeout(timer);
+  }, [detailFocusIdentity]);
+
   useEffect(() => {
     if (!detail) return undefined;
-    const timer = window.setTimeout(() => detailCloseRef.current?.focus(), 0);
     const onKey = (event: KeyboardEvent) => {
       if (reader) return;
       if (event.key === "Escape" && !detailBusy) {
@@ -2131,18 +2238,17 @@ function App() {
       if (!first || !last) return;
       if (!detailPanelRef.current?.contains(document.activeElement)) {
         event.preventDefault();
-        first.focus();
+        first.focus({ preventScroll: true });
       } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
-        last.focus();
+        last.focus({ preventScroll: true });
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
-        first.focus();
+        first.focus({ preventScroll: true });
       }
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      window.clearTimeout(timer);
       window.removeEventListener("keydown", onKey);
     };
   }, [closeDetail, detail, detailBusy, reader]);
@@ -2335,24 +2441,21 @@ function App() {
     }, 20_000);
     const session = detailSessionRef.current + 1;
     detailSessionRef.current = session;
+    detailProgressReadRef.current?.controller.abort();
+    detailProgressReadRef.current = null;
     setDetailError("");
     setReaderRetryIntent(null);
     setPersonalMarkStatus("");
     try {
       if (isSeries(item)) {
-        const [data, progressData] = await Promise.all([
-          getSeriesDetail(id, { signal: controller.signal }),
-          getSeriesProgress(id, { signal: controller.signal }).catch((reason) => {
-            if ((reason as { name?: string })?.name === "AbortError") throw reason;
-            return { group_id: id, progress: null };
-          }),
-        ]);
+        readDetailProgress(id, session);
+        const data = await getSeriesDetail(id, { signal: controller.signal });
         if (detailSessionRef.current !== session || (entry >= 0 && historyCurrentRef.current !== entry)) return;
         seriesDetailCacheRef.current.set(id, Promise.resolve(data));
         seriesDetailResolvedRef.current.set(id, data);
         setDetailIntent(null);
         setNoteDraft(String(data.mark?.notes || ""));
-        setDetail({ kind: "series", data, progress: progressData.progress });
+        setDetail({ kind: "series", data, progress: null, progressState: "loading" });
       } else {
         const data = await getWork(id, { signal: controller.signal });
         if (detailSessionRef.current !== session || (entry >= 0 && historyCurrentRef.current !== entry)) return;
@@ -2373,8 +2476,40 @@ function App() {
       if (detailLoadAbortRef.current === controller) detailLoadAbortRef.current = null;
       if (detailSessionRef.current === session && (entry < 0 || historyCurrentRef.current === entry)) setDetailLoading(false);
     }
-  }, [closeDetail, locale, retireFailedHistoryEntry]);
+  }, [closeDetail, locale, readDetailProgress, retireFailedHistoryEntry]);
   resumeDetailRef.current = (item, entry) => { void loadDetailForEntry(item, entry); };
+
+  const detailProgressSeriesID = detail?.kind === "series" ? detail.data.series.group_id : "";
+  useEffect(() => {
+    if (!detailProgressSeriesID) return undefined;
+    const session = detailSessionRef.current;
+    const request = readDetailProgress(detailProgressSeriesID, session);
+    let active = true;
+    void request.result.then(({ progress, error }) => {
+      if (!active || detailProgressReadRef.current !== request || detailSessionRef.current !== session || request.controller.signal.aborted && !error) return;
+      const acknowledgements = [...request.acknowledgements.values()];
+      request.acceptingAcknowledgements = false;
+      request.acknowledgements.clear();
+      if (pendingDetailScrollTopRef.current === null && detailScrollRef.current) {
+        pendingDetailScrollTopRef.current = detailScrollRef.current.scrollTop;
+      }
+      setDetail((current) => {
+        if (current?.kind !== "series" || current.data.series.group_id !== detailProgressSeriesID) return current;
+        return error
+          ? { ...current, progressState: "error", progressError: error }
+          : applySeriesProgressSummary(current, detailProgressSeriesID, progress, acknowledgements,
+            tr("最新进度对应的条目已变化，请重新打开详情后再试。", "The entry for the latest progress has changed. Reopen the details and try again.", "最新の進捗に対応する項目が変わりました。詳細を開き直して再試行してください。"));
+      });
+    });
+    return () => { active = false; };
+  }, [detailProgressSeriesID, detailProgressRevision, readDetailProgress, tr]);
+
+  const retryDetailProgress = useCallback(() => {
+    detailProgressReadRef.current?.controller.abort();
+    detailProgressReadRef.current = null;
+    setDetail((current) => current?.kind === "series" ? { ...current, progressState: "loading", progressError: "" } : current);
+    setDetailProgressRevision((revision) => revision + 1);
+  }, []);
 
   const openDetail = useCallback((item: CatalogItem) => {
     const id = itemID(item);
@@ -2847,12 +2982,12 @@ function App() {
         ? { status: progressStatus, oldIndex: numberValue(saved.index), oldCount: numberValue(saved.count) }
         : null;
       const requestedFit = String(tentative?.reader_fit_mode || "");
-      const fitMode: ActiveReaderFitMode = requestedFit === "fit-width" || requestedFit === "fit-page" || requestedFit === "split-wide"
+      const fitMode: ActiveReaderFitMode = requestedFit === "auto" || requestedFit === "fit-width" || requestedFit === "fit-page" || requestedFit === "split-wide"
         ? requestedFit
         : storedReaderFit(saved);
       const restoringSamePage = requestedIndex === undefined || requestedIndex === numberValue(tentative?.index);
-      const stageScrollTop = fitMode === "fit-width" && restoringSamePage ? Math.max(0, numberValue(tentative?.stage_scroll_top)) : 0;
-      const stageScrollLeft = fitMode === "fit-width" && restoringSamePage ? Math.max(0, numberValue(tentative?.stage_scroll_left)) : 0;
+      const stageScrollTop = (fitMode === "fit-width" || fitMode === "auto") && restoringSamePage ? Math.max(0, numberValue(tentative?.stage_scroll_top)) : 0;
+      const stageScrollLeft = (fitMode === "fit-width" || fitMode === "auto") && restoringSamePage ? Math.max(0, numberValue(tentative?.stage_scroll_left)) : 0;
       const splitPanel: 0 | 1 = fitMode === "split-wide" && restoringSamePage && numberValue(tentative?.reader_split_panel) >= 1 ? 1 : 0;
       setReaderIntent(null);
       setReader({
@@ -2870,6 +3005,7 @@ function App() {
         requestedSplitPanel: splitPanel,
         imageNaturalWidth: 0,
         imageNaturalHeight: 0,
+        autoLongStrip: false,
         stageScrollTop,
         stageScrollLeft,
         restoreScroll: true,
@@ -2917,8 +3053,14 @@ function App() {
     sourceNextItem?: WorkSummary,
     sourceSeries?: ContinueTarget["series"],
   ) => {
+    const expectedWorkIdentityID = String(progress.work_identity_id || sourceItem?.work_identity_id || "");
+    const pendingRead = detailProgressReadRef.current;
+    if (pendingRead?.acceptingAcknowledgements && !pendingRead.controller.signal.aborted && expectedWorkIdentityID) {
+      pendingRead.acknowledgements.set(expectedWorkIdentityID, { ...progress, work_identity_id: expectedWorkIdentityID });
+      if (pendingRead.acknowledgements.size > 80) pendingRead.acknowledgements.delete(pendingRead.acknowledgements.keys().next().value!);
+    }
     const patchItem = <T extends CatalogItem,>(item: T): T => item.candidate_id === candidateID
-      ? patchCatalogItemProgress(item, candidateID, progress)
+      ? patchCatalogItemProgress(item, candidateID, progress, expectedWorkIdentityID)
       : item;
     const affectedSeries = (item: CatalogItem) => isSeries(item) && (
       item.selected_candidate_id === candidateID
@@ -2938,8 +3080,8 @@ function App() {
     for (const key of dirtyFavoriteKeys) favoritesPageCacheRef.current.delete(key);
     if (dirtyCatalogKeys.length) readerCatalogRefreshNeededRef.current = true;
     if (dirtyFavoriteKeys.length) readerFavoritesRefreshNeededRef.current = true;
-    patchHistoryEntryDetailProgress(historyEntriesRef.current.values(), candidateID, progress);
-    setContinueTarget((current) => patchContinueTargetProgress(current, candidateID, progress, sourceItem, sourceNextItem, sourceSeries));
+    patchHistoryEntryDetailProgress(historyEntriesRef.current.values(), candidateID, progress, expectedWorkIdentityID);
+    setContinueTarget((current) => patchContinueTargetProgress(current, candidateID, progress, sourceItem, sourceNextItem, sourceSeries, expectedWorkIdentityID));
     setRecent((current) => current.map((item) => patchItem(item)));
     setHistory((current) => {
       const patched = current.map((item) => patchItem(item));
@@ -2961,7 +3103,7 @@ function App() {
         return [inserted, ...patched].slice(0, 8);
       })(),
     } : current);
-    setDetail((current) => patchDetailProgress(current, candidateID, progress));
+    setDetail((current) => patchDetailProgress(current, candidateID, progress, expectedWorkIdentityID));
     setHeroDetail((current) => current?.work.candidate_id === candidateID
       ? { ...current, work: patchItem(current.work) }
       : current);
@@ -3019,13 +3161,18 @@ function App() {
     const manifestID = String(current.pages.page_manifest_id || current.pages.manifest_hash || "unknown");
     const saveKey = `${candidateID}\u0000${manifestID}`;
     const stage = readerStageRef.current;
-    const liveScrollTop = current.fitMode === "fit-width" && stage ? Math.max(0, Math.round(stage.scrollTop)) : Math.max(0, Math.round(current.stageScrollTop));
-    const liveScrollLeft = current.fitMode === "fit-width" && stage ? Math.max(0, Math.round(stage.scrollLeft)) : Math.max(0, Math.round(current.stageScrollLeft));
+    const liveGeometry = stage && !current.restoreScroll && readerStageImageReady(stage, current)
+      ? readerStageScrollGeometry(stage) : null;
+    const scrollableWidthLayout = readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight);
+    const liveScrollTop = scrollableWidthLayout && liveGeometry ? Math.max(0, Math.round(liveGeometry.scrollTop)) : Math.max(0, Math.round(current.stageScrollTop));
+    const liveScrollLeft = scrollableWidthLayout && liveGeometry ? Math.max(0, Math.round(liveGeometry.scrollLeft)) : Math.max(0, Math.round(current.stageScrollLeft));
     const currentSplitWide = splitWideActive(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight);
     const completed = current.index >= current.pages.count - 1
       && !current.imageLoading
+      && (!current.restoreScroll || current.ending)
       && !current.error
-      && (!currentSplitWide || current.splitPanel >= 1);
+      && (!currentSplitWide || current.splitPanel >= 1)
+      && readerScrollablePageFinished(scrollableWidthLayout, current.ending, liveGeometry);
     const signature = [current.index, current.pages.count, completed ? 1 : 0, current.fitMode, currentSplitWide ? current.splitPanel : 0, liveScrollTop, liveScrollLeft].join(":");
     if (!options.force && readerSaveSignatureRef.current.get(saveKey) === signature) return null;
     readerSaveSignatureRef.current.set(saveKey, signature);
@@ -3170,6 +3317,10 @@ function App() {
     );
     const sameRequestedPanel = targetSplitPanel === current.requestedSplitPanel;
     if (target === current.requestedIndex && sameRequestedPanel && !retry && !current.error) return;
+    if (target !== current.index) {
+      readerScrollGeometryRef.current = null;
+      readerResizeAnchorRef.current = null;
+    }
     setReader({
       ...current,
       requestedIndex: target,
@@ -3254,7 +3405,7 @@ function App() {
     const current = uiRef.current?.reader;
     const stage = readerStageRef.current;
     if (!current || current.calibration) return;
-    if (current.fitMode !== "fit-width" || !stage || current.ending) {
+    if (!readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight) || !stage || current.ending) {
       moveReader(direction, revealChrome);
       return;
     }
@@ -3280,7 +3431,11 @@ function App() {
     if (!current || current.fitMode === mode) return;
     rememberReaderFit(mode);
     setReaderFitPreference(mode);
-    const refetchForSplit = mode === "split-wide" && current.fitMode !== "split-wide";
+    readerScrollGeometryRef.current = null;
+    readerResizeAnchorRef.current = null;
+    // Each mode has a distinct server-side pixel budget. Reusing the previous
+    // blob here is what made a longest-edge thumbnail look blurry after an
+    // 整页 → 适宽 switch on phones.
     const next = {
       ...current,
       fitMode: mode,
@@ -3290,12 +3445,14 @@ function App() {
       stageScrollLeft: 0,
       restoreScroll: true,
       chromeVisible: true,
-      pageRevision: refetchForSplit ? current.pageRevision + 1 : current.pageRevision,
-      imageLoading: refetchForSplit ? true : current.imageLoading,
-      error: refetchForSplit ? "" : current.error,
+      pageRevision: current.pageRevision + 1,
+      imageLoading: true,
+      error: "",
     };
+    // This is the user's explicit fit change, not deferred work that may run
+    // after a later image/fit has already been scrolled.
+    readerStageRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setReader(next);
-    window.requestAnimationFrame(() => readerStageRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" }));
     void persistReaderRef.current(next, { silent: true });
     revealReaderChrome();
   }, [revealReaderChrome]);
@@ -3303,12 +3460,19 @@ function App() {
   const handleReaderScroll = useCallback(() => {
     const current = uiRef.current?.reader;
     const stage = readerStageRef.current;
-    if (!current || !stage || current.fitMode !== "fit-width") return;
+    if (!current || !stage || current.restoreScroll || !readerStageImageReady(stage, current)
+      || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return;
+    const liveGeometry = readerStageScrollGeometry(stage);
+    const previousGeometry = readerScrollGeometryRef.current;
+    readerScrollGeometryRef.current = previousGeometry && readerResizeAnchorRef.current
+      ? { ...previousGeometry, scrollTop: liveGeometry.scrollTop, scrollLeft: liveGeometry.scrollLeft }
+      : liveGeometry;
     if (readerScrollTimerRef.current !== null) window.clearTimeout(readerScrollTimerRef.current);
     readerScrollTimerRef.current = window.setTimeout(() => {
       const latest = uiRef.current?.reader;
       const latestStage = readerStageRef.current;
-      if (!latest || !latestStage || latest.fitMode !== "fit-width") return;
+      if (!latest || !latestStage || latest.restoreScroll || !readerStageImageReady(latestStage, latest)
+        || !readerUsesScrollableWidthLayout(latest.fitMode, latest.imageNaturalWidth, latest.imageNaturalHeight)) return;
       const scrolled = {
         ...latest,
         stageScrollTop: Math.max(0, Math.round(latestStage.scrollTop)),
@@ -3352,8 +3516,16 @@ function App() {
   const readerManifestID = String(reader?.pages.page_manifest_id || reader?.pages.manifest_hash || "");
   const readerRequestedIndex = reader?.requestedIndex ?? -1;
   const readerPageRevision = reader?.pageRevision ?? 0;
-  const readerFitMode = reader?.fitMode || "fit-page";
+  const readerFitMode = reader?.fitMode || "auto";
   const readerEnding = Boolean(reader?.ending);
+  const readerScrollableWidthActive = Boolean(reader && readerUsesScrollableWidthLayout(
+    reader.fitMode,
+    reader.imageNaturalWidth,
+    reader.imageNaturalHeight,
+  ));
+  const readerEffectiveFitMode: ActiveReaderFitMode = readerScrollableWidthActive
+    ? "fit-width"
+    : readerFitMode === "auto" ? "fit-page" : readerFitMode;
   const readerSplitWideActive = Boolean(reader && splitWideActive(reader.fitMode, reader.imageNaturalWidth, reader.imageNaturalHeight));
   const currentReaderImageRequestKey = readerImageRequestKey(
     reader?.item.candidate_id || "",
@@ -3450,20 +3622,40 @@ function App() {
     const controller = new AbortController();
     readerPageAbortRef.current = controller;
     const preserveSource = readerUsesSourceQuality(current.item.candidate_type);
-    const imageMax = readerImageMax(readerFitMode, preserveSource);
-    const requestedURL = pageUrl(
+    let constrainWidth = readerFitMode === "fit-width"
+      || (readerFitMode === "auto" && current.autoLongStrip);
+    let imageMax = readerImageMax(constrainWidth ? "fit-width" : readerFitMode, preserveSource);
+    let requestedURL = pageUrl(
       readerCandidateID,
       readerRequestedIndex,
       current.pages.page_manifest_id,
       imageMax,
       preserveSource,
+      constrainWidth,
     );
     const pageCache = readerPageCacheRef.current;
 
     const load = async () => {
       try {
         if (!pageCache) throw new Error(tr("阅读缓存尚未准备好。", "The reader cache is not ready yet.", "リーダーキャッシュの準備ができていません。"));
-        const asset = await pageCache.load(requestedURL);
+        let asset = await pageCache.load(requestedURL);
+        if (controller.signal.aborted) return;
+        if (readerFitMode === "auto") {
+          const decodedAsLongStrip = readerImageIsLongStrip(asset.width, asset.height);
+          if (decodedAsLongStrip !== constrainWidth) {
+            constrainWidth = decodedAsLongStrip;
+            imageMax = readerImageMax(constrainWidth ? "fit-width" : "auto", preserveSource);
+            requestedURL = pageUrl(
+              readerCandidateID,
+              readerRequestedIndex,
+              current.pages.page_manifest_id,
+              imageMax,
+              preserveSource,
+              constrainWidth,
+            );
+            asset = await pageCache.load(requestedURL);
+          }
+        }
         if (controller.signal.aborted) return;
         const latest = uiRef.current?.reader;
         if (!latest
@@ -3475,7 +3667,7 @@ function App() {
           || latest.ending) return;
         readerImageCacheKeyRef.current = requestedURL;
         readerImageURLRef.current = asset.objectURL;
-        readerPrefetchPlanRef.current = {
+        const displayedImagePlan: ReaderPagePrefetchPlan = {
           cacheKey: requestedURL,
           candidateID: readerCandidateID,
           count: latest.pages.count,
@@ -3484,7 +3676,13 @@ function App() {
           index: readerRequestedIndex,
           pageManifestID: latest.pages.page_manifest_id,
           preserveSource,
+          constrainWidth,
         };
+        // Prefetch work is consumed after the image commits, whereas resize
+        // reconciliation must retain the exact request bucket for as long as
+        // this image remains on screen.
+        readerDisplayedImagePlanRef.current = displayedImagePlan;
+        readerPrefetchPlanRef.current = displayedImagePlan;
         setReader({
           ...latest,
           index: readerRequestedIndex,
@@ -3494,6 +3692,7 @@ function App() {
           splitPanel: latest.requestedSplitPanel,
           imageNaturalWidth: asset.width,
           imageNaturalHeight: asset.height,
+          autoLongStrip: latest.fitMode === "auto" && readerImageIsLongStrip(asset.width, asset.height),
           restoreScroll: true,
           ending: false,
         });
@@ -3531,6 +3730,110 @@ function App() {
     };
   }, [locale, readerCandidateID, readerEnding, readerFitMode, readerManifestID, readerPageRevision, readerRequestedIndex, revealReaderChrome]);
 
+  useEffect(() => {
+    if (!readerCandidateID) return undefined;
+    let disposed = false;
+    const reconcileWidthBucket = () => {
+      readerResizeTimerRef.current = null;
+      if (disposed) return;
+      const current = uiRef.current?.reader;
+      const plan = readerDisplayedImagePlanRef.current;
+      if (!current || !plan || current.ending || current.error) {
+        readerResizeAnchorRef.current = null;
+        return;
+      }
+      const stage = readerStageRef.current;
+      if (current.imageLoading || current.restoreScroll || !stage || !readerStageImageReady(stage, current)) {
+        readerResizeTimerRef.current = window.setTimeout(reconcileWidthBucket, 180);
+        return;
+      }
+      if (!readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)
+        || !plan.constrainWidth
+        || plan.candidateID !== current.item.candidate_id
+        || plan.index !== current.requestedIndex) {
+        readerResizeAnchorRef.current = null;
+        return;
+      }
+      const storedResizeAnchor = readerResizeAnchorRef.current;
+      const resizeAnchor = storedResizeAnchor
+        && storedResizeAnchor.candidateID === current.item.candidate_id
+        && storedResizeAnchor.index === current.index
+        ? storedResizeAnchor
+        : null;
+      if (storedResizeAnchor && !resizeAnchor) readerResizeAnchorRef.current = null;
+      let withScroll = current;
+      if (stage && resizeAnchor) {
+        const geometry = readerStageScrollGeometry(stage);
+        const position = readerScrollPositionForAnchor(resizeAnchor, geometry);
+        stage.scrollTo({ top: position.top, left: position.left, behavior: "auto" });
+        const settledGeometry = readerStageScrollGeometry(stage);
+        readerScrollGeometryRef.current = settledGeometry;
+        withScroll = {
+          ...current,
+          stageScrollTop: Math.max(0, Math.round(settledGeometry.scrollTop)),
+          stageScrollLeft: Math.max(0, Math.round(settledGeometry.scrollLeft)),
+        };
+        readerResizeAnchorRef.current = null;
+      } else {
+        withScroll = readerWithLiveScroll(current);
+      }
+      const nextImageMax = readerImageMax("fit-width", readerUsesSourceQuality(current.item.candidate_type));
+      if (nextImageMax === plan.imageMax) {
+        if (withScroll.stageScrollTop !== current.stageScrollTop || withScroll.stageScrollLeft !== current.stageScrollLeft) {
+          setReader(withScroll);
+          void persistReaderRef.current(withScroll, { silent: true });
+        }
+        return;
+      }
+      // Keep a content-relative anchor alive while the larger/smaller width
+      // bucket is fetched. A second rotation during that request must not fall
+      // back to the absolute pixel offset from the first viewport.
+      if (stage) {
+        const geometry = readerStageScrollGeometry(stage);
+        readerScrollGeometryRef.current = geometry;
+        readerResizeAnchorRef.current = {
+          ...readerScrollAnchorForGeometry(geometry),
+          candidateID: current.item.candidate_id,
+          index: current.index,
+        };
+      }
+      setReader({
+        ...withScroll,
+        pageRevision: withScroll.pageRevision + 1,
+        imageLoading: true,
+        error: "",
+        restoreScroll: true,
+      });
+    };
+    const schedule = () => {
+      const current = uiRef.current?.reader;
+      const stage = readerStageRef.current;
+      if (current
+        && stage
+        && !current.imageLoading
+        && !current.restoreScroll
+        && readerStageImageReady(stage, current)
+        && current.index === current.requestedIndex
+        && !readerResizeAnchorRef.current
+        && readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) {
+        readerResizeAnchorRef.current = {
+          ...readerScrollAnchorForGeometry(readerScrollGeometryRef.current || readerStageScrollGeometry(stage)),
+          candidateID: current.item.candidate_id,
+          index: current.index,
+        };
+      }
+      if (readerResizeTimerRef.current !== null) window.clearTimeout(readerResizeTimerRef.current);
+      readerResizeTimerRef.current = window.setTimeout(reconcileWidthBucket, 180);
+    };
+    window.addEventListener("resize", schedule);
+    return () => {
+      disposed = true;
+      window.removeEventListener("resize", schedule);
+      if (readerResizeTimerRef.current !== null) window.clearTimeout(readerResizeTimerRef.current);
+      readerResizeTimerRef.current = null;
+    };
+  }, [readerCandidateID, readerWithLiveScroll]);
+
   useLayoutEffect(() => {
     const plan = readerPrefetchPlanRef.current;
     const pageCache = readerPageCacheRef.current;
@@ -3555,6 +3858,7 @@ function App() {
           plan.pageManifestID,
           plan.imageMax,
           plan.preserveSource,
+          plan.constrainWidth,
         );
         await pageCache.load(nextURL);
       }),
@@ -3568,6 +3872,7 @@ function App() {
         plan.pageManifestID,
         plan.imageMax,
         plan.preserveSource,
+        plan.constrainWidth,
       );
       readerPrefetchTimerRef.current = window.setTimeout(() => {
         readerPrefetchTimerRef.current = null;
@@ -3583,18 +3888,48 @@ function App() {
   }, [reader?.imageURL, reader?.index, reader?.item.candidate_id]);
 
   useLayoutEffect(() => {
-    if (!reader?.imageURL || !reader.restoreScroll) return undefined;
-    const latest = uiRef.current?.reader;
+    if (!reader?.imageURL || !reader.restoreScroll || reader.imageLoading || reader.ending) return undefined;
     const stage = readerStageRef.current;
-    if (!latest || !stage || latest.imageURL !== reader.imageURL) return undefined;
-    const top = latest.fitMode === "fit-width" ? latest.stageScrollTop : 0;
-    const left = latest.fitMode === "fit-width" ? latest.stageScrollLeft : 0;
-    stage.scrollTo({ top, left, behavior: "auto" });
-    const settled = { ...latest, stageScrollTop: top, stageScrollLeft: left, restoreScroll: false };
-    setReader(settled);
-    void persistReaderRef.current(settled, { silent: true });
-    return undefined;
-  }, [reader?.fitMode, reader?.imageURL, reader?.restoreScroll]);
+    const image = stage?.querySelector<HTMLImageElement>(".reader-image");
+    if (!stage || !image) return undefined;
+    const restore = () => {
+      const latest = uiRef.current?.reader;
+      if (!latest || !latest.restoreScroll || latest.ending || readerStageRef.current !== stage
+        || latest.item.candidate_id !== reader.item.candidate_id
+        || latest.index !== reader.index || latest.pageRevision !== reader.pageRevision
+        || latest.fitMode !== reader.fitMode || latest.imageURL !== reader.imageURL
+        || !readerStageImageReady(stage, latest)) return;
+      const scrollableWidthLayout = readerUsesScrollableWidthLayout(latest.fitMode, latest.imageNaturalWidth, latest.imageNaturalHeight);
+      const storedResizeAnchor = scrollableWidthLayout ? readerResizeAnchorRef.current : null;
+      const resizeAnchor = storedResizeAnchor
+        && storedResizeAnchor.candidateID === latest.item.candidate_id
+        && storedResizeAnchor.index === latest.index
+        ? storedResizeAnchor
+        : null;
+      const anchoredPosition = resizeAnchor
+        ? readerScrollPositionForAnchor(resizeAnchor, readerStageScrollGeometry(stage))
+        : null;
+      const top = scrollableWidthLayout ? anchoredPosition?.top ?? latest.stageScrollTop : 0;
+      const left = scrollableWidthLayout ? anchoredPosition?.left ?? latest.stageScrollLeft : 0;
+      stage.scrollTo({ top, left, behavior: "auto" });
+      readerResizeAnchorRef.current = null;
+      const settledGeometry = readerStageScrollGeometry(stage);
+      readerScrollGeometryRef.current = settledGeometry;
+      const settled = {
+        ...latest,
+        stageScrollTop: Math.max(0, Math.round(settledGeometry.scrollTop)),
+        stageScrollLeft: Math.max(0, Math.round(settledGeometry.scrollLeft)),
+        restoreScroll: false,
+      };
+      setReader(settled);
+      void persistReaderRef.current(settled, { silent: true });
+    };
+    // The cache's decoded Image is not the newly mounted DOM image. Keep the
+    // anchor pending until this exact visible image has intrinsic dimensions.
+    image.addEventListener("load", restore);
+    restore();
+    return () => image.removeEventListener("load", restore);
+  }, [reader?.fitMode, reader?.imageURL, reader?.restoreScroll, reader?.imageLoading, reader?.ending, reader?.item.candidate_id, reader?.index, reader?.pageRevision]);
 
   useEffect(() => {
     if (!reader) {
@@ -3648,7 +3983,7 @@ function App() {
     const onStorage = (event: StorageEvent) => {
       if (event.key === READER_FIT_KEY || event.key === null) {
         const nextMode = event.newValue;
-        setReaderFitPreference(nextMode === "fit-width" || nextMode === "fit-page" || nextMode === "split-wide" ? nextMode : "fit-page");
+        setReaderFitPreference(nextMode === "auto" || nextMode === "fit-width" || nextMode === "fit-page" || nextMode === "split-wide" ? nextMode : "auto");
       }
       setPendingProgressTotal(pendingProgressCount());
       if (document.visibilityState === "visible") {
@@ -3837,7 +4172,9 @@ function App() {
     }
 
     if (view === "settings") {
-      const readerFitLabel = readerFitPreference === "fit-page"
+      const readerFitLabel = readerFitPreference === "auto"
+        ? tr("自动", "Auto", "自動")
+        : readerFitPreference === "fit-page"
         ? tr("整页", "Fit page", "ページ全体")
         : readerFitPreference === "fit-width"
           ? tr("适宽", "Fit width", "幅に合わせる")
@@ -3887,7 +4224,8 @@ function App() {
             <h2 id="reader-preference-title">{tr("默认阅读布局", "Default reader layout", "既定の表示レイアウト")}</h2>
             <p>{tr("用于还没有保存过单本布局的作品。已经读过的作品仍优先恢复它自己的布局和滚动位置。", "Used for books without a saved layout. Previously opened books still restore their own layout and scroll position first.", "作品ごとのレイアウトが未保存の場合に使います。既読の作品では、その作品のレイアウトとスクロール位置が優先して復元されます。")}</p>
             <div className="settings-choice" role="group" aria-label={tr("默认阅读布局", "Default reader layout", "既定の表示レイアウト")}>
-              <button type="button" aria-pressed={readerFitPreference === "fit-page"} onClick={() => changeReaderFitPreference("fit-page")}><strong>{tr("整页", "Fit page", "ページ全体")}</strong><small>{tr("完整看见一页，适合桌面与横图", "Show a full page; ideal for desktop and landscape pages", "ページ全体を表示。デスクトップや横長ページ向け")}</small></button>
+              <button type="button" aria-pressed={readerFitPreference === "auto"} onClick={() => changeReaderFitPreference("auto")}><strong>{tr("自动", "Auto", "自動")}</strong><small>{tr("普通页整页显示，超长条漫自动适宽滚动", "Show ordinary pages whole; fit tall strips to width for scrolling", "通常のページは全体表示、縦長の漫画は幅に合わせてスクロール")}</small></button>
+              <button type="button" aria-pressed={readerFitPreference === "fit-page"} onClick={() => changeReaderFitPreference("fit-page")}><strong>{tr("整页", "Fit page", "ページ全体")}</strong><small>{tr("始终完整显示一页，方便检查整页结构", "Always show the full page to inspect its layout", "常にページ全体を表示し、構成を確認")}</small></button>
               <button type="button" aria-pressed={readerFitPreference === "fit-width"} onClick={() => changeReaderFitPreference("fit-width")}><strong>{tr("适宽", "Fit width", "幅に合わせる")}</strong><small>{tr("按屏幕宽度放大，适合手机长读", "Scale to screen width; ideal for long reading on phones", "画面幅に拡大。スマートフォンでの縦読み向け")}</small></button>
               <button type="button" aria-pressed={readerFitPreference === "split-wide"} onClick={() => changeReaderFitPreference("split-wide")}><strong>{tr("横页拆分", "Split spreads", "見開きを分割")}</strong><small>{tr("宽图按日漫顺序先右后左，竖页保持整页", "Read wide spreads right half first; portrait pages stay whole", "横長ページは右から左へ分割し、縦長ページは全体表示")}</small></button>
             </div>
@@ -4054,7 +4392,12 @@ function App() {
     if (event.target === event.currentTarget && !detailBusy) closeDetail();
   };
 
-  const seriesReaderTarget = detail?.kind === "series" ? seriesContinueItem(detail.data, detail.progress) : undefined;
+  const seriesProgressReady = detail?.kind === "series" && detail.progressState === "ready";
+  const seriesProgressLoading = detail?.kind === "series" && detail.progressState !== "ready" && detail.progressState !== "error";
+  const seriesProgressLabel = seriesProgressLoading
+    ? tr("核对中", "Checking", "確認中")
+    : tr("待核对", "Unconfirmed", "未確認");
+  const seriesReaderTarget = detail?.kind === "series" ? seriesContinueItem(detail.data, detail.progress, seriesProgressReady) : undefined;
   const seriesReaderNextItem = detail?.kind === "series" && seriesReaderTarget
     ? nextSeriesReadable(detail.data, seriesReaderTarget.candidate_id)
     : undefined;
@@ -4108,7 +4451,7 @@ function App() {
         {localizedNavItems.map((item) => { const active = view === item.id || (item.id === "my" && view === "settings"); return <button type="button" className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => activateView(item.id)} key={item.id}><span>{item.index}</span>{item.label}</button>; })}
       </nav>
 
-      {detailLoading && !detail ? <div className="detail-overlay detail-loading-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetail(); }}><section className="detail-loading-card" role="dialog" aria-modal="true" aria-label={tr("正在打开作品", "Opening work", "作品を開いています")}><button ref={detailLoadingCloseRef} type="button" aria-label={tr("取消打开作品", "Cancel opening work", "作品を開くのを中止")} onClick={closeDetail}>×</button><span className="eyebrow">{tr("正在打开馆藏", "OPENING THE ARCHIVE", "アーカイブを開いています")}</span><Status>{tr("正在打开作品…", "Opening work…", "作品を開いています…")}</Status><small>{tr("按 Esc 可取消", "Press Esc to cancel", "Escでキャンセル")}</small></section></div> : null}
+      {detailLoading && !detail ? <div className="detail-overlay detail-loading-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetail(); }}><section className="detail-loading-card" role="dialog" aria-modal="true" aria-label={tr("正在打开作品", "Opening work", "作品を開いています")}><button ref={detailLoadingCloseRef} type="button" aria-label={tr("取消打开作品", "Cancel opening work", "作品を開くのを中止")} onClick={closeDetail}>×</button><span className="eyebrow">{tr("正在打开馆藏", "OPENING THE ARCHIVE", "アーカイブを開いています")}</span>{detailIntent ? <div className="detail-opening-preview"><Cover item={detailIntent} size={480} eager /><strong>{cleanTitle(itemTitle(detailIntent, locale))}</strong></div> : null}<Status>{tr("正在读取目录与标记…", "Loading the directory and marks…", "目次とマークを読み込み中…")}</Status><small>{tr("按 Esc 可取消", "Press Esc to cancel", "Escでキャンセル")}</small></section></div> : null}
       {detailError ? <div className="toast error" role="alert"><span>{detailError}</span>{readerRetryIntent ? <button type="button" onClick={() => { const { item, requestedIndex, ...context } = readerRetryIntent; setDetailError(""); setReaderRetryIntent(null); openReader(item, requestedIndex, context); }}>{tr("重试打开", "Try opening again", "もう一度開く")}</button> : null}<button type="button" onClick={() => { setDetailError(""); setReaderRetryIntent(null); }}>{tr("关闭", "Close", "閉じる")}</button></div> : null}
       {detail ? (
         <div className="detail-overlay" onMouseDown={closeDetailOnBackdrop}>
@@ -4158,9 +4501,9 @@ function App() {
                 </div>
               </div>
             ) : (
-              <div ref={detailScrollRef} className="detail-body series-detail">
+              <div ref={detailScrollRef} className="detail-body series-detail" data-progress-state={detail.progressState || "loading"}>
                 <div className="series-detail-intro">
-                  <DetailCoverFrame kind={tr("系列", "SERIES", "シリーズ")} state={seriesAggregate?.readPages ? `${tr("已读", "READ", "既読")} ${Math.round(seriesAggregate.percent)}%` : tr("未读", "UNREAD", "未読")}>
+                  <DetailCoverFrame kind={tr("系列", "SERIES", "シリーズ")} state={!seriesProgressReady ? seriesProgressLabel : seriesAggregate?.readPages ? `${tr("已读", "READ", "既読")} ${Math.round(seriesAggregate.percent)}%` : tr("未读", "UNREAD", "未読")}>
                     <Cover item={detail.data.series} size={1200} eager />
                   </DetailCoverFrame>
                   <div className="detail-copy">
@@ -4173,21 +4516,27 @@ function App() {
                       items={[
                         { label: tr("条目", "Entries", "項目"), value: number(numberValue(detail.data.series.counted_items, numberValue(detail.data.series.item_count))) || "—" },
                         { label: tr("分区", "Sections", "セクション"), value: number(numberValue(detail.data.series.section_count) || (detail.data.sectioned ? detail.data.sections.length : 1)) },
-                        { label: tr("馆藏进度", "Library progress", "ライブラリ進捗"), value: seriesAggregate?.readPages ? `${Math.round(seriesAggregate.percent)}%` : tr("未读", "Unread", "未読") },
+                        { label: tr("馆藏进度", "Library progress", "ライブラリ進捗"), value: !seriesProgressReady ? seriesProgressLabel : seriesAggregate?.readPages ? `${Math.round(seriesAggregate.percent)}%` : tr("未读", "Unread", "未読") },
                       ]}
                     />
                     <div className="detail-actions">
-                      {seriesReaderTarget ? <button className="button primary" type="button" onClick={() => openReader(seriesReaderTarget, seriesReaderProgress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem: seriesReaderNextItem })}>{seriesReaderProgress?.completed ? tr("重新阅读", "Read again", "もう一度読む") : seriesReaderProgress ? tr("继续阅读", "Continue reading", "続きを読む") : tr("从{chapter}开始", "Start with {chapter}", "{chapter}から読む", { chapter: chapterLabel(seriesReaderTarget) })} <span>→</span></button> : null}
+                      {seriesReaderTarget ? <button className="button primary" type="button" disabled={!seriesProgressReady} onClick={() => openReader(seriesReaderTarget, seriesReaderProgress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem: seriesReaderNextItem })}>{!seriesProgressReady ? seriesProgressLoading ? tr("核对阅读进度中", "Checking reading progress", "読書進捗を確認中") : tr("确认进度后阅读", "Confirm progress to read", "進捗確認後に読む") : seriesReaderProgress?.completed ? tr("重新阅读", "Read again", "もう一度読む") : seriesReaderProgress ? tr("继续阅读", "Continue reading", "続きを読む") : tr("从{chapter}开始", "Start with {chapter}", "{chapter}から読む", { chapter: chapterLabel(seriesReaderTarget) })} <span>→</span></button> : null}
                       <button className={`button favorite-button ${favoriteFor(detail.data.series, detail.data.mark) ? "active" : ""}`} type="button" aria-pressed={favoriteFor(detail.data.series, detail.data.mark)} disabled={favoriteSavingIDs.has(detail.data.series.group_id)} onClick={() => { const current = favoriteFor(detail.data.series, detail.data.mark); void changeFavorite(detail.data.series, !current, current); }}>{favoriteSavingIDs.has(detail.data.series.group_id) ? tr("保存中…", "Saving…", "保存中…") : favoriteFor(detail.data.series, detail.data.mark) ? tr("已收藏系列", "Series favorited", "シリーズをお気に入り済み") : tr("收藏系列", "Favorite series", "シリーズをお気に入り")}</button>
                     </div>
-                    {seriesReaderTarget ? <p className="series-resume-location"><span>{seriesReaderProgress
+                    {!seriesProgressReady ? <div className={`series-progress-check ${detail.progressState === "error" ? "is-error" : ""}`} role={detail.progressState === "error" ? "alert" : "status"}>
+                      <span>{detail.progressState === "error"
+                        ? tr("阅读进度未能确认：{error}。可重试，或直接选择章节单独核对。", "Reading progress could not be confirmed: {error}. Retry or choose a chapter to check it individually.", "読書進捗を確認できませんでした：{error}。再試行するか、章を選んで個別に確認できます。", { error: detail.progressError || seriesProgressLabel })
+                        : tr("目录已就绪，正在核对上次阅读位置…", "The directory is ready. Checking your last reading position…", "目次を読み込みました。前回の読書位置を確認中…")}</span>
+                      {detail.progressState === "error" ? <button type="button" onClick={retryDetailProgress}>{tr("重试进度核对", "Retry progress check", "進捗確認を再試行")}</button> : null}
+                    </div> : null}
+                    {seriesReaderTarget && seriesProgressReady ? <p className="series-resume-location"><span>{seriesReaderProgress
                       ? tr("继续位置：{chapter} · 第 {page}{count} 页", "Continue at {chapter} · page {page}{count}", "続き：{chapter} · {page}{count}ページ", { chapter: chapterLabel(seriesReaderTarget), page: seriesReaderProgress.index + 1, count: seriesReaderProgress.count ? ` / ${seriesReaderProgress.count}` : "" })
-                      : tr("阅读起点：{chapter}", "Starting point: {chapter}", "開始位置：{chapter}", { chapter: chapterLabel(seriesReaderTarget) })}</span><button type="button" onClick={() => window.requestAnimationFrame(() => document.getElementById("series-current-entry")?.scrollIntoView({ behavior: preferredScrollBehavior(), block: "center" }))}>{tr("在目录中定位", "Locate in directory", "目次で表示")}</button></p> : null}
+                      : tr("阅读起点：{chapter}", "Starting point: {chapter}", "開始位置：{chapter}", { chapter: chapterLabel(seriesReaderTarget) })}</span><button type="button" onClick={() => { pendingDetailScrollTopRef.current = null; setDirectoryLocateRevision((revision) => revision + 1); }}>{tr("在目录中定位", "Locate in directory", "目次で表示")}</button></p> : null}
                   </div>
                 </div>
                 <AsyncRegionBoundary resetKey={`series-directory-${detail.data.series.group_id}`} title={tr("章节目录暂时没有载入", "The chapter directory did not load", "章の目次を読み込めませんでした")} copy={tr("详情仍然保留。可能刚好遇到版本更新或短暂网络中断，请重新加载后再试。", "The details remain available. A version update or brief network interruption may have occurred; reload and try again.", "詳細はそのままです。更新や一時的なネットワーク中断の可能性があります。再読み込みしてお試しください。")}>
                   <Suspense fallback={<div className="series-directory-loading" role="status">{tr("正在排印章节目录…", "Preparing the chapter directory…", "章の目次を準備しています…")}</div>}>
-                    <SeriesDirectory key={detail.data.series.group_id} data={detail.data} activeCandidateID={seriesReaderTarget?.candidate_id} onOpen={(item, nextItem) => { const progress = progressFor(item); openReader(item, progress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem }); }} />
+                    <SeriesDirectory key={detail.data.series.group_id} data={detail.data} activeCandidateID={seriesProgressReady ? seriesReaderTarget?.candidate_id : undefined} progressLoading={seriesProgressLoading} progressUnknown={!seriesProgressReady} locateRevision={directoryLocateRevision} onOpen={(item, nextItem) => { const progress = seriesProgressReady ? progressFor(item) : null; openReader(item, progress?.completed ? 0 : undefined, { seriesID: detail.data.series.group_id, nextItem }); }} />
                   </Suspense>
                 </AsyncRegionBoundary>
                 <Suspense fallback={<Status>{tr("正在准备系列标记…", "Preparing series marks…", "シリーズのマークを準備しています…")}</Status>}>
@@ -4206,7 +4555,7 @@ function App() {
 
       {readerLoading ? <section className="reader reader-loading" role="dialog" aria-modal="true" aria-label={tr("正在准备阅读", "Preparing the reader", "リーダーを準備しています")}><button ref={readerLoadingCloseRef} type="button" className="reader-loading-close" autoFocus onClick={closeReader} aria-label={tr("取消并退出阅读", "Cancel and exit the reader", "キャンセルしてリーダーを閉じる")}>×</button><Status>{tr("正在整理这本书的页序…", "Preparing this book's page order…", "この作品のページ順を準備しています…")}</Status></section> : null}
       {reader ? (
-        <section ref={readerDialogRef} className={`reader ${reader.fitMode} ${readerSplitWideActive ? "split-wide-active" : ""} ${reader.chromeVisible || reader.calibration || reader.ending ? "" : "reader-chrome-hidden"}`} role="dialog" aria-modal="true" aria-label={tr("正在阅读《{title}》", "Reading “{title}”", "『{title}』を読んでいます", { title: itemTitle(reader.item, locale) })} data-candidate-id={reader.item.candidate_id} data-next-candidate-id={reader.nextItem?.candidate_id || ""} data-split-wide-active={readerSplitWideActive ? "true" : "false"} data-split-panel={reader.splitPanel} onMouseMove={handleReaderPointerMove}>
+        <section ref={readerDialogRef} className={`reader ${readerEffectiveFitMode} ${reader.autoLongStrip ? "auto-long-strip" : ""} ${readerSplitWideActive ? "split-wide-active" : ""} ${reader.chromeVisible || reader.calibration || reader.ending ? "" : "reader-chrome-hidden"}`} role="dialog" aria-modal="true" aria-label={tr("正在阅读《{title}》", "Reading “{title}”", "『{title}』を読んでいます", { title: itemTitle(reader.item, locale) })} data-candidate-id={reader.item.candidate_id} data-next-candidate-id={reader.nextItem?.candidate_id || ""} data-auto-long-strip={reader.autoLongStrip ? "true" : "false"} data-split-wide-active={readerSplitWideActive ? "true" : "false"} data-split-panel={reader.splitPanel} onMouseMove={handleReaderPointerMove}>
           <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{readerLiveStatus}</span>
           <ReaderTopbar
             ref={readerCloseRef}
@@ -4223,7 +4572,8 @@ function App() {
           {reader.calibration ? <aside ref={readerCalibrationRef} className="reader-calibration" role="alertdialog" aria-modal="true" aria-busy={reader.calibrationSaving} aria-labelledby="reader-calibration-title" aria-describedby="reader-calibration-copy" tabIndex={-1}><span>{tr("阅读位置确认", "READING POSITION CHECK", "読書位置の確認")}</span><strong id="reader-calibration-title">{tr("旧书签需要重新确认", "Confirm the old bookmark", "以前のしおりを確認してください")}</strong><p id="reader-calibration-copy">{tr("旧记录在第 {oldPage} / {oldCount} 页。当前显示第 {page} / {count} 页；你可以先微调页码，确认前不会覆盖原有进度。", "The old bookmark was on page {oldPage} of {oldCount}. Page {page} of {count} is shown now. You can adjust the page first; the old progress will not be replaced until you confirm.", "以前のしおりは {oldCount} ページ中 {oldPage} ページ目でした。現在は {count} ページ中 {page} ページ目を表示しています。先にページを調整でき、確認するまでは以前の進捗を上書きしません。", { oldPage: number(reader.calibration.oldIndex + 1), oldCount: reader.calibration.oldCount ? number(reader.calibration.oldCount) : "?", page: number(reader.index + 1), count: number(reader.pages.count) })}</p><span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{reader.calibrationSaving ? tr("正在确认阅读位置，请稍候。", "Confirming the reading position. Please wait.", "読書位置を確認しています。しばらくお待ちください。") : reader.imageLoading ? tr("正在载入第 {page} 页，共 {count} 页。", "Loading page {page} of {count}.", "全 {count} ページ中 {page} ページ目を読み込んでいます。", { page: number(reader.requestedIndex + 1), count: number(reader.pages.count) }) : tr("当前是第 {page} 页，共 {count} 页。", "Page {page} of {count} is currently shown.", "現在、全 {count} ページ中 {page} ページ目です。", { page: number(reader.index + 1), count: number(reader.pages.count) })}</span>{reader.error ? <div className="reader-calibration-error" role="alert"><span>{reader.error}</span><button type="button" onClick={retryReaderPage}>{tr("重试当前页", "Retry this page", "このページを再試行")}</button></div> : null}<div className="reader-calibration-pages"><button type="button" disabled={reader.calibrationSaving || reader.requestedIndex <= 0} onClick={() => goToReaderPage(reader.requestedIndex - 1)}>{tr("← 前一页", "← Previous page", "← 前のページ")}</button><button type="button" disabled={reader.calibrationSaving || reader.requestedIndex >= reader.pages.count - 1} onClick={() => goToReaderPage(reader.requestedIndex + 1)}>{tr("后一页 →", "Next page →", "次のページ →")}</button></div><div><button type="button" disabled={reader.calibrationSaving} onClick={closeReader}>{tr("先退出", "Exit for now", "いったん閉じる")}</button><button ref={readerCalibrationPrimaryRef} type="button" className="primary" disabled={reader.calibrationSaving || reader.imageLoading || Boolean(reader.error)} onClick={() => { void confirmReaderCalibration(); }}>{reader.calibrationSaving ? tr("正在确认…", "Confirming…", "確認中…") : tr("以当前页继续", "Continue from this page", "このページから続ける")}</button></div></aside> : null}
           <div
             ref={readerStageRef}
-            className={`reader-stage ${reader.fitMode} ${readerSplitWideActive ? "split-wide-active" : ""} ${readerVisualLoading ? "is-loading" : ""}`}
+            className={`reader-stage ${readerEffectiveFitMode} ${reader.autoLongStrip ? "auto-long-strip" : ""} ${readerSplitWideActive ? "split-wide-active" : ""} ${readerVisualLoading ? "is-loading" : ""}`}
+            data-auto-long-strip={reader.autoLongStrip ? "true" : "false"}
             data-split-wide-active={readerSplitWideActive ? "true" : "false"}
             data-split-panel={reader.splitPanel}
             tabIndex={reader.calibration ? -1 : 0}
@@ -4248,7 +4598,8 @@ function App() {
               readerTouchStartRef.current = null;
               if (!start || !touch) return;
               const stage = readerStageRef.current;
-              if (uiRef.current?.reader?.fitMode === "fit-width" && stage && stage.scrollWidth > stage.clientWidth + 8) return;
+              const current = uiRef.current?.reader;
+              if (current && readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight) && stage && stage.scrollWidth > stage.clientWidth + 8) return;
               const dx = touch.clientX - start.x;
               const dy = touch.clientY - start.y;
               if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
@@ -4270,7 +4621,7 @@ function App() {
               </article>
             ) : (
               <>
-                {reader.imageURL ? <img key={reader.imageURL} className={`reader-image ${readerSplitWideActive ? "is-split-wide" : ""}`} src={reader.imageURL} alt={readerSplitWideActive ? reader.splitPanel === 0 ? tr("第 {page} 页右半页", "Page {page}, right half", "{page} ページ目、右半分", { page: number(reader.index + 1) }) : tr("第 {page} 页左半页", "Page {page}, left half", "{page} ページ目、左半分", { page: number(reader.index + 1) }) : tr("第 {page} 页", "Page {page}", "{page} ページ目", { page: number(reader.index + 1) })} draggable={false} style={readerSplitImageStyle} /> : null}
+                {reader.imageURL ? <img key={reader.imageURL} className={`reader-image ${readerSplitWideActive ? "is-split-wide" : ""}`} src={reader.imageURL} alt={readerSplitWideActive ? reader.splitPanel === 0 ? tr("第 {page} 页右半页", "Page {page}, right half", "{page} ページ目、右半分", { page: number(reader.index + 1) }) : tr("第 {page} 页左半页", "Page {page}, left half", "{page} ページ目、左半分", { page: number(reader.index + 1) }) : tr("第 {page} 页", "Page {page}", "{page} ページ目", { page: number(reader.index + 1) })} draggable={false} width={reader.imageNaturalWidth || undefined} height={reader.imageNaturalHeight || undefined} style={readerSplitImageStyle} /> : null}
                 {readerVisualLoading ? <div className="reader-loading-layer"><span>{tr("正在显影第 {page} 页…", "Rendering page {page}…", "{page} ページ目を表示しています…", { page: number(reader.requestedIndex + 1) })}</span></div> : null}
                 {reader.error ? <div className="reader-error-layer" role="alert"><div><h3>{tr("这一页没有顺利打开", "This page did not open", "このページを開けませんでした")}</h3><p>{reader.error}</p><div className="reader-error-actions"><button type="button" onClick={retryReaderPage}>{tr("重试本页", "Retry this page", "このページを再試行")}</button>{reader.requestedIndex > 0 ? <button type="button" onClick={() => moveReader(-1)}>{tr("上一页", "Previous page", "前のページ")}</button> : null}{reader.requestedIndex < reader.pages.count - 1 ? <button type="button" onClick={() => moveReader(1)}>{tr("下一页", "Next page", "次のページ")}</button> : null}<button type="button" onClick={closeReader}>{tr("退出", "Exit", "閉じる")}</button></div></div></div> : null}
               </>

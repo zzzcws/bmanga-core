@@ -1,7 +1,7 @@
 
 import { ApiError, apiErrorText } from "./lib/api";
 import { type ActiveReaderFitMode } from "./components/ReaderChrome";
-import { seriesReadingOrder } from "./lib/seriesOrder";
+import { nextSeriesReadable, seriesReadingOrder } from "./lib/seriesOrder";
 import { preferredScrollBehavior } from "./lib/motion";
 import { type CatalogPage, type FavoritesPage } from "./lib/catalogPageCache";
 import {
@@ -37,7 +37,7 @@ import {
 import { type DetailState } from "./lib/detailProgress";
 import type { PersonalMarkField } from "./lib/userMarks";
 import { cleanTitle, pageMeta, progressFor } from "./lib/catalogPresentation";
-import { selectSeriesContinueItem } from "./lib/seriesResume";
+import { selectConfirmedSeriesContinueItem, selectSeriesContinueItem } from "./lib/seriesResume";
 import {
   DEFAULT_LOCALE,
   intlLocale,
@@ -72,6 +72,7 @@ export interface ReaderState {
   requestedSplitPanel: 0 | 1;
   imageNaturalWidth: number;
   imageNaturalHeight: number;
+  autoLongStrip: boolean;
   stageScrollTop: number;
   stageScrollLeft: number;
   restoreScroll: boolean;
@@ -307,14 +308,14 @@ export function initialBrowseRoute(href: string): BrowseRouteState {
 
 export function storedReaderFit(progress?: ReadingProgress | null): ActiveReaderFitMode {
   const fromProgress = String(progress?.reader_fit_mode || "");
-  if (fromProgress === "fit-page" || fromProgress === "fit-width" || fromProgress === "split-wide") return fromProgress;
+  if (fromProgress === "auto" || fromProgress === "fit-page" || fromProgress === "fit-width" || fromProgress === "split-wide") return fromProgress;
   try {
     const stored = window.localStorage.getItem(READER_FIT_KEY);
-    if (stored === "fit-width" || stored === "fit-page" || stored === "split-wide") return stored;
+    if (stored === "auto" || stored === "fit-width" || stored === "fit-page" || stored === "split-wide") return stored;
   } catch {
     // Storage can be unavailable without blocking reading.
   }
-  return "fit-page";
+  return "auto";
 }
 
 export type DetailReaderWarmTarget = {
@@ -327,9 +328,10 @@ export type DetailReaderWarmTarget = {
 
 export function detailReaderWarmTarget(detail: DetailState | null): DetailReaderWarmTarget | null {
   if (!detail) return null;
+  if (detail.kind === "series" && detail.progressState !== "ready") return null;
   const item = detail.kind === "work"
     ? detail.data.work
-    : seriesContinueItem(detail.data, detail.progress);
+    : seriesContinueItem(detail.data, detail.progress, true);
   if (!item?.candidate_id || !item.can_read) return null;
   const catalogProgress = progressFor(item);
   const seriesProgress = detail.kind === "series" && detail.progress?.candidate_id === item.candidate_id
@@ -342,7 +344,7 @@ export function detailReaderWarmTarget(detail: DetailState | null): DetailReader
     manifest_hash: item.progress_manifest_hash,
   } : null);
   const preferredFit = String(fullProgress?.reader_fit_mode || item.progress_reader_fit_mode || "");
-  const fitMode = preferredFit === "fit-page" || preferredFit === "fit-width" || preferredFit === "split-wide"
+  const fitMode = preferredFit === "auto" || preferredFit === "fit-page" || preferredFit === "fit-width" || preferredFit === "split-wide"
     ? preferredFit
     : storedReaderFit(fullProgress);
   return {
@@ -438,6 +440,7 @@ export type ReaderPagePrefetchPlan = {
   index: number;
   pageManifestID?: string;
   preserveSource: boolean;
+  constrainWidth: boolean;
 };
 
 export class ReaderPageResponseError extends Error {
@@ -648,9 +651,14 @@ export function favoriteFor(item: CatalogItem, mark?: UserMark | null): boolean 
   return mark ? Boolean(mark.favorite) : booleanValue(item.user_favorite);
 }
 
-export function seriesContinueItem(data: SeriesDetailResponse, seriesProgress: ReadingProgress | null = null): WorkSummary | undefined {
+export function seriesContinueItem(data: SeriesDetailResponse, seriesProgress: ReadingProgress | null = null, summaryConfirmed?: boolean): WorkSummary | undefined {
   const readable = seriesReadingOrder(data).filter((item) => item.can_read);
   if (!readable.length) return undefined;
+  if (summaryConfirmed === false) return readable[0];
+  if (summaryConfirmed === true) {
+    return selectConfirmedSeriesContinueItem(data.items, seriesProgress, readable[0], (candidateID) => nextSeriesReadable(data, candidateID));
+  }
+  // Existing two-argument callers retain the cached-progress selection policy.
   const resumed = selectSeriesContinueItem(readable, seriesProgress);
   if (resumed) return resumed;
   return readable.find((item) => item.candidate_id === data.series.selected_candidate_id) || readable[0];

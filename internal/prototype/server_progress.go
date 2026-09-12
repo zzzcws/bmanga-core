@@ -148,7 +148,7 @@ func (s *Server) handleProgressSave(w http.ResponseWriter, r *http.Request) {
 	}
 	readerFitMode := strings.TrimSpace(stringValue(payload["reader_fit_mode"]))
 	switch readerFitMode {
-	case "fit-page", "fit-width", "split-wide":
+	case "auto", "fit-page", "fit-width", "split-wide":
 	default:
 		readerFitMode = ""
 	}
@@ -161,7 +161,7 @@ func (s *Server) handleProgressSave(w http.ResponseWriter, r *http.Request) {
 	}
 	stageScrollTop := clampInt(stringValue(payload["stage_scroll_top"]), 0, 0, 1_000_000)
 	stageScrollLeft := clampInt(stringValue(payload["stage_scroll_left"]), 0, 0, 1_000_000)
-	if readerFitMode != "fit-width" {
+	if readerFitMode != "fit-width" && readerFitMode != "auto" {
 		stageScrollTop = 0
 		stageScrollLeft = 0
 	}
@@ -929,21 +929,45 @@ func (s *Server) handleSeriesProgressGet(w http.ResponseWriter, r *http.Request)
 	if !allowGet(w, r) {
 		return
 	}
+	// Detail presentation needs a fresh saved position, not archive discovery.
+	// The normal reader endpoints continue to validate the actual page manifest.
+	manifestMode := strings.TrimSpace(r.URL.Query().Get("manifest"))
+	if manifestMode != "" && manifestMode != "stored" {
+		writeJSONError(w, http.StatusBadRequest, "unsupported manifest mode")
+		return
+	}
 	groupID := strings.TrimSpace(r.URL.Query().Get("id"))
 	if groupID == "" {
 		writeJSONError(w, http.StatusBadRequest, "missing id")
 		return
 	}
-	rows, err := s.query(`
+	currentJoin := "LEFT JOIN series_items current_si ON current_si.candidate_id = wi.current_candidate_id"
+	currentProjection := ""
+	queryArgs := []any{groupID, groupID}
+	if manifestMode == "stored" {
+		// Only the same stable identity's current, visible member of this
+		// series can replace the saved candidate in the response. Never change
+		// the saved manifest or page position, or write this projection back.
+		currentJoin += " AND current_si.group_id = ? AND " + visibleWorkCandidateExistsSQL("wi.current_candidate_id")
+		currentProjection = `,
+			current_si.candidate_id AS series_progress_current_candidate_id,
+			COALESCE(current_wb.title, '') AS series_progress_current_title,
+			COALESCE(current_si.sort_key, '') AS series_progress_current_sort_key,
+			COALESCE(current_si.sequence_number, '') AS series_progress_current_sequence`
+		queryArgs = []any{groupID, groupID, groupID}
+	}
+	queryStarted := time.Now()
+	rows, err := s.queryContext(r.Context(), `
 		SELECT
 			rp.*,
 			COALESCE(progress_wb.title, current_wb.title, '') AS title,
 			COALESCE(NULLIF(progress_si.sort_key, ''), NULLIF(current_si.sort_key, ''), '') AS series_progress_sort_key,
 			COALESCE(NULLIF(progress_si.sequence_number, ''), NULLIF(current_si.sequence_number, ''), '') AS series_progress_sequence
+			`+currentProjection+`
 		FROM reading_progress rp
 		JOIN work_identities wi ON wi.work_identity_id = rp.work_identity_id
 		LEFT JOIN series_items progress_si ON progress_si.candidate_id = rp.candidate_id
-		LEFT JOIN series_items current_si ON current_si.candidate_id = wi.current_candidate_id
+		`+currentJoin+`
 		LEFT JOIN work_browse progress_wb ON progress_wb.candidate_id = rp.candidate_id
 		LEFT JOIN work_browse current_wb ON current_wb.candidate_id = wi.current_candidate_id
 		WHERE rp.reader_profile_key = 'default'
@@ -955,7 +979,8 @@ func (s *Server) handleSeriesProgressGet(w http.ResponseWriter, r *http.Request)
 			  )
 		  )
 		  AND `+visibleWorkCandidateExistsSQL("rp.candidate_id")+`
-	`, groupID, groupID)
+	`, queryArgs...)
+	appendServerTiming(w.Header(), "progressQuery", time.Since(queryStarted))
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -963,12 +988,26 @@ func (s *Server) handleSeriesProgressGet(w http.ResponseWriter, r *http.Request)
 	var progress map[string]any
 	var progressRow map[string]any
 	for _, row := range rows {
+		if manifestMode == "stored" && stringValue(row["series_progress_current_candidate_id"]) != "" {
+			row["candidate_id"] = row["series_progress_current_candidate_id"]
+			row["title"] = row["series_progress_current_title"]
+			row["series_progress_sort_key"] = row["series_progress_current_sort_key"]
+			row["series_progress_sequence"] = row["series_progress_current_sequence"]
+		}
 		if seriesResumeProgressRowBetter(row, progressRow) {
 			progressRow = row
 		}
 	}
 	if progressRow != nil {
-		manifest, err := s.currentManifestForCandidate(r.Context(), stringValue(progressRow["candidate_id"]))
+		manifestStarted := time.Now()
+		var manifest map[string]any
+		var err error
+		if manifestMode == "stored" {
+			manifest, err = s.getCurrentManifestContext(r.Context(), stringValue(progressRow["candidate_id"]))
+		} else {
+			manifest, err = s.currentManifestForCandidate(r.Context(), stringValue(progressRow["candidate_id"]))
+		}
+		appendServerTiming(w.Header(), "progressManifest", time.Since(manifestStarted))
 		if err != nil {
 			writeJSONError(w, http.StatusInternalServerError, err.Error())
 			return

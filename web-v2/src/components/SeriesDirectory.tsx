@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useI18n, type LocalizedText } from "../i18n";
 import { preferredScrollBehavior } from "../lib/motion";
@@ -13,6 +13,9 @@ import type { SeriesDetailResponse, WorkSummary } from "../types";
 interface SeriesDirectoryProps {
   data: SeriesDetailResponse;
   activeCandidateID?: string;
+  progressLoading?: boolean;
+  progressUnknown?: boolean;
+  locateRevision?: number;
   onOpen: (item: WorkSummary, nextItem?: WorkSummary) => void;
 }
 
@@ -41,6 +44,8 @@ const copy = {
   },
   unnamedEntry: { "zh-CN": "未命名条目", en: "Untitled entry", ja: "名称未設定の項目" },
   unread: { "zh-CN": "未读", en: "Unread", ja: "未読" },
+  progressChecking: { "zh-CN": "核对进度中…", en: "Checking progress…", ja: "進捗を確認中…" },
+  progressUnknown: { "zh-CN": "进度待核对", en: "Progress unconfirmed", ja: "進捗未確認" },
   unavailable: { "zh-CN": "暂不可读", en: "Unavailable", ja: "現在閲覧できません" },
   read: { "zh-CN": "已读", en: "Read", ja: "読了" },
   pageProgress: { "zh-CN": "第 {current} / {count} 页", en: "Page {current} of {count}", ja: "{count} ページ中 {current} ページ目" },
@@ -129,11 +134,16 @@ function entryMeta(
   return values.slice(0, 3).join(" · ");
 }
 
-export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirectoryProps) {
+export function SeriesDirectory({ data, activeCandidateID, progressLoading = false, progressUnknown = false, locateRevision = 0, onOpen }: SeriesDirectoryProps) {
   const { locale, number, text } = useI18n();
   const outline = useMemo(() => buildSeriesOutline(data, locale), [data, locale]);
   const activeSectionIndex = Math.max(0, outline.sections.findIndex((section) => section.groups.some((group) => groupContains(group, activeCandidateID))));
   const [openSections, setOpenSections] = useState<Set<number>>(() => new Set([activeSectionIndex]));
+  const userNavigatedRef = useRef(false);
+  const lastActiveRef = useRef("");
+  const lastLocateRef = useRef(locateRevision);
+  const pendingLocateCandidateRef = useRef<string | null>(null);
+  const directoryRef = useRef<HTMLElement | null>(null);
   const [sectionRanges, setSectionRanges] = useState<Record<string, number>>(() => {
     const section = outline.sections[activeSectionIndex];
     if (!section || !activeCandidateID) return {};
@@ -144,6 +154,9 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
   });
 
   useEffect(() => {
+    const activeKey = `${activeCandidateID || ""}:${activeSectionIndex}`;
+    if (lastActiveRef.current === activeKey || userNavigatedRef.current) return;
+    lastActiveRef.current = activeKey;
     setOpenSections((current) => new Set(current).add(activeSectionIndex));
     if (!activeCandidateID) return;
     const section = outline.sections[activeSectionIndex];
@@ -156,7 +169,36 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
       : { ...current, [section.key]: rangeIndex });
   }, [activeCandidateID, activeSectionIndex, outline]);
 
+  useEffect(() => {
+    if (lastLocateRef.current === locateRevision) return undefined;
+    lastLocateRef.current = locateRevision;
+    const section = outline.sections[activeSectionIndex];
+    if (!section || !activeCandidateID) return undefined;
+    const groupIndex = section.groups.findIndex((group) => groupContains(group, activeCandidateID));
+    if (groupIndex < 0) return undefined;
+    userNavigatedRef.current = true;
+    pendingLocateCandidateRef.current = activeCandidateID;
+    setOpenSections((current) => new Set(current).add(activeSectionIndex));
+    setSectionRanges((current) => ({ ...current, [section.key]: seriesDirectoryRangeForGroup(groupIndex, section.groups.length) }));
+  }, [locateRevision, activeCandidateID, activeSectionIndex, outline]);
+
+  useLayoutEffect(() => {
+    const candidateID = pendingLocateCandidateRef.current;
+    if (!candidateID) return;
+    if (candidateID !== activeCandidateID) {
+      pendingLocateCandidateRef.current = null;
+      return;
+    }
+    const target = directoryRef.current?.querySelector<HTMLElement>("#series-current-entry");
+    if (!target) return;
+    // Expansion/range selection must be committed before consuming the request.
+    // A changed outline must not cancel a queued frame after marking it handled.
+    target.scrollIntoView({ block: "center", behavior: preferredScrollBehavior() });
+    pendingLocateCandidateRef.current = null;
+  });
+
   const jumpToSection = (index: number) => {
+    userNavigatedRef.current = true;
     setOpenSections((current) => new Set(current).add(index));
     window.requestAnimationFrame(() => document.getElementById(`series-outline-section-${index}`)?.scrollIntoView({ block: "start", behavior: preferredScrollBehavior() }));
   };
@@ -176,7 +218,7 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
   };
 
   return (
-    <section className="series-directory" aria-label={text(copy.directoryAria)} data-section-count={outline.sections.length} data-entry-count={outline.entries.length}>
+    <section ref={directoryRef} className="series-directory" aria-label={text(copy.directoryAria)} data-section-count={outline.sections.length} data-entry-count={outline.entries.length}>
       <header className="series-directory-heading">
         <div><span>{text(copy.readingOrder)}</span><h2>{text(copy.directoryTitle)}</h2></div>
         <p>{data.sectioned ? data.section_summary : (data.series.item_summary || text(copy.entries, { count: number(outline.entries.length) }))}</p>
@@ -190,7 +232,7 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
         {outline.sections.map((section, sectionIndex) => {
           const open = openSections.has(sectionIndex);
           const activeGroupIndex = section.groups.findIndex((group) => groupContains(group, activeCandidateID));
-          const defaultRange = activeGroupIndex >= 0
+          const defaultRange = !userNavigatedRef.current && activeGroupIndex >= 0
             ? seriesDirectoryRangeForGroup(activeGroupIndex, section.groups.length)
             : 0;
           const range = seriesDirectoryRangeWindow(
@@ -201,6 +243,7 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
           const rangeLabels = section.groups.map((group) => group.label);
           const entryCount = section.groups.reduce((total, group) => total + group.items.length, 0);
           const changeRange = (nextIndex: number) => {
+            userNavigatedRef.current = true;
             const nextRange = seriesDirectoryRangeWindow(section.groups.length, nextIndex);
             setSectionRanges((current) => current[section.key] === nextRange.index
               ? current
@@ -208,7 +251,7 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
           };
           return (
             <section className={`series-outline-section ${sectionIndex === activeSectionIndex ? "is-current" : ""}`} id={`series-outline-section-${sectionIndex}`} key={section.key}>
-              <button className="series-outline-toggle" type="button" aria-expanded={open} onClick={() => setOpenSections((current) => { const next = new Set(current); if (next.has(sectionIndex)) next.delete(sectionIndex); else next.add(sectionIndex); return next; })}>
+              <button className="series-outline-toggle" type="button" aria-expanded={open} onClick={() => { userNavigatedRef.current = true; setOpenSections((current) => { const next = new Set(current); if (next.has(sectionIndex)) next.delete(sectionIndex); else next.add(sectionIndex); return next; }); }}>
                 <span>{number(sectionIndex + 1, { minimumIntegerDigits: 2, useGrouping: false })}</span>
                 <strong>{section.title}</strong>
                 <small>{text(copy.groupsAndEntries, { groups: number(section.groups.length), entries: number(entryCount) })}</small>
@@ -234,11 +277,11 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
                       const groupNumber = (outline.groupIndex.get(group.key) ?? 0) + 1;
                       return (
                         <article id={current ? "series-current-entry" : undefined} className={`series-group ${current ? "is-active" : ""}`} key={group.key}>
-                          <button className="series-group-primary" type="button" aria-current={current ? "true" : undefined} disabled={!selected.can_read} onClick={() => onOpen(selected, nextItem)}>
+                          <button className="series-group-primary" type="button" aria-current={current ? "true" : undefined} disabled={progressLoading || !selected.can_read} onClick={() => onOpen(selected, nextItem)}>
                             <span>{number(groupNumber, { minimumIntegerDigits: 3, useGrouping: false })}</span>
                             <strong>{group.label}</strong>
                             <small>{entryMeta(selected, text, number)}</small>
-                            <em>{progressLabel(selected, text, number)}</em>
+                            <em>{progressLoading ? text(copy.progressChecking) : progressUnknown ? text(copy.progressUnknown) : progressLabel(selected, text, number)}</em>
                           </button>
                           {group.items.length > 1 ? (
                             <details className="series-group-entries" open={current}>
@@ -246,7 +289,7 @@ export function SeriesDirectory({ data, activeCandidateID, onOpen }: SeriesDirec
                               <div>
                                 {group.items.map((item, itemIndex) => {
                                   const itemCurrent = item.candidate_id === activeCandidateID;
-                                  return <button type="button" className={itemCurrent ? "is-active" : ""} aria-current={itemCurrent ? "true" : undefined} disabled={!item.can_read} onClick={() => onOpen(item, nextSeriesReadableFromOutline(outline, item.candidate_id))} key={item.candidate_id}><span>{number(itemIndex + 1, { minimumIntegerDigits: 2, useGrouping: false })}</span><strong>{itemTitle(item, text(copy.unnamedEntry))}</strong><small>{entryMeta(item, text, number)}</small><em>{progressLabel(item, text, number)}</em></button>;
+                                  return <button type="button" className={itemCurrent ? "is-active" : ""} aria-current={itemCurrent ? "true" : undefined} disabled={progressLoading || !item.can_read} onClick={() => onOpen(item, nextSeriesReadableFromOutline(outline, item.candidate_id))} key={item.candidate_id}><span>{number(itemIndex + 1, { minimumIntegerDigits: 2, useGrouping: false })}</span><strong>{itemTitle(item, text(copy.unnamedEntry))}</strong><small>{entryMeta(item, text, number)}</small><em>{progressLoading ? text(copy.progressChecking) : progressUnknown ? text(copy.progressUnknown) : progressLabel(item, text, number)}</em></button>;
                                 })}
                               </div>
                             </details>

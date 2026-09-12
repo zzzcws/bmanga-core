@@ -672,8 +672,12 @@ func safeSeriesCoverJoinSQLForSelected(selectedOnly bool) string {
 	}
 	filters := strings.Join(parts, " AND ")
 	selectedJoin := ""
+	selectedFilter := ""
 	if selectedOnly {
 		selectedJoin = "JOIN selected_groups selected_cover ON selected_cover.group_id = si.group_id"
+		// Keep an indexed group bound even if SQLite reorders the join for
+		// the window function's ordering.
+		selectedFilter = "AND si.group_id IN (SELECT group_id FROM selected_groups)"
 	}
 	return fmt.Sprintf(`
 		LEFT JOIN (
@@ -707,10 +711,11 @@ func safeSeriesCoverJoinSQLForSelected(selectedOnly bool) string {
 				WHERE wcc.cover_status = 'ready'
 				  AND wcc.cover_kind IN ('page_image', 'archive', 'pdf', 'ebook')
 				  AND %s
+				  %s
 			) ranked_safe_covers
 			WHERE cover_rank = 1
 		) safe_cover ON safe_cover.group_id = sg.group_id
-	`, selectedJoin, filters)
+	`, selectedJoin, filters, selectedFilter)
 }
 
 func seriesCoverOverrideJoinSQL() string {
@@ -752,8 +757,10 @@ func seriesSectionStatsJoinSQL() string {
 
 func seriesSectionStatsJoinSQLForSelected(selectedOnly bool) string {
 	selectedJoin := ""
+	selectedFilter := ""
 	if selectedOnly {
 		selectedJoin = "JOIN selected_groups selected_section ON selected_section.group_id = si.group_id"
+		selectedFilter = "WHERE si.group_id IN (SELECT group_id FROM selected_groups)"
 	}
 	return `
 		LEFT JOIN (
@@ -806,6 +813,7 @@ func seriesSectionStatsJoinSQLForSelected(selectedOnly bool) string {
 					` + selectedJoin + `
 					JOIN series_groups sg2 ON sg2.group_id = si.group_id
 					JOIN work_browse section_wb ON section_wb.candidate_id = si.candidate_id
+					` + selectedFilter + `
 				) section_labels
 				GROUP BY section_labels.group_id, section_labels.section_label
 			) section_counts

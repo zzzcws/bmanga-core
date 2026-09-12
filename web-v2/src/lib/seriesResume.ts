@@ -70,3 +70,20 @@ export function selectSeriesContinueItem(
   if (!anchorProgress.completed) return readable[anchorIndex];
   return readable[anchorIndex + 1] || readable[anchorIndex];
 }
+
+/** A confirmed summary is the resume anchor, even after a reset makes it
+ * older than cached item progress. Chapter advancement is delegated to the
+ * directory's group-aware order so another edition is not the next chapter. */
+export function selectConfirmedSeriesContinueItem(
+  items: readonly WorkSummary[],
+  progress: ReadingProgress | null,
+  firstReadable: WorkSummary | undefined,
+  nextReadable: (candidateID: string) => WorkSummary | undefined,
+): WorkSummary | undefined {
+  if (!progress) return firstReadable;
+  const anchor = items.find((item) => item.candidate_id === progress.candidate_id
+    && item.can_read
+    && (!progress.work_identity_id || !item.work_identity_id || item.work_identity_id === progress.work_identity_id));
+  if (!anchor) return undefined;
+  return progress.completed ? nextReadable(anchor.candidate_id) || anchor : anchor;
+}

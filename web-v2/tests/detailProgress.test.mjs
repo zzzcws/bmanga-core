@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  applySeriesProgressSummary,
   patchContinueTargetProgress,
   patchDetailProgress,
   patchHistoryEntryDetailProgress,
@@ -58,6 +59,114 @@ function seriesDetail(currentProgress) {
     progress: currentProgress,
   };
 }
+
+test("fresh detail summary updates the target while retaining mutable notes and directory additions", () => {
+  const current = seriesDetail(progress("chapter-5.1", 2, 13));
+  current.progressState = "loading";
+  current.data.mark = { notes: "Saved note remains unchanged", favorite: true };
+  current.data.items.push(work("chapter-5.3", 17));
+  const latest = { ...progress("chapter-5.2", 4, 14), updated_at: "2026-07-15T00:00:00Z", last_read_at: "2026-07-15T00:00:00Z" };
+  const result = applySeriesProgressSummary(current, "series-1", latest);
+  assert.equal(result.progressState, "ready");
+  assert.equal(result.progress, latest);
+  assert.equal(result.data.items[1].progress, latest);
+  assert.equal(result.data.items.length, 3);
+  assert.equal(result.data.mark, current.data.mark);
+  assert.equal(current.progressState, "loading");
+});
+
+test("a late detail summary cannot roll back a newer ACK in the same or another chapter", () => {
+  const older = progress("chapter-5.1", 2, 13);
+  const newer = { ...older, index: 8, updated_at: "2026-07-15T00:00:00Z", last_read_at: "2026-07-15T00:00:00Z" };
+  const same = applySeriesProgressSummary(seriesDetail(newer), "series-1", older, [newer]);
+  assert.equal(same.progress, newer);
+  assert.equal(same.data.items[0].progress, newer);
+  const current = patchDetailProgress(seriesDetail(older), "chapter-5.2", { ...newer, candidate_id: "chapter-5.2", work_identity_id: "work:chapter-5.2" });
+  const other = applySeriesProgressSummary(current, "series-1", older, [current.progress]);
+  assert.equal(other.progress.candidate_id, "chapter-5.2");
+  assert.equal(other.progress.index, 8);
+});
+
+test("detail summaries reject stale series and replacement identities without unlocking reading", () => {
+  const current = seriesDetail(null);
+  assert.equal(applySeriesProgressSummary(current, "other-series", progress("chapter-5.1", 2, 13)), current);
+  for (const incoming of [progress("missing-chapter", 2, 13), { ...progress("chapter-5.1", 2, 13), work_identity_id: "replaced-work" }]) {
+    const result = applySeriesProgressSummary(current, "series-1", incoming);
+    assert.equal(result.progressState, "error");
+    assert.equal(result.data, current.data);
+  }
+});
+
+test("an unread summary confirms readiness without inventing progress", () => {
+  const current = seriesDetail(null);
+  const result = applySeriesProgressSummary(current, "series-1", null);
+  assert.equal(result.progressState, "ready");
+  assert.equal(result.progress, null);
+  assert.equal(result.data.mark, current.data.mark);
+});
+
+test("an authoritative null clears old history progress but retains ACKs from this read", () => {
+  const stale = progress("chapter-5.1", 2, 13);
+  const current = seriesDetail(stale);
+  current.data.items[0].progress_index = 2;
+  current.data.items[0].progress_count = 13;
+  current.data.items[0].progress_updated_at = stale.updated_at;
+  const cleared = applySeriesProgressSummary(current, "series-1", null);
+  assert.equal(cleared.progress, null);
+  assert.equal(cleared.data.items[0].progress, undefined);
+  assert.equal(cleared.data.items[0].progress_count, undefined);
+  assert.equal(cleared.data.items[0].progress_updated_at, undefined);
+  const ack = progress("chapter-5.2", 8, 14);
+  const retained = applySeriesProgressSummary(current, "series-1", null, [ack]);
+  assert.equal(retained.progress, ack);
+  assert.equal(retained.data.items[1].progress, ack);
+  assert.equal(retained.data.items[0].progress, undefined);
+});
+
+test("ACKs received before directory mount replay against final membership for null and non-null summaries", () => {
+  const stale = progress("chapter-5.1", 2, 13);
+  const ack = { ...progress("chapter-5.2", 9, 14), updated_at: "2026-07-15T00:00:00Z", last_read_at: "2026-07-15T00:00:00Z" };
+  for (const summary of [null, stale]) {
+    const result = applySeriesProgressSummary(seriesDetail(stale), "series-1", summary, [ack, progress("unrelated", 11, 20)]);
+    assert.equal(result.progress, ack);
+    assert.equal(result.data.items[1].progress.index, 9);
+    assert.equal(result.data.items.length, 2);
+    const staleAck = { ...ack, index: 1, updated_at: "2026-07-13T00:00:00Z", last_read_at: "2026-07-13T00:00:00Z" };
+    assert.equal(applySeriesProgressSummary(seriesDetail(ack), "series-1", ack, [staleAck]).progress.index, 9);
+  }
+  const changed = seriesDetail(stale);
+  changed.data.items[1].candidate_id = "current-chapter";
+  const remapped = applySeriesProgressSummary(changed, "series-1", null, [ack]);
+  assert.equal(remapped.progress.candidate_id, "current-chapter");
+  assert.equal(remapped.progress.work_identity_id, ack.work_identity_id);
+});
+
+test("a non-null authoritative summary replaces a later cached anchor after another-device reset", () => {
+  const cached = { ...progress("chapter-5.1", 12, 13), updated_at: "2026-07-15T00:00:00Z", last_read_at: "2026-07-15T00:00:00Z" };
+  const remaining = progress("chapter-5.2", 2, 14);
+  const current = seriesDetail(cached);
+  const result = applySeriesProgressSummary(current, "series-1", remaining);
+  assert.equal(result.progress, remaining);
+  assert.equal(result.progressState, "ready");
+  assert.equal(result.data.items[0].progress, cached, "Unrelated chapter display data is not erased by a one-position summary");
+});
+
+
+test("summary identity errors use the caller's localized message", () => {
+  const result = applySeriesProgressSummary(seriesDetail(null), "series-1", progress("missing", 1, 12), [], "Localized directory mismatch");
+  assert.equal(result.progressState, "error");
+  assert.equal(result.progressError, "Localized directory mismatch");
+});
+
+test("identity-guarded ACKs cannot patch replacement candidates or history", () => {
+  const current = seriesDetail(null);
+  const ack = progress("chapter-5.1", 8, 13);
+  assert.equal(patchDetailProgress(current, ack.candidate_id, ack, "unrelated-identity"), current);
+  const snapshot = { detail: current };
+  assert.equal(patchSnapshotDetailProgress(snapshot, ack.candidate_id, ack, "unrelated-identity"), snapshot);
+  const next = applySeriesProgressSummary(current, "series-1", null, [{ ...ack, work_identity_id: "unrelated-identity" }]);
+  assert.equal(next.progress, null);
+});
 
 test("next chapter progress patches the restored parent snapshot", () => {
   const chapter51 = progress("chapter-5.1", 12, 13, true);

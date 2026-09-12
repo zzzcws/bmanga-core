@@ -6,6 +6,31 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+## [0.1.0-alpha.7] - 2026-09-12
+
+### Fixed
+
+- Limit series-detail aggregates and cover selection to the requested series;
+  display the directory before the saved reading-position check completes.
+- Separate progress checking/error/unread states, allow independent retry, and
+  preserve authoritative summaries and newer acknowledgements across races.
+- Keep mobile detail focus, scroll position, directory folds and ranges stable
+  during background updates; explicitly reveal the current chapter on request.
+- Add automatic long-strip width fit and width-based image requests, preserving
+  source pixels instead of stretching longest-edge thumbnails. Keep distinct
+  derivative caches, bound resize working memory, and retain source bytes when
+  a safe width derivative cannot be generated within the memory budget.
+- Preserve scroll anchors when the viewport changes and avoid marking the last
+  long strip complete before its scrollable content has been read.
+
+### Verification
+
+- Add synthetic Go query, progress, image and resource-budget regressions plus
+  isolated mobile Chromium detail/reader tests in CI and release gates.
+- Preserve English, Simplified Chinese and Japanese interfaces. Dependency locks,
+  runtime component inventory and the local-only/read-only source boundary are
+  unchanged. Online providers and private operational data are not included.
+
 ## [0.1.0-alpha.6] - 2026-09-12
 
 ### Fixed

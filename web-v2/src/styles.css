@@ -2241,6 +2241,39 @@ progress::-webkit-progress-value {
   line-height: 1.55;
 }
 
+.series-progress-check {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.series-progress-check.is-error { color: var(--vermilion-dark); }
+.series-progress-check button {
+  min-height: 40px;
+  border: 1px solid currentColor;
+  padding: 6px 12px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.detail-opening-preview {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin: 20px 0;
+  text-align: left;
+}
+.detail-opening-preview img { width: 64px; max-height: 96px; object-fit: cover; }
+.detail-opening-preview strong { overflow-wrap: anywhere; }
+
 .series-resume-location button {
   border: 0;
   border-bottom: 1px solid currentColor;

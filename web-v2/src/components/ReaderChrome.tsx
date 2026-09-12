@@ -22,6 +22,7 @@ const copy = {
   controls: { "zh-CN": "阅读控制", en: "Reader controls", ja: "リーダー操作" },
   previousPage: { "zh-CN": "← 上一页", en: "← Previous page", ja: "← 前のページ" },
   fitGroup: { "zh-CN": "页面适配", en: "Page fit", ja: "ページ表示" },
+  fitAuto: { "zh-CN": "自动", en: "Auto", ja: "自動" },
   fitPage: { "zh-CN": "整页", en: "Fit page", ja: "ページ全体" },
   fitWidth: { "zh-CN": "适宽", en: "Fit width", ja: "幅に合わせる" },
   splitWide: { "zh-CN": "横页拆分", en: "Split wide pages", ja: "見開きを分割" },
@@ -34,7 +35,7 @@ const copy = {
   synced: { "zh-CN": "进度已同步", en: "Progress synced", ja: "進捗を同期済み" },
 } satisfies Record<string, LocalizedText>;
 
-export type ActiveReaderFitMode = Extract<ReaderFitMode, "fit-page" | "fit-width" | "split-wide">;
+export type ActiveReaderFitMode = Extract<ReaderFitMode, "auto" | "fit-page" | "fit-width" | "split-wide">;
 
 export interface ReaderTopbarProps {
   title: string;
@@ -151,7 +152,7 @@ export function ReaderControls({
   return (
     <nav className="reader-controls" aria-label={text(copy.controls)} aria-hidden={inactive ? true : undefined} inert={inactive ? true : undefined} onMouseEnter={onReveal}>
       <button type="button" onClick={onPrevious} disabled={calibrationOpen || (!ending && requestedIndex <= 0 && (!splitWideActive || splitPanel <= 0))}>{text(copy.previousPage)}</button>
-      <div className="reader-fit-toggle" role="group" aria-label={text(copy.fitGroup)}><button type="button" aria-pressed={fitMode === "fit-page"} onClick={() => onFitChange("fit-page")}>{text(copy.fitPage)}</button><button type="button" aria-pressed={fitMode === "fit-width"} onClick={() => onFitChange("fit-width")}>{text(copy.fitWidth)}</button><button type="button" aria-pressed={fitMode === "split-wide"} onClick={() => onFitChange("split-wide")}>{text(copy.splitWide)}</button></div>
+      <div className="reader-fit-toggle" role="group" aria-label={text(copy.fitGroup)}><button type="button" aria-pressed={fitMode === "auto"} onClick={() => onFitChange("auto")}>{text(copy.fitAuto)}</button><button type="button" aria-pressed={fitMode === "fit-page"} onClick={() => onFitChange("fit-page")}>{text(copy.fitPage)}</button><button type="button" aria-pressed={fitMode === "fit-width"} onClick={() => onFitChange("fit-width")}>{text(copy.fitWidth)}</button><button type="button" aria-pressed={fitMode === "split-wide"} onClick={() => onFitChange("split-wide")}>{text(copy.splitWide)}</button></div>
       <form className="reader-page-jump" onSubmit={submitPage}><button type="button" className="reader-edge-jump" disabled={calibrationOpen || (firstPhysicalPage && !canRewindSplitPanel)} onClick={jumpToFirst}>{text(copy.first)}</button><label htmlFor="reader-page-input">{text(copy.pageNumber)}</label><input id="reader-page-input" inputMode="numeric" pattern="[0-9]*" value={pageDraft} disabled={calibrationOpen} onChange={(event) => onPageDraftChange(event.target.value.replace(/\D+/gu, ""))} aria-label={text(copy.jumpLabel, { count: number(pageCount) })} /><span>/ {number(pageCount)}</span><button type="submit" className="reader-page-submit" disabled={calibrationOpen}>{text(copy.jump)}</button><button type="button" className="reader-edge-jump" disabled={calibrationOpen || (lastPhysicalPage && !canRewindSplitPanel)} onClick={jumpToLast}>{text(copy.last)}</button></form>
       <span className="reader-sync-state" data-state={pendingProgressCount ? "pending" : "synced"}>{pendingProgressCount ? text(copy.pending, { count: number(pendingProgressCount) }) : text(copy.synced)}</span>
       <div className="reader-secondary-actions">{onOpenNextItem ? <button type="button" title={localizedNextItemLabel} onClick={onOpenNextItem}>{localizedNextItemLabel}</button> : null}</div>
