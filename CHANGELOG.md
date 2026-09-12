@@ -6,7 +6,21 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+## [0.1.0-alpha.5] - 2026-09-12
+
 ### Changed
+
+- Update the Go 1.26 toolchain to 1.26.8 with an exact-version guard and a
+  verified immutable builder digest; retain the supported 1.26 line rather
+  than mixing an unreviewed Go 1.27 migration into routine maintenance.
+- Upgrade `modernc.org/sqlite` to 1.58.0, `modernc.org/libc` to 1.75.6, and
+  `modernc.org/memory` to 1.12.1 with refreshed Linux/amd64 artifact evidence.
+- Update `@vitejs/plugin-react` to 6.1.1, `@types/react-dom` to 19.2.7, and
+  Node 24-aligned `@types/node` to 24.13.4. Keep Node type major upgrades
+  separate from patch maintenance and tied to a reviewed builder migration.
+- Update pinned SBOM and provenance actions. Explicitly disable optional
+  artifact storage records so the existing minimum-permission release
+  workflow retains its previous scope.
 
 - Upgrade `modernc.org/sqlite` from 1.56.0 to 1.57.0 with regenerated
   Linux/amd64 linkage, license, and artifact-boundary evidence. The optional

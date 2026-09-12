@@ -7,15 +7,15 @@
   },
   "artifactProfile": {
     "go": {
-      "version": "1.26.6",
+      "version": "1.26.8",
       "goos": "linux",
       "goarch": "amd64",
       "cgoEnabled": false,
-      "goModSha256": "40074b892b43b4fd4e6e97f2dae1bbe39d2bf3e8c6e44c6702e89daee36d0d4f",
-      "goSumSha256": "bfb24c4b1829ebf9b9c64751bfc27a089c756609ddb1a01f7bd699b80f0d7234",
+      "goModSha256": "0e8a4a7b10538be25002c7a929534961ce633fe1da18735a30cf7b4f304fc9d5",
+      "goSumSha256": "54f57a03c0a7489e2d3a3f062159dc2172efbef57587fb466d61a89e61fef76b",
       "technicalReviewEvidence": {
-        "path": "LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json",
-        "sha256": "9d2ebd298da913fbe33f70dc98b82de9606b4067cc15f96919ad4f2c05a6f36d"
+        "path": "LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json",
+        "sha256": "64c63add3b5857054003acc2b550f5b8b748fba7ef1db1be77476497a3fdd8b6"
       },
       "binaryLinkage": [
         {
@@ -47,7 +47,7 @@
             },
             {
               "module": "modernc.org/libc",
-              "version": "v1.74.4"
+              "version": "v1.75.6"
             },
             {
               "module": "modernc.org/mathutil",
@@ -55,11 +55,11 @@
             },
             {
               "module": "modernc.org/memory",
-              "version": "v1.11.0"
+              "version": "v1.12.1"
             },
             {
               "module": "modernc.org/sqlite",
-              "version": "v1.57.0"
+              "version": "v1.58.0"
             }
           ]
         },
@@ -92,7 +92,7 @@
             },
             {
               "module": "modernc.org/libc",
-              "version": "v1.74.4"
+              "version": "v1.75.6"
             },
             {
               "module": "modernc.org/mathutil",
@@ -100,11 +100,11 @@
             },
             {
               "module": "modernc.org/memory",
-              "version": "v1.11.0"
+              "version": "v1.12.1"
             },
             {
               "module": "modernc.org/sqlite",
-              "version": "v1.57.0"
+              "version": "v1.58.0"
             }
           ]
         }
@@ -113,9 +113,9 @@
     "web": {
       "nodeVersion": "24.19.0",
       "packageJson": "web-v2/package.json",
-      "packageJsonSha256": "b2fe32e7fc95b22ba8ee4b6d3905faf982585586ddb8a8536c17b89d274a28a7",
+      "packageJsonSha256": "9e8140f2f5f76a854c5e38142b781a1396c43e5f0947cb17f457610596aa153f",
       "packageLock": "web-v2/package-lock.json",
-      "packageLockSha256": "1dbdeb0196518add8e93f10eef18e120b6ac06d51064f05e452b7b6a57a24732",
+      "packageLockSha256": "a1a24962897dfd2b411c35d3ee2924018022ec581c5e553c9b1ab9e75753933a",
       "productionPackages": [
         {
           "name": "react",
@@ -143,7 +143,7 @@
       "typeOnlyPackages": [
         {
           "name": "@types/node",
-          "version": "24.13.3"
+          "version": "24.13.4"
         },
         {
           "name": "undici-types",
@@ -155,7 +155,7 @@
       "dockerfileFrontend": "docker.io/docker/dockerfile:1.7@sha256:a57df69d0ea827fb7266491f2813635de6f17269be881f696fbfdf2d83dda33e",
       "buildImages": {
         "node": "docker.io/library/node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03",
-        "go": "docker.io/library/golang:1.26.6-bookworm@sha256:116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36"
+        "go": "docker.io/library/golang:1.26.8-bookworm@sha256:9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81"
       },
       "runtimeBase": "scratch",
       "user": "65532:65532",
@@ -192,7 +192,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -218,7 +218,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -244,7 +244,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -280,7 +280,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -316,7 +316,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -352,13 +352,13 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
-      "id": "go-module:modernc.org/libc@v1.74.4",
+      "id": "go-module:modernc.org/libc@v1.75.6",
       "name": "modernc.org/libc",
-      "version": "v1.74.4",
+      "version": "v1.75.6",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -366,29 +366,29 @@
       "reviewStatus": "human-reviewed",
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE",
+          "path": "LICENSES/go/modernc.org/libc@v1.75.6/LICENSE",
           "bytes": 1482,
           "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/libc@v1.74.4/LICENSE",
+            "locator": "modernc.org/libc@v1.75.6/LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE-3RD-PARTY.md",
+          "path": "LICENSES/go/modernc.org/libc@v1.75.6/LICENSE-3RD-PARTY.md",
           "bytes": 10505,
           "sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/libc@v1.74.4/LICENSE-3RD-PARTY.md",
+            "locator": "modernc.org/libc@v1.75.6/LICENSE-3RD-PARTY.md",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -414,13 +414,13 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
-      "id": "go-module:modernc.org/memory@v1.11.0",
+      "id": "go-module:modernc.org/memory@v1.12.1",
       "name": "modernc.org/memory",
-      "version": "v1.11.0",
+      "version": "v1.12.1",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -428,45 +428,45 @@
       "reviewStatus": "human-reviewed",
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/memory@v1.12.1/LICENSE",
           "bytes": 1484,
           "sha256": "59895e669f48f168b6b858358f6005779cdf40a265f7828813061b56af67b496",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/memory@v1.11.0/LICENSE",
+            "locator": "modernc.org/memory@v1.12.1/LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-GO",
+          "path": "LICENSES/go/modernc.org/memory@v1.12.1/LICENSE-GO",
           "bytes": 1479,
           "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/memory@v1.11.0/LICENSE-GO",
+            "locator": "modernc.org/memory@v1.12.1/LICENSE-GO",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-MMAP-GO",
+          "path": "LICENSES/go/modernc.org/memory@v1.12.1/LICENSE-MMAP-GO",
           "bytes": 1518,
           "sha256": "c2eba69f20d05414538c3a5df7694dde392e065ff70882e1625e90f5d6659fff",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/memory@v1.11.0/LICENSE-MMAP-GO",
+            "locator": "modernc.org/memory@v1.12.1/LICENSE-MMAP-GO",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
-      "id": "go-module:modernc.org/sqlite@v1.57.0",
+      "id": "go-module:modernc.org/sqlite@v1.58.0",
       "name": "modernc.org/sqlite",
-      "version": "v1.57.0",
+      "version": "v1.58.0",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -474,35 +474,35 @@
       "reviewStatus": "human-reviewed",
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.58.0/LICENSE",
           "bytes": 1489,
           "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/sqlite@v1.57.0/LICENSE",
+            "locator": "modernc.org/sqlite@v1.58.0/LICENSE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         },
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE-SQLITE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.58.0/LICENSE-SQLITE",
           "bytes": 1506,
           "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0",
           "source": {
             "kind": "go-module-cache",
-            "locator": "modernc.org/sqlite@v1.57.0/LICENSE-SQLITE",
+            "locator": "modernc.org/sqlite@v1.58.0/LICENSE-SQLITE",
             "moduleZipAuthenticatedBy": "go.sum"
           }
         }
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
-      "id": "go-toolchain-1.26.6",
+      "id": "go-toolchain-1.26.8",
       "name": "Go toolchain and standard library",
-      "version": "1.26.6",
+      "version": "1.26.8",
       "artifactRoles": [
         "bmanga-go",
         "bmanga-scan"
@@ -510,29 +510,29 @@
       "reviewStatus": "human-reviewed",
       "files": [
         {
-          "path": "LICENSES/go/toolchain-go1.26.6/LICENSE",
+          "path": "LICENSES/go/toolchain-go1.26.8/LICENSE",
           "bytes": 1453,
           "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
           "source": {
             "kind": "go-toolchain",
-            "locator": "go1.26.6/LICENSE",
-            "verifiedLocalToolchain": "go1.26.6"
+            "locator": "go1.26.8/LICENSE",
+            "verifiedLocalToolchain": "go1.26.8"
           }
         },
         {
-          "path": "LICENSES/go/toolchain-go1.26.6/PATENTS",
+          "path": "LICENSES/go/toolchain-go1.26.8/PATENTS",
           "bytes": 1303,
           "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
           "source": {
             "kind": "go-toolchain",
-            "locator": "go1.26.6/PATENTS",
-            "verifiedLocalToolchain": "go1.26.6"
+            "locator": "go1.26.8/PATENTS",
+            "verifiedLocalToolchain": "go1.26.8"
           }
         }
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -558,7 +558,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -584,7 +584,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -621,7 +621,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -647,7 +647,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     },
     {
@@ -673,7 +673,7 @@
       ],
       "reviewEvidence": {
         "decisionFile": "LICENSES/reviews/linux-amd64.json",
-        "sha256": "766cddc5b8b7743f722882c3c6294f71425fac701ccd9797e27f825f9141896c"
+        "sha256": "5f904630be9549b9fb3e2bb449960ee98a65e533365110c14e55bbff51bf9444"
       }
     }
   ]

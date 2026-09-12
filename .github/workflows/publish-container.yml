@@ -257,7 +257,7 @@ jobs:
             artifacts/rootfs/app/bmanga-scan \
             LICENSES/manifest.json \
             LICENSES/reviews/linux-amd64.json \
-            LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json \
+            LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json \
             > artifacts/checksums.txt
 
       - name: Smoke-test the exact digest
@@ -320,7 +320,7 @@ jobs:
           docker logs "${name}" > artifacts/smoke.log 2>&1
 
       - name: Generate final image SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           image: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
           format: cyclonedx-json
@@ -344,11 +344,12 @@ jobs:
           sha256sum artifacts/*.json artifacts/*.txt artifacts/*.html artifacts/*.log > artifacts/evidence-sha256.txt
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
+          create-storage-record: false
 
       - name: Attest image SBOM
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2

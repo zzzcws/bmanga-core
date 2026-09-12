@@ -12,14 +12,14 @@ Web assets are built with exact Node.js 24.19.0 from the digest-pinned Node
 build image; neither Node.js nor npm is copied into the final image.
 The mapped components are:
 
-- Go 1.26.6 and the ten external modules linked into both Go binaries;
+- Go 1.26.8 and the ten external modules linked into both Go binaries;
 - React, React DOM, and Scheduler in the browser bundle;
 - Vite's injected runtime and Rolldown's injected module-preload polyfill.
 
 The locked Rolldown 1.2.4 npm package includes both `LICENSE` and the complete
 supplemental `THIRD-PARTY-LICENSE`; both are copied from the exact `npm ci`
 installation and bound to the lock integrity, resolved URL, and reviewed
-SHA-256. The build profile separately binds `@types/node` 24.13.3 and its
+SHA-256. The build profile separately binds `@types/node` 24.13.4 and its
 `undici-types` 7.18.2 dependency to match the exact Node.js 24 toolchain.
 These type-only packages, `@vitejs/plugin-react`, TypeScript, PostCSS,
 Lightning CSS, and native build bindings are not copied into the final
@@ -43,7 +43,7 @@ npm --prefix web-v2 ci
 python tools/check-third-party-licenses.py --verify --verify-web-sources
 ```
 
-Maintainers can regenerate this exact profile after installing Go 1.26.6 and
+Maintainers can regenerate this exact profile after installing Go 1.26.8 and
 running `npm --prefix web-v2 ci`:
 
 ```sh
@@ -62,9 +62,9 @@ OpenAI Codex under explicit maintainer delegation and publication authority;
 the exact conclusions and obligations are recorded in
 `LICENSES/reviews/linux-amd64.json`. The manifest is release-ready only for
 this reviewed Linux/amd64 artifact profile.
-The modernc.org/sqlite 1.57.0 upgrade also has a separate structured artifact-
+The modernc.org/sqlite 1.58.0 upgrade also has a separate structured artifact-
 boundary review at
-`LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json`. It records and
+`LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json`. It records and
 pins the evidence that the optional `modernc.org/sqlite/vec` package is present
 in the downloaded module but is not imported, linked, or copied into the
 scratch runtime image. Its separate `LICENSE-SQLITE_VEC` source hash is checked
