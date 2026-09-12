@@ -22,17 +22,17 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[1]
 LICENSES = REPO / "LICENSES"
-GO_VERSION = "1.26.6"
+GO_VERSION = "1.26.8"
 NODE_VERSION = "24.19.0"
-GO_MOD_SHA256 = "40074b892b43b4fd4e6e97f2dae1bbe39d2bf3e8c6e44c6702e89daee36d0d4f"
-GO_SUM_SHA256 = "bfb24c4b1829ebf9b9c64751bfc27a089c756609ddb1a01f7bd699b80f0d7234"
-PACKAGE_JSON_SHA256 = "b2fe32e7fc95b22ba8ee4b6d3905faf982585586ddb8a8536c17b89d274a28a7"
-PACKAGE_LOCK_SHA256 = "1dbdeb0196518add8e93f10eef18e120b6ac06d51064f05e452b7b6a57a24732"
+GO_MOD_SHA256 = "0e8a4a7b10538be25002c7a929534961ce633fe1da18735a30cf7b4f304fc9d5"
+GO_SUM_SHA256 = "54f57a03c0a7489e2d3a3f062159dc2172efbef57587fb466d61a89e61fef76b"
+PACKAGE_JSON_SHA256 = "9e8140f2f5f76a854c5e38142b781a1396c43e5f0947cb17f457610596aa153f"
+PACKAGE_LOCK_SHA256 = "a1a24962897dfd2b411c35d3ee2924018022ec581c5e553c9b1ab9e75753933a"
 SQLITE_TECHNICAL_REVIEW = (
-    "LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json"
+    "LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json"
 )
 SQLITE_TECHNICAL_REVIEW_SHA256 = (
-    "9d2ebd298da913fbe33f70dc98b82de9606b4067cc15f96919ad4f2c05a6f36d"
+    "64c63add3b5857054003acc2b550f5b8b748fba7ef1db1be77476497a3fdd8b6"
 )
 REVIEWED_SQLITE_PACKAGES = {
     "modernc.org/sqlite",
@@ -54,8 +54,8 @@ NODE_BUILD_IMAGE = (
     "sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03"
 )
 GO_BUILD_IMAGE = (
-    "docker.io/library/golang:1.26.6-bookworm@"
-    "sha256:116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36"
+    "docker.io/library/golang:1.26.8-bookworm@"
+    "sha256:9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81"
 )
 
 # module, version, [(source filename, reviewed SHA-256)]
@@ -92,7 +92,7 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "modernc.org/libc",
-        "v1.74.4",
+        "v1.75.6",
         [
             ("LICENSE", "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600"),
             (
@@ -108,7 +108,7 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "modernc.org/memory",
-        "v1.11.0",
+        "v1.12.1",
         [
             ("LICENSE", "59895e669f48f168b6b858358f6005779cdf40a265f7828813061b56af67b496"),
             ("LICENSE-GO", "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"),
@@ -120,7 +120,7 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "modernc.org/sqlite",
-        "v1.57.0",
+        "v1.58.0",
         [
             ("LICENSE", "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"),
             (
@@ -309,7 +309,7 @@ def lock_package(lock: dict[str, Any], name: str, version: str) -> dict[str, Any
 def generate() -> None:
     go_mod_path = REPO / "go.mod"
     go_mod = go_mod_path.read_bytes()
-    if not re.search(rb"(?m)^go 1\.26\.6\r?$", go_mod):
+    if not re.search(rb"(?m)^go 1\.26\.8\r?$", go_mod):
         raise RuntimeError("go.mod no longer pins the reviewed Go version")
     if re.search(rb"(?m)^\s*replace(?:\s|\()", go_mod):
         raise RuntimeError("go.mod replace directives require a new provenance review")
@@ -328,10 +328,10 @@ def generate() -> None:
         raise RuntimeError("SQLite technical review evidence is not valid UTF-8 JSON") from exc
     expected_subject = {
         "module": "modernc.org/sqlite",
-        "fromVersion": "v1.56.0",
-        "toVersion": "v1.57.0",
+        "fromVersion": "v1.57.0",
+        "toVersion": "v1.58.0",
         "requiredTransitiveModule": "modernc.org/libc",
-        "requiredTransitiveVersion": "v1.74.4",
+        "requiredTransitiveVersion": "v1.75.6",
     }
     if technical_review.get("subject") != expected_subject:
         raise RuntimeError("SQLite technical review subject changed")
@@ -353,7 +353,7 @@ def generate() -> None:
         '"${TARGETARCH}" != "amd64"',
         '"${TARGETPLATFORM}" != "linux/amd64"',
         'go env GOVERSION',
-        '"go1.26.6"',
+        '"go1.26.8"',
     ):
         if marker not in dockerfile:
             raise RuntimeError(f"Dockerfile no longer matches the no-base runtime profile: {marker}")
@@ -384,7 +384,7 @@ def generate() -> None:
     if run("go", "mod", "verify", env=verify_env) != "all modules verified":
         raise RuntimeError("Go module cache verification did not complete cleanly")
     read_checked(
-        module_dir(modcache, "modernc.org/sqlite", "v1.57.0")
+        module_dir(modcache, "modernc.org/sqlite", "v1.58.0")
         / "LICENSE-SQLITE_VEC",
         SQLITE_VEC_LICENSE_SHA256,
     )
@@ -395,8 +395,8 @@ def generate() -> None:
     if sha256(package_json_path.read_bytes()) != PACKAGE_JSON_SHA256:
         raise RuntimeError("package.json changed; update the reviewed artifact profile first")
     package_json = json.loads(package_json_path.read_text(encoding="utf-8"))
-    if (package_json.get("devDependencies") or {}).get("@types/node") != "24.13.3":
-        raise RuntimeError("generator requires @types/node 24.13.3 for the Node 24 profile")
+    if (package_json.get("devDependencies") or {}).get("@types/node") != "24.13.4":
+        raise RuntimeError("generator requires @types/node 24.13.4 for the Node 24 profile")
     if sha256(lock_path.read_bytes()) != PACKAGE_LOCK_SHA256:
         raise RuntimeError("package-lock changed; update the reviewed artifact profile first")
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
@@ -404,7 +404,7 @@ def generate() -> None:
     if {
         ("@types/node", (lock_packages.get("node_modules/@types/node") or {}).get("version")),
         ("undici-types", (lock_packages.get("node_modules/undici-types") or {}).get("version")),
-    } != {("@types/node", "24.13.3"), ("undici-types", "7.18.2")}:
+    } != {("@types/node", "24.13.4"), ("undici-types", "7.18.2")}:
         raise RuntimeError("locked Node type packages differ from the reviewed Node 24 profile")
     node_modules = REPO / "web-v2" / "node_modules"
     if not node_modules.is_dir():
@@ -532,7 +532,7 @@ def generate() -> None:
                     {"name": "rolldown", "version": "1.2.4"},
                 ],
                 "typeOnlyPackages": [
-                    {"name": "@types/node", "version": "24.13.3"},
+                    {"name": "@types/node", "version": "24.13.4"},
                     {"name": "undici-types", "version": "7.18.2"},
                 ],
             },

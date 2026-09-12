@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "ab4cff56c5b4ff3bd5fe913290b32ef0a30533e25cc6b546e8ce5227c2278c25",
-  "reviewedBy": "OpenAI Codex technical license review (AI; delegated and publication-authorized by maintainer zzzcws; not legal advice)",
-  "reviewedAt": "2026-08-25T14:37:14Z",
+  "artifactProfileSha256": "9b240051ee8bcf08ecb8fe605ede277c497fc605b2a26108eece510b9c9b4faa",
+  "reviewedBy": "OpenAI Codex technical license review (AI; maintainer-delegated public maintenance and publication; not legal advice)",
+  "reviewedAt": "2026-09-12T07:35:38Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
@@ -109,7 +109,7 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/libc@v1.74.4",
+      "id": "go-module:modernc.org/libc@v1.75.6",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause AND MIT AND BSD-2-Clause with documented public-domain portions",
       "obligations": [
@@ -119,11 +119,11 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE",
+          "path": "LICENSES/go/modernc.org/libc@v1.75.6/LICENSE",
           "sha256": "95ff867eb55a56935fa7492406cfa953fb7c13ca73f4c0a86ae05756b4605600"
         },
         {
-          "path": "LICENSES/go/modernc.org/libc@v1.74.4/LICENSE-3RD-PARTY.md",
+          "path": "LICENSES/go/modernc.org/libc@v1.75.6/LICENSE-3RD-PARTY.md",
           "sha256": "f597097efe3d97021f89170746bd3a0fb9a8b6fb26b82043ed68a4e0283bee6c"
         }
       ]
@@ -144,7 +144,7 @@
       ]
     },
     {
-      "id": "go-module:modernc.org/memory@v1.11.0",
+      "id": "go-module:modernc.org/memory@v1.12.1",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause",
       "obligations": [
@@ -153,21 +153,21 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/memory@v1.12.1/LICENSE",
           "sha256": "59895e669f48f168b6b858358f6005779cdf40a265f7828813061b56af67b496"
         },
         {
-          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-GO",
+          "path": "LICENSES/go/modernc.org/memory@v1.12.1/LICENSE-GO",
           "sha256": "2d36597f7117c38b006835ae7f537487207d8ec407aa9d9980794b2030cbc067"
         },
         {
-          "path": "LICENSES/go/modernc.org/memory@v1.11.0/LICENSE-MMAP-GO",
+          "path": "LICENSES/go/modernc.org/memory@v1.12.1/LICENSE-MMAP-GO",
           "sha256": "c2eba69f20d05414538c3a5df7694dde392e065ff70882e1625e90f5d6659fff"
         }
       ]
     },
     {
-      "id": "go-module:modernc.org/sqlite@v1.57.0",
+      "id": "go-module:modernc.org/sqlite@v1.58.0",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with documented SQLite public-domain dedication",
       "obligations": [
@@ -178,17 +178,17 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.58.0/LICENSE",
           "sha256": "c6fe05491a60ae13bcd223088d2705e36dede24e5587226231d2459ada5c4822"
         },
         {
-          "path": "LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE-SQLITE",
+          "path": "LICENSES/go/modernc.org/sqlite@v1.58.0/LICENSE-SQLITE",
           "sha256": "8438c9c89b849131ead81d5435cb97fcf052df5b0b286dda8a2d4c29e6cb3fd0"
         }
       ]
     },
     {
-      "id": "go-toolchain-1.26.6",
+      "id": "go-toolchain-1.26.8",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
       "obligations": [
@@ -198,11 +198,11 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/toolchain-go1.26.6/LICENSE",
+          "path": "LICENSES/go/toolchain-go1.26.8/LICENSE",
           "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
         },
         {
-          "path": "LICENSES/go/toolchain-go1.26.6/PATENTS",
+          "path": "LICENSES/go/toolchain-go1.26.8/PATENTS",
           "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
         }
       ]

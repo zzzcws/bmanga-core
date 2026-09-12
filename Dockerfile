@@ -20,7 +20,7 @@ COPY web-v2 ./web-v2
 COPY tools/build-web-assets.mjs ./tools/build-web-assets.mjs
 RUN node tools/build-web-assets.mjs
 
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.26.6-bookworm@sha256:116d58cbd88c1297624acc6e967a060012422bacf9930927e23fb719189c6f36 AS go-build
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.26.8-bookworm@sha256:9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81 AS go-build
 ARG TARGETPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
@@ -30,8 +30,8 @@ RUN if [ "${TARGETPLATFORM}" != "linux/amd64" ] || [ "${TARGETOS}" != "linux" ] 
       exit 1; \
     fi
 RUN actual="$(go env GOVERSION)"; \
-    if [ "${actual}" != "go1.26.6" ]; then \
-      echo "unexpected Go toolchain: ${actual}; license manifest covers go1.26.6 only" >&2; \
+    if [ "${actual}" != "go1.26.8" ]; then \
+      echo "unexpected Go toolchain: ${actual}; license manifest covers go1.26.8 only" >&2; \
       exit 1; \
     fi
 RUN if [ -z "${VERSION}" ] || [ "${#VERSION}" -gt 64 ]; then \

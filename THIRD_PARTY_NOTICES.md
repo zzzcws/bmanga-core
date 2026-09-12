@@ -15,7 +15,7 @@ review before that platform is enabled.
 The OCI aggregate license expression for this image is
 `Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND CC0-1.0 AND ISC AND MIT AND LicenseRef-SQLite-Public-Domain`.
 `LicenseRef-SQLite-Public-Domain` refers to
-`LICENSES/go/modernc.org/sqlite@v1.57.0/LICENSE-SQLITE`.
+`LICENSES/go/modernc.org/sqlite@v1.58.0/LICENSE-SQLITE`.
 
 ## Covered artifact profile
 
@@ -29,17 +29,17 @@ external modules:
 - `golang.org/x/image` 0.45.0
 - `golang.org/x/sys` 0.47.0
 - `golang.org/x/text` 0.41.0
-- `modernc.org/libc` 1.74.4
+- `modernc.org/libc` 1.75.6
 - `modernc.org/mathutil` 1.7.1
-- `modernc.org/memory` 1.11.0
-- `modernc.org/sqlite` 1.57.0
+- `modernc.org/memory` 1.12.1
+- `modernc.org/sqlite` 1.58.0
 
-The bundle also preserves Go 1.26.6 `LICENSE` and `PATENTS`, the `PATENTS`
+The bundle also preserves Go 1.26.8 `LICENSE` and `PATENTS`, the `PATENTS`
 files for the `golang.org/x/*` modules, and applicable modernc supplemental
 files including `LICENSE-3RD-PARTY.md`, `LICENSE-GO`, `LICENSE-MMAP-GO`, and
 `LICENSE-SQLITE`.
 
-The downloaded `modernc.org/sqlite` 1.57.0 module also contains the optional
+The downloaded `modernc.org/sqlite` 1.58.0 module also contains the optional
 `modernc.org/sqlite/vec` package, which bundles sqlite-vec 0.1.9. Neither
 shipped entrypoint imports that side-effect package: the reviewed Linux/amd64
 import graphs contain only `modernc.org/sqlite`, `modernc.org/sqlite/lib`, and
@@ -52,7 +52,7 @@ distributing it later requires adding its separately reviewed
 license hash and exclusion evidence are recorded without copying that
 non-shipped component into this artifact's license bundle. The structured
 evidence is recorded in
-`LICENSES/reviews/sqlite-v1.57.0-linux-amd64-technical.json`.
+`LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json`.
 
 The browser production tree contains React 19.2.8, React DOM 19.2.8, and
 Scheduler 0.27.0. The built bundle additionally contains Vite 8.2.2 injected
@@ -61,7 +61,7 @@ published license files are included. Rolldown 1.2.4's npm archive includes
 both `LICENSE` and `THIRD-PARTY-LICENSE`; the inventory copies both files from
 the exact locked installation and verifies their source metadata and hashes.
 
-`@types/node` 24.13.3 and `undici-types` 7.18.2 are aligned to the reviewed
+`@types/node` 24.13.4 and `undici-types` 7.18.2 are aligned to the reviewed
 Node.js 24 toolchain and recorded as type-only inputs in the artifact profile.
 They, `@vitejs/plugin-react`, TypeScript, PostCSS, Lightning CSS, native
 Rolldown/Lightning CSS bindings, and the other development dependencies are

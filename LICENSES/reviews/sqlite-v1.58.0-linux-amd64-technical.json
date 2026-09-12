@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "reviewType": "dependency-upgrade-artifact-boundary",
+  "reviewedBy": "OpenAI Codex technical dependency review (AI; maintainer-delegated public maintenance; not legal advice)",
+  "reviewedAt": "2026-09-12T07:28:13Z",
+  "subject": {
+    "module": "modernc.org/sqlite",
+    "fromVersion": "v1.57.0",
+    "toVersion": "v1.58.0",
+    "requiredTransitiveModule": "modernc.org/libc",
+    "requiredTransitiveVersion": "v1.75.6"
+  },
+  "artifactProfile": {
+    "goVersion": "go1.26.8",
+    "goos": "linux",
+    "goarch": "amd64",
+    "cgoEnabled": false,
+    "webBuild": {
+      "nodeVersion": "24.19.0",
+      "builderImage": "docker.io/library/node:24-bookworm-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03"
+    },
+    "entrypoints": [
+      "cmd/bmanga-go",
+      "cmd/bmanga-scan"
+    ],
+    "runtimeBase": "scratch"
+  },
+  "integrityEvidence": {
+    "goModSha256": "0e8a4a7b10538be25002c7a929534961ce633fe1da18735a30cf7b4f304fc9d5",
+    "goSumSha256": "54f57a03c0a7489e2d3a3f062159dc2172efbef57587fb466d61a89e61fef76b",
+    "moduleChecksums": [
+      {
+        "module": "modernc.org/libc",
+        "version": "v1.75.6",
+        "sum": "h1:yKk8qo+Di4gkmvRboK8ocCqH22FiUCR6jRy2OwtCRus=",
+        "goModSum": "h1:bO5o2ztHxBb2rjz0PgdHN0sSMw57CgxGFLZ3Qd/QpVQ="
+      },
+      {
+        "module": "modernc.org/memory",
+        "version": "v1.12.1",
+        "sum": "h1:nFMiWrpStgZczNl6XI9GnIk/rWhYIyHGUaR04pGbp9g=",
+        "goModSum": "h1:/JP4VbVC+K5sU2wZi9bHoq2MAkCnrt2r98UGeSK7Mjw="
+      },
+      {
+        "module": "modernc.org/sqlite",
+        "version": "v1.58.0",
+        "sum": "h1:38u40/bwkfM7f0Myhosl+SEMltSDxnGdQf8o6Kjmys0=",
+        "goModSum": "h1:rsD2CckafgObKC4DhBlGBf+RiHxkc3hINGt1Xw32tVY="
+      }
+    ],
+    "goModVerify": "all modules verified"
+  },
+  "importAndLinkageEvidence": {
+    "verificationCommands": [
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go list -deps ./cmd/bmanga-go",
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go list -deps ./cmd/bmanga-scan",
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -buildvcs=false -mod=readonly -trimpath ./cmd/bmanga-go",
+      "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -buildvcs=false -mod=readonly -trimpath ./cmd/bmanga-scan",
+      "go tool nm <unstripped-audit-binary>"
+    ],
+    "linkedExternalModules": [
+      "github.com/dustin/go-humanize@v1.0.1",
+      "github.com/google/uuid@v1.6.0",
+      "github.com/remyoudompheng/bigfft@v0.0.0-20230129092748-24d4a6f8daec",
+      "golang.org/x/image@v0.45.0",
+      "golang.org/x/sys@v0.47.0",
+      "golang.org/x/text@v0.41.0",
+      "modernc.org/libc@v1.75.6",
+      "modernc.org/mathutil@v1.7.1",
+      "modernc.org/memory@v1.12.1",
+      "modernc.org/sqlite@v1.58.0"
+    ],
+    "importedSqlitePackages": [
+      "modernc.org/sqlite",
+      "modernc.org/sqlite/lib",
+      "modernc.org/sqlite/vtab"
+    ],
+    "optionalPackageExclusions": [
+      {
+        "package": "modernc.org/sqlite/vec",
+        "upstreamPayload": "sqlite-vec v0.1.9",
+        "licenseFile": "LICENSE-SQLITE_VEC",
+        "licenseSha256": "6ce72bbe12d975bd5286e5ab0a064c069693300c47bccbc57bec18485f1621ea",
+        "presentInDownloadedModule": true,
+        "requiresExplicitSideEffectImport": true,
+        "importedByEntrypoints": false,
+        "linkedIntoBinaries": false,
+        "binarySymbolMatches": 0
+      }
+    ]
+  },
+  "containerEvidence": {
+    "runtimeBase": "scratch",
+    "finalStageCopies": [
+      "COPY --from=go-build --chown=65532:65532 /out/ /app/",
+      "COPY --from=web-build --chown=65532:65532 /src/web/v2 /app/web/v2",
+      "COPY --chown=65532:65532 LICENSE THIRD_PARTY_NOTICES.md /app/",
+      "COPY --chown=65532:65532 LICENSES /app/LICENSES"
+    ],
+    "goModuleCacheCopied": false,
+    "sourceTreeCopied": false,
+    "sqliteVecDistributed": false
+  },
+  "decision": {
+    "status": "approved",
+    "rationale": [
+      "The upstream v1.58.0 CHANGELOG.md adopts SQLite 3.53.4 and its journal-rollback fix, replacing the local recovery patch retained in v1.57.0. Its go.mod requires libc v1.75.6 and memory v1.12.1; these are upgraded together rather than mixing generated SQLite code with another libc ABI.",
+      "The exact sqlite BSD and public-domain license texts, libc BSD and complete third-party notices, and memory BSD-3-Clause, Go and mmap-go texts are byte-identical to the prior artifact profile. Their new source module versions and verified checksums are recorded without weakening byte-hash verification.",
+      "Go is updated from 1.26.6 to the supported 1.26.8 patch line. The Docker Official Image index 9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81 contains linux/amd64 manifest bc6beb46032d45f421cf400036bf031cdc64f683ba9cdc124e31d063e71670bd. The exact Go license and PATENTS bytes remain unchanged; both entrypoints cross-build with go1.26.8 and retain the same ten external module identities.",
+      "The optional sqlite/vec package remains excluded: neither entrypoint imports it and both unstripped Linux binaries have zero matching vec symbols. memory v1.12.1 also carries a README logo and LICENSE-LOGO locator (SHA-256 5ae5bee3072a841376451b48d8cfcec7188e10543926d5870828d36c8a750dc5); no memory Go file embeds the logo, and neither that image nor the module source/cache is copied into the runtime.",
+      "The project still uses the default sqlite driver, sql.Open, and its existing WAL/busy-timeout PRAGMA DSNs. No OFD environment variable, OFDLocking call, new source query, schema migration, or runtime component is introduced by this maintenance update."
+    ],
+    "residualRisks": [
+      "SQLite v1.58.0 exposes opt-in Linux OFD locking, off by default upstream. This change does not enable it; enabling it later changes process-wide database-file locking while WAL shared-memory coordination remains POSIX and requires a separate compatibility review.",
+      "Importing sqlite/vec or distributing memory's README logo or module sources in a later artifact changes the reviewed boundary and requires the corresponding notices and a new inventory review before release.",
+      "Go 1.27.1 is deliberately deferred: it is a new major toolchain line, whereas 1.26 remains supported. The original dependency PR changes only the Docker image and is insufficient by itself to satisfy this project's exact toolchain, inventory, and runtime guards.",
+      "Passing module verification, native Go tests and vet, the reachable-vulnerability scan, and Linux cross-build/linkage inspection reduces but does not eliminate regression risk. This is a delegated AI technical artifact review, not an independent legal opinion or final publication authorization."
+    ]
+  }
+}
