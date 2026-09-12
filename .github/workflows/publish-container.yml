@@ -84,6 +84,15 @@ jobs:
           npm --prefix web-v2 run typecheck
           node tools/build-web-assets.mjs
 
+      - name: Test synthetic mobile reader before publication
+        env:
+          BMANGA_UI_SMOKE_TOOL_ROOT: ${{ runner.temp }}/bmanga-ui-tools
+        run: |
+          npm install --prefix "${BMANGA_UI_SMOKE_TOOL_ROOT}" --ignore-scripts --no-audit --no-fund --package-lock=false playwright-core@1.59.1
+          node "${BMANGA_UI_SMOKE_TOOL_ROOT}/node_modules/playwright-core/cli.js" install --with-deps chromium
+          node web-v2/tests/detail-opening-ui-smoke.mjs
+          node web-v2/tests/webtoon-ui-smoke.mjs
+
   container:
     name: Build, inspect, attest, and publish
     needs: gate

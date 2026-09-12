@@ -1,6 +1,7 @@
 package prototype
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,11 @@ import (
 )
 
 func (s *Server) query(stmt string, args ...any) ([]map[string]any, error) {
-	rows, err := s.db.Query(stmt, args...)
+	return s.queryContext(context.Background(), stmt, args...)
+}
+
+func (s *Server) queryContext(ctx context.Context, stmt string, args ...any) ([]map[string]any, error) {
+	rows, err := s.db.QueryContext(ctx, stmt, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -37,51 +38,14 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seriesRows, err := s.query(fmt.Sprintf(`
-		SELECT
-			sg.group_id,
-			sg.library_key,
-			sg.series_title,
-			sg.group_path,
-			sg.group_type,
-			sg.candidate_count,
-			COALESCE(stats.unique_sequence_count, sg.candidate_count) AS unique_sequence_count,
-			COALESCE(stats.item_count, sg.candidate_count) AS item_count,
-			COALESCE(section_stats.section_count, 1) AS section_count,
-			COALESCE(section_stats.multi_section_count, 0) AS multi_section_count,
-			COALESCE(section_stats.special_section_count, 0) AS special_section_count,
-			sg.confidence,
-			COALESCE(cover_override.candidate_id, safe_cover.selected_candidate_id, scc.selected_candidate_id) AS selected_candidate_id,
-			cover_choice.correction_value AS manual_cover_candidate_id,
-			kind_choice.correction_value AS series_kind,
-			unit_choice.correction_value AS series_unit,
-			COALESCE(cover_override.cover_status, safe_cover.cover_status, scc.cover_status) AS cover_status,
-			COALESCE(cover_override.cover_kind, safe_cover.cover_kind, scc.cover_kind) AS cover_kind,
-			COALESCE(cover_override.cover_source_path, safe_cover.cover_source_path, scc.cover_source_path) AS cover_source_path,
-			COALESCE(cover_override.requires_extraction, safe_cover.requires_extraction, scc.requires_extraction) AS requires_extraction
-		FROM series_groups sg
-		LEFT JOIN series_cover_candidates scc
-			ON scc.group_id = sg.group_id
-		   AND %s
-		%s
-		%s
-		%s
-		LEFT JOIN (
-			SELECT
-				si.group_id,
-				COUNT(*) AS item_count,
-				COUNT(DISTINCT CASE
-					WHEN si.sequence_number IS NOT NULL AND si.sequence_number <> '' THEN si.sequence_number
-					ELSE si.candidate_id
-				END) AS unique_sequence_count
-			FROM series_items si
-			JOIN work_browse stats_wb ON stats_wb.candidate_id = si.candidate_id
-			GROUP BY si.group_id
-		) stats ON stats.group_id = sg.group_id
-		%s
-		WHERE sg.group_id = ?
-		  AND %s
-	`, visibleWorkCandidateExistsSQL("scc.selected_candidate_id"), safeSeriesCoverJoinSQL(), seriesCoverOverrideJoinSQL(), seriesKindJoinSQL(), seriesSectionStatsJoinSQL(), seriesHasVisibleMemberSQL("sg")), groupID)
+	phaseStarted := time.Now()
+	recordTiming := func(name string) {
+		appendServerTiming(w.Header(), name, time.Since(phaseStarted))
+		phaseStarted = time.Now()
+	}
+
+	seriesRows, err := s.queryContext(r.Context(), seriesDetailMainSQL(), groupID)
+	recordTiming("seriesMain")
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -91,7 +55,7 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemRows, err := s.query(`
+	itemRows, err := s.queryContext(r.Context(), `
 		SELECT
 			wb.candidate_id,
 			wb.work_identity_id,
@@ -122,11 +86,12 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		WHERE si.group_id = ?
 		ORDER BY si.sort_key, wb.title, wb.candidate_id
 	`, groupID)
+	recordTiming("seriesItems")
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	coverRows, err := s.query(`
+	coverRows, err := s.queryContext(r.Context(), `
 		SELECT
 			wb.candidate_id,
 			wb.work_identity_id,
@@ -158,11 +123,13 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		  AND wcc.cover_kind IN ('page_image', 'archive', 'pdf', 'ebook')
 		ORDER BY si.sort_key, wb.title, wb.candidate_id
 	`, groupID)
+	recordTiming("seriesCovers")
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	mark, err := s.getSeriesUserMark(groupID)
+	recordTiming("seriesMark")
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -178,6 +145,7 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	recordTiming("seriesMetadata")
 	items := make([]map[string]any, 0, len(itemRows))
 	for _, row := range itemRows {
 		enrichWork(row)
@@ -212,6 +180,7 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		coverCandidates = append(coverCandidates, row)
 	}
 	disambiguateCoverCandidateLabels(coverCandidates, series)
+	recordTiming("seriesAssemble")
 
 	writeJSON(w, map[string]any{
 		"series":           series,
@@ -222,6 +191,59 @@ func (s *Server) handleSeriesDetail(w http.ResponseWriter, r *http.Request) {
 		"cover_candidates": coverCandidates,
 		"mark":             mark,
 	})
+}
+
+// Restrict aggregate and cover-ranking inputs before materialization so
+// opening one series does not scan the rest of the library.
+func seriesDetailMainSQL() string {
+	return fmt.Sprintf(`
+		WITH selected_groups(group_id) AS (VALUES (?))
+		SELECT
+			sg.group_id,
+			sg.library_key,
+			sg.series_title,
+			sg.group_path,
+			sg.group_type,
+			sg.candidate_count,
+			COALESCE(stats.unique_sequence_count, sg.candidate_count) AS unique_sequence_count,
+			COALESCE(stats.item_count, sg.candidate_count) AS item_count,
+			COALESCE(section_stats.section_count, 1) AS section_count,
+			COALESCE(section_stats.multi_section_count, 0) AS multi_section_count,
+			COALESCE(section_stats.special_section_count, 0) AS special_section_count,
+			sg.confidence,
+			COALESCE(cover_override.candidate_id, safe_cover.selected_candidate_id, scc.selected_candidate_id) AS selected_candidate_id,
+			cover_choice.correction_value AS manual_cover_candidate_id,
+			kind_choice.correction_value AS series_kind,
+			unit_choice.correction_value AS series_unit,
+			COALESCE(cover_override.cover_status, safe_cover.cover_status, scc.cover_status) AS cover_status,
+			COALESCE(cover_override.cover_kind, safe_cover.cover_kind, scc.cover_kind) AS cover_kind,
+			COALESCE(cover_override.cover_source_path, safe_cover.cover_source_path, scc.cover_source_path) AS cover_source_path,
+			COALESCE(cover_override.requires_extraction, safe_cover.requires_extraction, scc.requires_extraction) AS requires_extraction
+		FROM selected_groups selected
+		JOIN series_groups sg ON sg.group_id = selected.group_id
+		LEFT JOIN series_cover_candidates scc
+			ON scc.group_id = sg.group_id
+		   AND %s
+		%s
+		%s
+		%s
+		LEFT JOIN (
+			SELECT
+				si.group_id,
+				COUNT(*) AS item_count,
+				COUNT(DISTINCT CASE
+					WHEN si.sequence_number IS NOT NULL AND si.sequence_number <> '' THEN si.sequence_number
+					ELSE si.candidate_id
+				END) AS unique_sequence_count
+			FROM selected_groups selected_stats
+			JOIN series_items si ON si.group_id = selected_stats.group_id
+			JOIN work_browse stats_wb ON stats_wb.candidate_id = si.candidate_id
+			WHERE si.group_id IN (SELECT group_id FROM selected_groups)
+			GROUP BY si.group_id
+		) stats ON stats.group_id = sg.group_id
+		%s
+		WHERE %s
+	`, visibleWorkCandidateExistsSQL("scc.selected_candidate_id"), safeSeriesCoverJoinSQLForSelected(true), seriesCoverOverrideJoinSQL(), seriesKindJoinSQL(), seriesSectionStatsJoinSQLForSelected(true), seriesHasVisibleMemberSQL("sg"))
 }
 
 func effectiveSeriesKind(series map[string]any) string {

@@ -493,12 +493,14 @@ export function pageUrl(
   manifest?: string,
   max?: number,
   preserveSource = false,
+  constrainWidth = false,
 ): string {
   return requestUrl("/page", {
     id,
     index: Math.max(0, Math.round(index)),
     manifest,
-    max: max && max > 0 ? Math.min(READER_IMAGE_MAX_DIMENSION, Math.round(max)) : undefined,
+    max: !constrainWidth && max && max > 0 ? Math.min(READER_IMAGE_MAX_DIMENSION, Math.round(max)) : undefined,
+    max_width: constrainWidth && max && max > 0 ? Math.min(READER_IMAGE_MAX_DIMENSION, Math.round(max)) : undefined,
     quality: preserveSource ? "source" : undefined,
   });
 }
@@ -542,6 +544,12 @@ export function getSeriesDetail(id: string, options: ApiRequestOptions = {}): Pr
 
 export function getSeriesProgress(id: string, options: ApiRequestOptions = {}): Promise<SeriesProgressResponse> {
   return apiGet<SeriesProgressResponse>("/api/series-progress", withParams(options, { id }));
+}
+
+// Detail opening needs stored progress only. The reader still validates the
+// actual page manifest through getProgress before resuming or saving a page.
+export function getSeriesProgressSummary(id: string, options: ApiRequestOptions = {}): Promise<SeriesProgressResponse> {
+  return apiGet<SeriesProgressResponse>("/api/series-progress", withParams(options, { id, manifest: "stored" }));
 }
 
 export function getReadingHistory(

@@ -6,6 +6,12 @@ import {
   READER_IMAGE_MAX_DIMENSION,
   readerImageCacheBucket,
   readerImageMaxForViewport,
+  readerImageIsLongStrip,
+  readerUsesScrollableWidthLayout,
+  readerScrollAtEnd,
+  readerScrollablePageFinished,
+  readerScrollAnchorForGeometry,
+  readerScrollPositionForAnchor,
   readerUsesSourceQuality,
   snapReaderPixel,
 } from "../src/lib/readerImage.ts";
@@ -43,6 +49,45 @@ test("only manga candidates request source-preserving page delivery", () => {
 test("split positioning snaps to physical pixels", () => {
   assert.equal(snapReaderPixel(100.2, 2), 100);
   assert.ok(Math.abs(snapReaderPixel(100.2, 3) - (301 / 3)) < Number.EPSILON * 100);
+});
+
+test("auto recognizes decoded long strips without changing explicit page fit", () => {
+  assert.equal(readerImageIsLongStrip(800, 2400), true);
+  assert.equal(readerImageIsLongStrip(800, 2399), false);
+  assert.equal(readerImageIsLongStrip(2400, 800), false);
+  for (const invalid of [0, -1, NaN, Infinity]) {
+    assert.equal(readerImageIsLongStrip(invalid, 2400), false);
+    assert.equal(readerImageIsLongStrip(800, invalid), false);
+  }
+  assert.equal(readerUsesScrollableWidthLayout("auto", 800, 8000), true);
+  assert.equal(readerUsesScrollableWidthLayout("auto", 800, 1200), false);
+  assert.equal(readerUsesScrollableWidthLayout("fit-page", 800, 8000), false);
+  assert.equal(readerUsesScrollableWidthLayout("split-wide", 800, 8000), false);
+  assert.equal(readerUsesScrollableWidthLayout("fit-width", 800, 1200), true);
+  assert.equal(readerImageMaxForViewport("auto", 390, 844, 3), 2400);
+});
+
+test("a single tall page is finished only after reaching its bottom", () => {
+  const page = { clientHeight: 800, clientWidth: 390, scrollHeight: 8000, scrollWidth: 390, scrollTop: 2000, scrollLeft: 0 };
+  assert.equal(readerScrollablePageFinished(true, false, null), false);
+  assert.equal(readerScrollablePageFinished(true, false, page), false);
+  assert.equal(readerScrollablePageFinished(true, false, { ...page, scrollTop: 7200 }), true);
+  assert.equal(readerScrollablePageFinished(false, false, page), true);
+  assert.equal(readerScrollablePageFinished(true, true, page), true);
+  assert.equal(readerScrollAtEnd(7192, 8000, 800), true);
+  assert.equal(readerScrollAtEnd(7191, 8000, 800), false);
+  assert.equal(readerScrollAtEnd(0, 500, 800), true);
+});
+
+test("resizing width preserves the content anchor and end position", () => {
+  const page = { clientHeight: 800, clientWidth: 390, scrollHeight: 8000, scrollWidth: 390, scrollTop: 2000, scrollLeft: 0 };
+  const larger = { ...page, clientWidth: 780, scrollWidth: 780, scrollHeight: 16000 };
+  const anchor = readerScrollAnchorForGeometry(page);
+  assert.deepEqual(readerScrollPositionForAnchor(anchor, larger), { left: 0, top: 4000 });
+  assert.deepEqual(readerScrollPositionForAnchor(readerScrollAnchorForGeometry({ ...page, scrollTop: 7200 }), larger), { left: 0, top: 15200 });
+  const horizontallyScrolled = { ...page, scrollWidth: 780, scrollLeft: 100 };
+  assert.ok(Math.abs(readerScrollPositionForAnchor(readerScrollAnchorForGeometry(horizontallyScrolled), { ...larger, scrollWidth: 1560 }).left - 200) < 1e-9);
+  assert.deepEqual(readerScrollPositionForAnchor(anchor, { ...page, scrollHeight: 100 }), { left: 0, top: 0 });
 });
 
 test("split-wide regression styles never interpolate the persistent crop transform", async () => {

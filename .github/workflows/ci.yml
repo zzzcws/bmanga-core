@@ -234,6 +234,18 @@ jobs:
       - name: Type-check frontend
         run: npm run typecheck
 
+      - name: Install isolated browser-test tooling
+        run: |
+          npm install --prefix "${RUNNER_TEMP}/bmanga-ui-tools" --ignore-scripts --no-audit --no-fund --package-lock=false playwright-core@1.59.1
+          node "${RUNNER_TEMP}/bmanga-ui-tools/node_modules/playwright-core/cli.js" install --with-deps chromium
+
+      - name: Exercise synthetic mobile details and webtoon reader
+        env:
+          BMANGA_UI_SMOKE_TOOL_ROOT: ${{ runner.temp }}/bmanga-ui-tools
+        run: |
+          node tests/detail-opening-ui-smoke.mjs
+          node tests/webtoon-ui-smoke.mjs
+
       - name: Build and precompress the V2 frontend
         working-directory: ${{ github.workspace }}
         run: node tools/build-web-assets.mjs

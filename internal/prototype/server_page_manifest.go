@@ -11,7 +11,11 @@ import (
 )
 
 func (s *Server) getCurrentManifest(candidateID string) (map[string]any, error) {
-	rows, err := s.query(`
+	return s.getCurrentManifestContext(context.Background(), candidateID)
+}
+
+func (s *Server) getCurrentManifestContext(ctx context.Context, candidateID string) (map[string]any, error) {
+	rows, err := s.queryContext(ctx, `
 		SELECT
 			pm.page_manifest_id,
 			pm.work_identity_id,

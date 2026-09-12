@@ -1,6 +1,6 @@
 export type NumericValue = number | string;
 export type Nullable<T> = T | null;
-export type ReaderFitMode = "" | "fit-page" | "fit-width" | "split-wide";
+export type ReaderFitMode = "" | "auto" | "fit-page" | "fit-width" | "split-wide";
 export type TargetType = "work" | "series";
 export type MetadataOverrideField = "title" | "creator" | "series" | "language";
 

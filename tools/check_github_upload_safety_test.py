@@ -119,6 +119,25 @@ class PublicationSafetyTest(unittest.TestCase):
         self.assertEqual(blockers, [])
         self.assertEqual(warnings, [])
 
+    def test_synthetic_svg_namespace_is_not_a_general_host_exception(self):
+        namespace = "http" + "://www.w3.org/2000/svg"
+        path = "web-v2/tests/webtoon-ui-smoke.mjs"
+        valid = f'const image = `<svg xmlns="{namespace}" width="4" height="3"></svg>`;'
+        self.assertEqual(self.scan({path: valid})[0], [])
+        self.assertEqual(self.scan({"web-v2/tests/helpers/synthetic-ui.mjs": valid})[0], [])
+        for content in (
+            f'fetch("{namespace}")',
+            f'<svg href="{namespace}"></svg>',
+            f'<svg xmlns="{namespace}?private=1"></svg>',
+            f'<svg xmlns="{namespace}#extra"></svg>',
+            f'<svg xmlns="{namespace}/other"></svg>',
+            f'<svg xmlns="{namespace}."/>',
+            f'<svg xmlns="{namespace}"/><image href="{namespace}"/>',
+        ):
+            with self.subTest(content=content):
+                self.assertTrue(any(row["key"] == "unreviewed_url_host" for row in self.scan({path: content})[0]))
+        self.assertTrue(any(row["key"] == "unreviewed_url_host" for row in self.scan({"web-v2/src/view.ts": valid})[0]))
+
     def test_staged_reviewed_document_png_passes(self):
         path = "docs/assets/home-desktop.png"
         raw = self.png_bytes(1440, 960)

@@ -70,7 +70,7 @@ func (s *Server) handlePageImage(w http.ResponseWriter, r *http.Request) {
 	rawIndex := strings.TrimSpace(r.URL.Query().Get("index"))
 	requestedManifestID := strings.TrimSpace(r.URL.Query().Get("manifest"))
 	index, err := strconv.Atoi(rawIndex)
-	maxDimension := clampInt(r.URL.Query().Get("max"), 0, 0, readerPageMaxDimension)
+	maxDimension, maxWidth := pageImageResizeParameters(r)
 	if candidateID == "" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
@@ -113,6 +113,7 @@ func (s *Server) handlePageImage(w http.ResponseWriter, r *http.Request) {
 			int64(intValue(row["size_bytes"])),
 			stringValue(row["extension"]),
 			maxDimension,
+			maxWidth,
 		)
 		return
 	}
@@ -126,6 +127,7 @@ func (s *Server) handlePageImage(w http.ResponseWriter, r *http.Request) {
 			int64(intValue(row["size_bytes"])),
 			stringValue(row["extension"]),
 			maxDimension,
+			maxWidth,
 		)
 		return
 	}
@@ -134,13 +136,27 @@ func (s *Server) handlePageImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if stringValue(row["source_type"]) == "ebook_inner" {
-		s.sendEbookPage(w, r, stringValue(row["library_key"]), stringValue(row["path"]), coalesceString(row["source_relative_path"], row["archive_relative_path"]), stringValue(row["source_inner_path"]), int64(intValue(row["size_bytes"])), stringValue(row["extension"]), maxDimension)
+		s.sendEbookPage(w, r, stringValue(row["library_key"]), stringValue(row["path"]), coalesceString(row["source_relative_path"], row["archive_relative_path"]), stringValue(row["source_inner_path"]), int64(intValue(row["size_bytes"])), stringValue(row["extension"]), maxDimension, maxWidth)
 		return
 	}
 	if _, ok := row["page_index"]; !ok {
 		row["page_index"] = index
 	}
-	s.sendSourcePageImage(w, r, work, row, manifest, maxDimension)
+	s.sendSourcePageImage(w, r, work, row, manifest, maxDimension, maxWidth)
+}
+
+func pageImageResizeParameters(r *http.Request) (int, int) {
+	if r == nil || r.URL == nil {
+		return 0, 0
+	}
+	maxDimension := clampInt(r.URL.Query().Get("max"), 0, 0, readerPageMaxDimension)
+	maxWidth := clampInt(r.URL.Query().Get("max_width"), 0, 0, readerPageMaxDimension)
+	if maxWidth > 0 {
+		// Width is a distinct axis for tall pages; it wins over a leftover
+		// legacy max parameter without changing that parameter's behavior.
+		maxDimension = 0
+	}
+	return maxDimension, maxWidth
 }
 
 func (s *Server) handleCover(w http.ResponseWriter, r *http.Request) {

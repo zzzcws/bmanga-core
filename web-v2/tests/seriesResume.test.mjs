@@ -6,7 +6,10 @@ import {
   isMeaningfulSeriesProgress,
   preferredSeriesResumeProgress,
   selectSeriesContinueItem,
+  selectConfirmedSeriesContinueItem,
 } from "../src/lib/seriesResume.ts";
+import { applySeriesProgressSummary } from "../src/lib/detailProgress.ts";
+import { nextSeriesReadable, seriesReadingOrder } from "../src/lib/seriesOrder.ts";
 
 function progress(candidateID, index, updatedAt, options = {}) {
   return {
@@ -40,6 +43,36 @@ function work(candidateID, sequence, itemProgress) {
     progress: itemProgress,
   };
 }
+
+test("a confirmed reset anchor outranks newer cached progress, while legacy selection stays compatible", () => {
+  const a = work("synthetic-a", 1, progress("synthetic-a", 4, "2026-01-02T12:00:00Z"));
+  const b = work("synthetic-b", 2);
+  const incoming = progress("synthetic-b", 8, "2026-01-02T10:00:00Z");
+  const applied = applySeriesProgressSummary({ kind: "series", data: { series: { group_id: "synthetic" }, items: [a, b], sections: [] }, progress: null }, "synthetic", incoming);
+  const order = seriesReadingOrder(applied.data);
+  assert.equal(selectSeriesContinueItem(order, applied.progress), a, "Legacy callers retain their earlier policy");
+  assert.equal(selectConfirmedSeriesContinueItem(applied.data.items, applied.progress, order[0], (id) => nextSeriesReadable(applied.data, id))?.candidate_id, "synthetic-b");
+  assert.equal(selectConfirmedSeriesContinueItem(applied.data.items, null, order[0], () => undefined), a, "Confirmed unread starts with the first chapter without scanning cached progress");
+});
+
+test("confirmed secondary editions resume exactly and completion advances to the next chapter group", () => {
+  const primary = work("synthetic-primary", 1);
+  const secondary = work("synthetic-secondary", 1);
+  const next = work("synthetic-next", 2);
+  const data = {
+    series: { group_id: "synthetic" }, items: [primary, secondary, next], sectioned: true,
+    sections: [{ title: "Synthetic main", groups: [
+      { key: "first", sequence: 1, sort: 0, primary, items: [primary, secondary] },
+      { key: "next", sequence: 2, sort: 1, primary: next, items: [next] },
+    ] }],
+  };
+  const choose = (incoming) => selectConfirmedSeriesContinueItem(data.items, incoming, seriesReadingOrder(data)[0], (id) => nextSeriesReadable(data, id));
+  assert.equal(choose(progress(secondary.candidate_id, 8, "2026-01-01T00:00:00Z")), secondary);
+  assert.equal(choose(progress(secondary.candidate_id, 189, "2026-01-01T00:00:00Z", { completed: true })), next);
+  assert.equal(choose(progress(next.candidate_id, 189, "2026-01-01T00:00:00Z", { completed: true })), next, "Completed final chapter remains the final chapter");
+  assert.equal(choose({ ...progress(secondary.candidate_id, 8, "2026-01-01T00:00:00Z"), work_identity_id: "replaced-identity" }), undefined);
+  assert.equal(choose(progress("missing", 8, "2026-01-01T00:00:00Z")), undefined);
+});
 
 test("美食猎人形态会选择最近真正翻阅的第 8 卷，而不是停在首页的第 22 卷", () => {
   const items = [

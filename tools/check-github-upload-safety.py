@@ -1176,7 +1176,23 @@ def scan_content(
             "LICENSES/manifest.json",
             "LICENSES/README.md",
         }
-        if not license_evidence and not allowed_url_host(parsed.hostname):
+        # These two tests generate inline SVG fixtures. An exact xmlns value
+        # declares the format; it is not a fetched resource. Do not allow the
+        # host generally, href/src URLs, modified namespaces, or other paths.
+        namespace_attribute = re.search(
+            r'''<svg\b[^<>]*\sxmlns\s*=\s*(["'])$''',
+            text[max(0, match.start() - 512):match.start()],
+        )
+        synthetic_svg_namespace = (
+            relative in {
+                "web-v2/tests/helpers/synthetic-ui.mjs",
+                "web-v2/tests/webtoon-ui-smoke.mjs",
+            }
+            and match.group(0) == joined("http", "://www.w3.org/2000/svg")
+            and namespace_attribute is not None
+            and text[match.end():].startswith(namespace_attribute.group(1))
+        )
+        if not license_evidence and not synthetic_svg_namespace and not allowed_url_host(parsed.hostname):
             add(
                 blockers,
                 "blocker",

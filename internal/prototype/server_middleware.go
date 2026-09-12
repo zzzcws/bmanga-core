@@ -27,6 +27,8 @@ func readerTimingMiddleware(next http.Handler) http.Handler {
 
 func readerTimingTrackedPath(path string) bool {
 	switch path {
+	case "/api/series-progress":
+		return true
 	case "/api/work", "/api/works", "/api/shelf", "/api/discover", "/api/random-work", "/api/reading-history", "/api/continue-target", "/api/series-detail", "/api/pages", "/api/progress", "/page", "/cover":
 		return true
 	default:

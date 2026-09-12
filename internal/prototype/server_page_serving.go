@@ -28,7 +28,8 @@ func (s *Server) sendSourceImage(w http.ResponseWriter, r *http.Request, library
 	s.serveImageFile(w, r, source, "", maxDimension)
 }
 
-func (s *Server) sendSourcePageImage(w http.ResponseWriter, r *http.Request, work map[string]any, row map[string]any, manifest map[string]any, maxDimension int) {
+func (s *Server) sendSourcePageImage(w http.ResponseWriter, r *http.Request, work map[string]any, row map[string]any, manifest map[string]any, maxDimension int, maxWidth ...int) {
+	resize := pageImageResizeSpec(maxDimension, maxWidth...)
 	libraryKey := stringValue(row["library_key"])
 	sourcePath := stringValue(row["path"])
 	relativePath := stringValue(row["relative_path"])
@@ -63,7 +64,7 @@ func (s *Server) sendSourcePageImage(w http.ResponseWriter, r *http.Request, wor
 		return
 	}
 	if stat.Size() > s.archiveLimits.maxPageBytes {
-		s.serveImageFile(w, r, source, contentType, maxDimension)
+		s.servePageImageFile(w, r, source, contentType, maxDimension, maxWidth...)
 		return
 	}
 	data, err := io.ReadAll(io.LimitReader(file, s.archiveLimits.maxPageBytes+1))
@@ -72,7 +73,7 @@ func (s *Server) sendSourcePageImage(w http.ResponseWriter, r *http.Request, wor
 		return
 	}
 	if int64(len(data)) > s.archiveLimits.maxPageBytes {
-		s.serveImageFile(w, r, source, contentType, maxDimension)
+		s.servePageImageFile(w, r, source, contentType, maxDimension, maxWidth...)
 		return
 	}
 	if _, _, err := image.DecodeConfig(bytes.NewReader(data)); err != nil {
@@ -80,7 +81,7 @@ func (s *Server) sendSourcePageImage(w http.ResponseWriter, r *http.Request, wor
 		return
 	}
 
-	if maxDimension > 0 && s.sendThumbnailBytes(w, r, data, contentType, source, stat.ModTime(), maxDimension) {
+	if resize.active() && s.sendThumbnailBytesWithResize(w, r, data, contentType, source, stat.ModTime(), resize) {
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
@@ -103,8 +104,8 @@ func (s *Server) sendLocalCacheImage(w http.ResponseWriter, r *http.Request, cac
 	s.serveImageFile(w, r, source, mimeType, maxDimension)
 }
 
-func archivePageSourceLockKey(archivePath, normalizedInnerPath string, maxDimension int) string {
-	return "archive-page-source:" + archivePath + "|" + normalizedInnerPath + "|" + strconv.Itoa(maxDimension)
+func archivePageSourceLockKey(archivePath, normalizedInnerPath string, maxDimension int, maxWidth ...int) string {
+	return "archive-page-source:" + archivePath + "|" + normalizedInnerPath + "|" + pageImageResizeSpec(maxDimension, maxWidth...).cacheToken()
 }
 
 func (s *Server) openPinnedLibrarySource(libraryKey, sourcePath, relativePath string) (*openedArchiveSource, error) {
@@ -171,8 +172,8 @@ func (s *Server) openZipArchive(archivePath string) (*openedZipArchive, error) {
 	return nil, err
 }
 
-func (s *Server) sendArchivePage(w http.ResponseWriter, r *http.Request, archivePath string, innerPath string, sizeBytes int64, extension string, maxDimension int) {
-	s.sendArchivePageWithSource(w, r, archivePath, innerPath, sizeBytes, extension, maxDimension, nil)
+func (s *Server) sendArchivePage(w http.ResponseWriter, r *http.Request, archivePath string, innerPath string, sizeBytes int64, extension string, maxDimension int, maxWidth ...int) {
+	s.sendArchivePageWithSource(w, r, archivePath, innerPath, sizeBytes, extension, maxDimension, nil, maxWidth...)
 }
 
 func (s *Server) sendLibraryArchivePage(
@@ -185,10 +186,11 @@ func (s *Server) sendLibraryArchivePage(
 	sizeBytes int64,
 	extension string,
 	maxDimension int,
+	maxWidth ...int,
 ) {
 	s.sendArchivePageWithSource(w, r, archivePath, innerPath, sizeBytes, extension, maxDimension, func() (*openedArchiveSource, error) {
 		return s.openPinnedLibrarySource(libraryKey, archivePath, sourceRelativePath)
-	})
+	}, maxWidth...)
 }
 
 func (s *Server) sendArchivePageWithSource(
@@ -200,7 +202,9 @@ func (s *Server) sendArchivePageWithSource(
 	extension string,
 	maxDimension int,
 	openSource func() (*openedArchiveSource, error),
+	maxWidth ...int,
 ) {
+	resize := pageImageResizeSpec(maxDimension, maxWidth...)
 	if archivePath == "" || innerPath == "" {
 		http.NotFound(w, r)
 		return
@@ -213,9 +217,9 @@ func (s *Server) sendArchivePageWithSource(
 		stat, statErr := os.Stat(archivePath)
 		if statErr == nil {
 			modTime = stat.ModTime()
-			if maxDimension > 0 && sizeBytes > 0 {
+			if resize.active() && sizeBytes > 0 {
 				contentType := archiveEntryMIME(coalesceString(extension, innerPath))
-				thumbnailPath = s.thumbnailBytesCachePathForSize(sizeBytes, contentType, cacheKey, modTime, maxDimension)
+				thumbnailPath = s.thumbnailBytesCachePathForSizeWithResize(sizeBytes, contentType, cacheKey, modTime, resize)
 				if s.sendCachedThumbnail(w, r, thumbnailPath) {
 					return
 				}
@@ -224,7 +228,7 @@ func (s *Server) sendArchivePageWithSource(
 	}
 	releaseLock, ok := s.acquireRenderLock(
 		r.Context(),
-		archivePageSourceLockKey(archivePath, normalizedInnerPath, maxDimension),
+		archivePageSourceLockKey(archivePath, normalizedInnerPath, maxDimension, maxWidth...),
 	)
 	if !ok {
 		return
@@ -264,9 +268,9 @@ func (s *Server) sendArchivePageWithSource(
 		archivePath = pinnedSource.path
 		cacheKey = archivePath + "|" + normalizedInnerPath
 		modTime = pinnedSource.stat.ModTime()
-		if maxDimension > 0 && sizeBytes > 0 {
+		if resize.active() && sizeBytes > 0 {
 			contentType := archiveEntryMIME(coalesceString(extension, innerPath))
-			thumbnailPath = s.thumbnailBytesCachePathForSize(sizeBytes, contentType, cacheKey, modTime, maxDimension)
+			thumbnailPath = s.thumbnailBytesCachePathForSizeWithResize(sizeBytes, contentType, cacheKey, modTime, resize)
 			if thumbnailFile, thumbnailStat, ready := openCachedThumbnail(thumbnailPath); ready {
 				_ = pinnedSource.Close()
 				unlockSource()
@@ -327,8 +331,8 @@ func (s *Server) sendArchivePageWithSource(
 		http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
 		return
 	}
-	if maxDimension > 0 && (thumbnailPath == "" || sizeBytes != int64(selected.UncompressedSize64)) {
-		thumbnailPath = s.thumbnailBytesCachePathForSize(int64(selected.UncompressedSize64), contentType, cacheKey, modTime, maxDimension)
+	if resize.active() && (thumbnailPath == "" || sizeBytes != int64(selected.UncompressedSize64)) {
+		thumbnailPath = s.thumbnailBytesCachePathForSizeWithResize(int64(selected.UncompressedSize64), contentType, cacheKey, modTime, resize)
 	}
 	if thumbnailPath != "" {
 		if thumbnailFile, thumbnailStat, ready := openCachedThumbnail(thumbnailPath); ready {
@@ -370,12 +374,15 @@ func (s *Server) sendArchivePageWithSource(
 		}
 		return
 	}
+	if resize.maxWidth > 0 && imageBytesWithinMaxWidth(data, resize.maxWidth) {
+		thumbnailPath = ""
+	}
 	var thumbnailFile *os.File
 	var thumbnailStat os.FileInfo
 	thumbnailBuilt := false
-	if maxDimension > 0 && thumbnailPath != "" {
+	if resize.active() && thumbnailPath != "" {
 		started := time.Now()
-		built, thumbnailErr := s.ensureThumbnailBytesToPathCached(r.Context(), data, thumbnailPath, maxDimension)
+		built, thumbnailErr := s.ensureThumbnailBytesToPathCachedWithResize(r.Context(), data, thumbnailPath, resize)
 		appendServerTiming(w.Header(), "thumbnail", time.Since(started))
 		thumbnailBuilt = built
 		if thumbnailErr == nil {
@@ -392,7 +399,7 @@ func (s *Server) sendArchivePageWithSource(
 		serveCachedThumbnailFile(w, r, thumbnailPath, thumbnailFile, thumbnailStat)
 		return
 	}
-	if maxDimension > 0 && thumbnailPath == "" && s.sendThumbnailBytes(w, r, data, contentType, cacheKey, modTime, maxDimension) {
+	if resize.active() && thumbnailPath == "" && s.sendThumbnailBytesWithResize(w, r, data, contentType, cacheKey, modTime, resize) {
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
@@ -404,7 +411,7 @@ func (s *Server) sendArchivePageWithSource(
 	_, _ = w.Write(data)
 }
 
-func (s *Server) sendEbookPage(w http.ResponseWriter, r *http.Request, libraryKey, archivePath, sourceRelativePath, innerPath string, sizeBytes int64, extension string, maxDimension int) {
+func (s *Server) sendEbookPage(w http.ResponseWriter, r *http.Request, libraryKey, archivePath, sourceRelativePath, innerPath string, sizeBytes int64, extension string, maxDimension int, maxWidth ...int) {
 	if archivePath == "" || innerPath == "" {
 		http.NotFound(w, r)
 		return
@@ -413,7 +420,7 @@ func (s *Server) sendEbookPage(w http.ResponseWriter, r *http.Request, libraryKe
 		http.NotFound(w, r)
 		return
 	}
-	s.sendLibraryArchivePage(w, r, libraryKey, archivePath, sourceRelativePath, innerPath, sizeBytes, extension, maxDimension)
+	s.sendLibraryArchivePage(w, r, libraryKey, archivePath, sourceRelativePath, innerPath, sizeBytes, extension, maxDimension, maxWidth...)
 }
 
 func (s *Server) sendNestedArchivePage(
@@ -426,7 +433,9 @@ func (s *Server) sendNestedArchivePage(
 	sizeBytes int64,
 	extension string,
 	maxDimension int,
+	maxWidth ...int,
 ) {
+	resize := pageImageResizeSpec(maxDimension, maxWidth...)
 	outerPath, imagePath, ok := splitNestedArchivePath(innerPath)
 	if archivePath == "" || !ok {
 		http.NotFound(w, r)
@@ -443,7 +452,7 @@ func (s *Server) sendNestedArchivePage(
 		}
 	}
 	defer unlockSource()
-	releaseLock, acquired := s.acquireRenderLock(r.Context(), "nested-archive-page-source:"+cacheKey+"|"+strconv.Itoa(maxDimension))
+	releaseLock, acquired := s.acquireRenderLock(r.Context(), "nested-archive-page-source:"+cacheKey+"|"+resize.cacheToken())
 	if !acquired {
 		return
 	}
@@ -463,9 +472,9 @@ func (s *Server) sendNestedArchivePage(
 	archivePath = reader.source.path
 	cacheKey = archivePath + "|" + outerPath + "!" + imagePath
 	modTime = reader.source.stat.ModTime()
-	if maxDimension > 0 && sizeBytes > 0 {
+	if resize.active() && sizeBytes > 0 {
 		contentType := archiveEntryMIME(coalesceString(extension, imagePath))
-		thumbnailPath = s.thumbnailBytesCachePathForSize(sizeBytes, contentType, cacheKey, modTime, maxDimension)
+		thumbnailPath = s.thumbnailBytesCachePathForSizeWithResize(sizeBytes, contentType, cacheKey, modTime, resize)
 		if thumbnailFile, thumbnailStat, ready := openCachedThumbnail(thumbnailPath); ready {
 			_ = reader.Close()
 			unlockSource()
@@ -551,8 +560,8 @@ func (s *Server) sendNestedArchivePage(
 		http.Error(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
 		return
 	}
-	if maxDimension > 0 && (thumbnailPath == "" || sizeBytes != int64(selected.UncompressedSize64)) {
-		thumbnailPath = s.thumbnailBytesCachePathForSize(int64(selected.UncompressedSize64), contentType, cacheKey, modTime, maxDimension)
+	if resize.active() && (thumbnailPath == "" || sizeBytes != int64(selected.UncompressedSize64)) {
+		thumbnailPath = s.thumbnailBytesCachePathForSizeWithResize(int64(selected.UncompressedSize64), contentType, cacheKey, modTime, resize)
 		if thumbnailFile, thumbnailStat, ready := openCachedThumbnail(thumbnailPath); ready {
 			closeReader()
 			unlockSource()
@@ -578,12 +587,15 @@ func (s *Server) sendNestedArchivePage(
 		}
 		return
 	}
+	if resize.maxWidth > 0 && imageBytesWithinMaxWidth(data, resize.maxWidth) {
+		thumbnailPath = ""
+	}
 	var thumbnailFile *os.File
 	var thumbnailStat os.FileInfo
 	thumbnailBuilt := false
-	if maxDimension > 0 && thumbnailPath != "" {
+	if resize.active() && thumbnailPath != "" {
 		started := time.Now()
-		built, thumbnailErr := s.ensureThumbnailBytesToPathCached(r.Context(), data, thumbnailPath, maxDimension)
+		built, thumbnailErr := s.ensureThumbnailBytesToPathCachedWithResize(r.Context(), data, thumbnailPath, resize)
 		appendServerTiming(w.Header(), "thumbnail", time.Since(started))
 		thumbnailBuilt = built
 		if thumbnailErr == nil {
@@ -600,7 +612,7 @@ func (s *Server) sendNestedArchivePage(
 		serveCachedThumbnailFile(w, r, thumbnailPath, thumbnailFile, thumbnailStat)
 		return
 	}
-	if maxDimension > 0 && thumbnailPath == "" && s.sendThumbnailBytes(w, r, data, contentType, cacheKey, modTime, maxDimension) {
+	if resize.active() && thumbnailPath == "" && s.sendThumbnailBytesWithResize(w, r, data, contentType, cacheKey, modTime, resize) {
 		return
 	}
 	w.Header().Set("Content-Type", contentType)

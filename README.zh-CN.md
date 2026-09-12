@@ -8,7 +8,7 @@
 [5 分钟体验](#5-分钟体验ghcr) ·
 [报告问题][bug-report] · [参与讨论][discussions]
 
-[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.6)
+[![Alpha release](https://img.shields.io/github/v/release/zzzcws/bmanga-core?include_prereleases&sort=semver&label=alpha)](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.7)
 [![CI](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zzzcws/bmanga-core/actions/workflows/ci.yml)
 [![Container](https://img.shields.io/badge/GHCR-linux%2Famd64-2496ED?logo=docker&logoColor=white)](https://github.com/zzzcws/bmanga-core/pkgs/container/bmanga-core)
 [![License](https://img.shields.io/github/license/zzzcws/bmanga-core)](LICENSE)
@@ -18,7 +18,7 @@
 > **Linux/amd64**，请勿将服务直接暴露到公网。
 
 > [!NOTE]
-> 当前发布的 `v0.1.0-alpha.6` 镜像提供 English / 简体中文 / 日本語 界面选择。
+> 当前发布的 `v0.1.0-alpha.7` 镜像提供 English / 简体中文 / 日本語 界面选择。
 > 该选择只切换界面文字，不会自动翻译书籍内容或书库元数据；在用户明确选择前，
 > 简体中文仍是安全默认语言。
 
@@ -37,6 +37,7 @@ _截图中的元数据和封面均为合成演示内容；bmanga-core 不附带�
 
 - 将有权使用的本地图像目录和支持的图像归档索引到本地 SQLite 目录中。
 - 提供网页书架、目录搜索、作品详情、图像阅读器和本地阅读进度。
+- 条漫可自动适宽并按屏幕宽度取清晰图；系列目录先显示，进度另行核对，后台刷新保留滚动和折叠状态。[说明](docs/features/reader-and-detail.md)
 - Compose 配置将源漫画目录以只读方式挂载；展示用元数据覆盖不会重命名或改写源文件。
 - 不需要内容平台账号，也不包含在线内容源集成；核心目录和阅读流程不依赖非必要外部服务。
 - 提供有限的运行诊断，以及一个用于比较待整理目录与书库目录的源码级只读导入计划工具。
@@ -72,7 +73,7 @@ cp config/libraries.example.json config/libraries.json
 编辑未跟踪的 `.env`，至少设置以下项目：
 
 ```dotenv
-BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.6
+BMANGA_IMAGE=ghcr.io/zzzcws/bmanga-core:0.1.0-alpha.7
 BMANGA_AUTH_USER=bmanga
 BMANGA_AUTH_PASSWORD=<足够长的随机密码>
 BMANGA_SESSION_SECRET=<另一个足够长的随机值>
@@ -95,7 +96,7 @@ docker compose --env-file .env down
 ```
 
 Alpha 阶段不会发布 `latest` 标签。更新固定版本前，请先阅读
-[发布说明](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.6)。
+[发布说明](https://github.com/zzzcws/bmanga-core/releases/tag/v0.1.0-alpha.7)。
 
 ## 邀请早期测试者
 

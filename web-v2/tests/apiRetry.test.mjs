@@ -1,7 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ApiError, apiErrorText, apiGet, pageUrl } from "../src/lib/api.ts";
+import { ApiError, apiErrorText, apiGet, pageUrl, getSeriesProgress, getSeriesProgressSummary } from "../src/lib/api.ts";
+
+test("stored series summary is explicit and strict reader requests remain unchanged", async () => {
+  const originalFetch = globalThis.fetch;
+  const urls = [];
+  globalThis.fetch = async (url) => {
+    urls.push(String(url));
+    return new Response(JSON.stringify({ group_id: "series-example", progress: null }), { status: 200 });
+  };
+  try {
+    await getSeriesProgressSummary("series-example");
+    await getSeriesProgress("series-example");
+    assert.deepEqual(urls, [
+      "/api/series-progress?id=series-example&manifest=stored",
+      "/api/series-progress?id=series-example",
+    ]);
+  } finally { globalThis.fetch = originalFetch; }
+});
 
 test("reader page URLs cap at 3200 and opt into source quality only when requested", () => {
   assert.equal(
@@ -12,6 +29,15 @@ test("reader page URLs cap at 3200 and opt into source quality only when request
     pageUrl("work-1", 3, "manifest-1", 2400),
     "/page?id=work-1&index=3&manifest=manifest-1&max=2400",
   );
+  assert.equal(
+    pageUrl("work-1", 3, "manifest-1", 1200, true, true),
+    "/page?id=work-1&index=3&manifest=manifest-1&max_width=1200&quality=source",
+  );
+  assert.equal(
+    pageUrl("work-1", 3, "manifest-1", 9000, false, true),
+    "/page?id=work-1&index=3&manifest=manifest-1&max_width=3200",
+  );
+  assert.equal(pageUrl("work-1", 0, undefined, undefined, false, true), "/page?id=work-1&index=0");
 });
 
 test("GET retries one transient server failure and returns the recovered payload", async () => {
