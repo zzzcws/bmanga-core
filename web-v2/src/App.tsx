@@ -152,6 +152,7 @@ import {
   readerImageIsLongStrip,
   readerImageReadyForScroll,
   readerScrollAnchorForGeometry,
+  readerScrollGeometryBeforeResize,
   readerScrollablePageFinished,
   readerScrollPositionForAnchor,
   readerUsesScrollableWidthLayout,
@@ -1464,9 +1465,7 @@ function App() {
       || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return current;
     const liveGeometry = readerStageScrollGeometry(stage);
     const previousGeometry = readerScrollGeometryRef.current;
-    readerScrollGeometryRef.current = previousGeometry && readerResizeAnchorRef.current
-      ? { ...previousGeometry, scrollTop: liveGeometry.scrollTop, scrollLeft: liveGeometry.scrollLeft }
-      : liveGeometry;
+    readerScrollGeometryRef.current = readerScrollGeometryBeforeResize(previousGeometry, liveGeometry);
     return {
       ...current,
       stageScrollTop: Math.max(0, Math.round(liveGeometry.scrollTop)),
@@ -3464,9 +3463,7 @@ function App() {
       || !readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) return;
     const liveGeometry = readerStageScrollGeometry(stage);
     const previousGeometry = readerScrollGeometryRef.current;
-    readerScrollGeometryRef.current = previousGeometry && readerResizeAnchorRef.current
-      ? { ...previousGeometry, scrollTop: liveGeometry.scrollTop, scrollLeft: liveGeometry.scrollLeft }
-      : liveGeometry;
+    readerScrollGeometryRef.current = readerScrollGeometryBeforeResize(previousGeometry, liveGeometry);
     if (readerScrollTimerRef.current !== null) window.clearTimeout(readerScrollTimerRef.current);
     readerScrollTimerRef.current = window.setTimeout(() => {
       const latest = uiRef.current?.reader;
@@ -3817,7 +3814,9 @@ function App() {
         && !readerResizeAnchorRef.current
         && readerUsesScrollableWidthLayout(current.fitMode, current.imageNaturalWidth, current.imageNaturalHeight)) {
         readerResizeAnchorRef.current = {
-          ...readerScrollAnchorForGeometry(readerScrollGeometryRef.current || readerStageScrollGeometry(stage)),
+          ...readerScrollAnchorForGeometry(readerScrollGeometryBeforeResize(
+            readerScrollGeometryRef.current, readerStageScrollGeometry(stage),
+          )),
           candidateID: current.item.candidate_id,
           index: current.index,
         };

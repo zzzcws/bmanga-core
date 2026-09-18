@@ -12,6 +12,7 @@ import {
   readerScrollAtEnd,
   readerScrollablePageFinished,
   readerScrollAnchorForGeometry,
+  readerScrollGeometryBeforeResize,
   readerScrollPositionForAnchor,
   readerUsesSourceQuality,
   snapReaderPixel,
@@ -102,6 +103,42 @@ test("scroll restoration waits for the matching visible image, not the decoded c
   assert.equal(readerImageReadyForScroll({ ...ready, naturalWidth: 300, naturalHeight: 2400 }, expected), false);
   assert.equal(readerImageReadyForScroll(ready, { ...expected, loading: true }), false);
   assert.equal(readerImageReadyForScroll(ready, expected), true);
+});
+
+test("resize captures the live offset before a queued scroll event arrives", () => {
+  const previous = { clientHeight: 580, clientWidth: 370, scrollHeight: 2960, scrollWidth: 370, scrollTop: 0, scrollLeft: 0 };
+  const live = { ...previous, clientWidth: 580, scrollWidth: 580, scrollHeight: 4640, scrollTop: 1000 };
+  const anchor = readerScrollAnchorForGeometry(readerScrollGeometryBeforeResize(previous, live));
+  assert.equal(anchor.y, 1000 / 2960);
+  assert.ok(Math.abs(readerScrollPositionForAnchor(anchor, live).top / 4640 - 1000 / 2960) < 1e-9);
+  assert.equal(readerScrollGeometryBeforeResize(null, live), live);
+  assert.equal(readerScrollGeometryBeforeResize(previous, { ...previous, scrollTop: 1000 }).scrollTop, 1000);
+});
+
+test("a scroll event delivered after layout but before resize retains the old coordinate system", () => {
+  const previous = { clientHeight: 580, clientWidth: 370, scrollHeight: 2960, scrollWidth: 370, scrollTop: 0, scrollLeft: 0 };
+  const live = { ...previous, clientWidth: 580, scrollWidth: 580, scrollHeight: 4640, scrollTop: 1000 };
+  const scrollEvent = readerScrollGeometryBeforeResize(previous, live);
+  const resizeEvent = readerScrollGeometryBeforeResize(scrollEvent, live);
+  assert.equal(resizeEvent.clientWidth, 370);
+  assert.equal(readerScrollAnchorForGeometry(resizeEvent).y, 1000 / 2960);
+});
+
+test("shrinking preserves content and end anchors when the browser clamps offsets", () => {
+  const previous = { clientHeight: 580, clientWidth: 580, scrollHeight: 4640, scrollWidth: 1160, scrollTop: 4000, scrollLeft: 500 };
+  const live = { ...previous, clientWidth: 370, scrollWidth: 740, scrollHeight: 2960, scrollTop: 2380, scrollLeft: 370 };
+  const anchor = readerScrollAnchorForGeometry(readerScrollGeometryBeforeResize(previous, live));
+  assert.equal(anchor.y, 4000 / 4640);
+  assert.equal(anchor.x, 500 / 1160);
+  const end = readerScrollAnchorForGeometry(readerScrollGeometryBeforeResize({ ...previous, scrollTop: 4060, scrollLeft: 580 }, live));
+  assert.deepEqual(readerScrollPositionForAnchor(end, live), { top: 2380, left: 370 });
+});
+
+test("height-only resize uses live image extent without scaling the latest offset", () => {
+  const previous = { clientHeight: 580, clientWidth: 370, scrollHeight: 2890, scrollWidth: 370, scrollTop: 0, scrollLeft: 0 };
+  const live = { ...previous, clientHeight: 476, scrollHeight: 2960, scrollTop: 1100 };
+  const anchor = readerScrollAnchorForGeometry(readerScrollGeometryBeforeResize(previous, live));
+  assert.equal(readerScrollPositionForAnchor(anchor, live).top, 1100);
 });
 
 test("a pending visible-image load does not consume the source-content anchor on collapsed layout", () => {

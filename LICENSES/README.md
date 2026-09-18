@@ -12,11 +12,11 @@ Web assets are built with exact Node.js 24.19.0 from the digest-pinned Node
 build image; neither Node.js nor npm is copied into the final image.
 The mapped components are:
 
-- Go 1.26.8 and the ten external modules linked into both Go binaries;
+- Go 1.27.1 and the ten external modules linked into both Go binaries;
 - React, React DOM, and Scheduler in the browser bundle;
 - Vite's injected runtime and Rolldown's injected module-preload polyfill.
 
-The locked Rolldown 1.2.4 npm package includes both `LICENSE` and the complete
+The locked Rolldown 1.2.9 npm package includes both `LICENSE` and the complete
 supplemental `THIRD-PARTY-LICENSE`; both are copied from the exact `npm ci`
 installation and bound to the lock integrity, resolved URL, and reviewed
 SHA-256. The build profile separately binds `@types/node` 24.13.4 and its
@@ -43,7 +43,7 @@ npm --prefix web-v2 ci
 python tools/check-third-party-licenses.py --verify --verify-web-sources
 ```
 
-Maintainers can regenerate this exact profile after installing Go 1.26.8 and
+Maintainers can regenerate this exact profile after installing Go 1.27.1 and
 running `npm --prefix web-v2 ci`:
 
 ```sh

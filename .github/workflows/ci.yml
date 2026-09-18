@@ -143,8 +143,8 @@ jobs:
           expected_build_stages = (
               "from --platform=$buildplatform docker.io/library/node:24-bookworm-slim@sha256:"
               "3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 as web-build",
-              "from --platform=$buildplatform docker.io/library/golang:1.26.8-bookworm@sha256:"
-              "9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81 as go-build",
+              "from --platform=$buildplatform docker.io/library/golang:1.27.1-bookworm@sha256:"
+              "648f440f42a0958804efb24df176f806f9d353b41f1c0627f666428e40310f6b as go-build",
           )
           for stage in expected_build_stages:
               if dockerfile.count(stage) != 1:
@@ -179,7 +179,7 @@ jobs:
           target_build = 'goos="${targetos}" goarch="${targetarch}" cgo_enabled=0 go build'
           if dockerfile.count(target_build) != 2:
               found.append("both binaries must use guarded target variables")
-          for marker in ('actual="$(go env goversion)"', '"${actual}" != "go1.26.8"'):
+          for marker in ('actual="$(go env goversion)"', '"${actual}" != "go1.27.1"'):
               if dockerfile.count(marker) != 1:
                   found.append(f"missing exact Go toolchain guard: {marker}")
           for marker in ('actual="$(node --version)"', '"${actual}" != "v24.19.0"'):
