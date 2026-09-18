@@ -8,6 +8,14 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## [0.1.0-alpha.8] - 2026-09-18
 
+### Fixed
+
+- Preserve the latest long-strip reading position when resize arrives before
+  its queued scroll event. Keep pre-resize coordinates for rescaling and retain
+  content/end anchors when a smaller viewport clamps the scroll offset.
+- Add a deterministic mobile regression for that event ordering, alongside
+  unit coverage for both event orders, shrinking and height-only changes.
+
 ### Changed
 
 - Migrate the exact Go build profile to 1.27.1, including the immutable builder,

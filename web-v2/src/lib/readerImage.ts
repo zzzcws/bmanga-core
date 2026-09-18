@@ -147,6 +147,30 @@ export function readerScrollablePageFinished(
   ));
 }
 
+/** Scroll events are queued, so resize can observe a newer DOM offset before
+ * the scroll handler has saved it. Keep the pre-resize coordinate system but
+ * read live offsets; retain an older offset only when shrinkage clamped it. */
+export function readerScrollGeometryBeforeResize(
+  previous: ReaderScrollGeometry | null,
+  live: ReaderScrollGeometry,
+): ReaderScrollGeometry {
+  if (!previous || (previous.clientWidth === live.clientWidth && previous.clientHeight === live.clientHeight)) return live;
+  const maxTop = Math.max(0, live.scrollHeight - live.clientHeight);
+  const maxLeft = Math.max(0, live.scrollWidth - live.clientWidth);
+  // Height-only browser chrome changes do not rescale the image. Use its live
+  // extent, even if a preceding fit transition finished after the last sample.
+  const before = previous.clientWidth === live.clientWidth
+    ? { ...live, clientHeight: previous.clientHeight }
+    : previous;
+  return {
+    ...before,
+    scrollTop: previous.scrollTop > maxTop && live.scrollTop >= maxTop - READER_SCROLL_END_TOLERANCE
+      ? previous.scrollTop : live.scrollTop,
+    scrollLeft: previous.scrollLeft > maxLeft && live.scrollLeft >= maxLeft - READER_SCROLL_END_TOLERANCE
+      ? previous.scrollLeft : live.scrollLeft,
+  };
+}
+
 /** Preserve the source-content point at the viewport's top-left while a
  * width-based page is rescaled. Bottom/right are explicit anchors so a reader
  * already at the end stays at the end when browser chrome or orientation

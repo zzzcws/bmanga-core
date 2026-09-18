@@ -145,7 +145,12 @@ try {
   await waitForReaderSettled("Fit width");
   await page.locator(".reader-fit-toggle").getByRole("button", { name: "Auto", exact: true }).evaluate((element) => element.click());
   await assertStrip(0);
-  await page.locator(".reader-stage").evaluate((stage) => { stage.scrollTop = 1000; });
+  await page.locator(".reader-stage").evaluate((stage) => {
+    stage.scrollTop = 1000;
+    // Resize may reach the app before the browser delivers its queued scroll
+    // event. Exercise that ordering deterministically, then rotate for real.
+    window.dispatchEvent(new Event("resize"));
+  });
   const anchorBefore = await page.locator(".reader-stage").evaluate((stage) => stage.scrollTop / stage.scrollHeight);
   const sourceBeforeResize = await page.evaluate(() => window.__readerGeometry().source);
   resizeResponseGate = ui.gate();
