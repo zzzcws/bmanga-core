@@ -22,17 +22,17 @@ from typing import Any
 
 REPO = Path(__file__).resolve().parents[1]
 LICENSES = REPO / "LICENSES"
-GO_VERSION = "1.26.8"
+GO_VERSION = "1.27.1"
 NODE_VERSION = "24.19.0"
-GO_MOD_SHA256 = "0e8a4a7b10538be25002c7a929534961ce633fe1da18735a30cf7b4f304fc9d5"
-GO_SUM_SHA256 = "54f57a03c0a7489e2d3a3f062159dc2172efbef57587fb466d61a89e61fef76b"
-PACKAGE_JSON_SHA256 = "9e8140f2f5f76a854c5e38142b781a1396c43e5f0947cb17f457610596aa153f"
-PACKAGE_LOCK_SHA256 = "a1a24962897dfd2b411c35d3ee2924018022ec581c5e553c9b1ab9e75753933a"
+GO_MOD_SHA256 = "ac0141141ed02f0d04c996c529c5019a024e02b0f1d195548e3389bbdd9c62c6"
+GO_SUM_SHA256 = "6d9911f44208f341ed27d815879ad38587303e78fe0167053b6801e0c85a24cb"
+PACKAGE_JSON_SHA256 = "7c4b935ff4b5f2b20931c42fdff1ca858a6e29a990e4d969e1de99b0ffccda34"
+PACKAGE_LOCK_SHA256 = "84cb7bfb2b0cd0a6080ab624dbbabe87cc409d00465135b92689f8fb90acc84f"
 SQLITE_TECHNICAL_REVIEW = (
     "LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json"
 )
 SQLITE_TECHNICAL_REVIEW_SHA256 = (
-    "64c63add3b5857054003acc2b550f5b8b748fba7ef1db1be77476497a3fdd8b6"
+    "e39e4e886546457f9d61bd8641a5f2e0b83eccc9176627965ac91d23e55b7b5b"
 )
 REVIEWED_SQLITE_PACKAGES = {
     "modernc.org/sqlite",
@@ -54,8 +54,8 @@ NODE_BUILD_IMAGE = (
     "sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03"
 )
 GO_BUILD_IMAGE = (
-    "docker.io/library/golang:1.26.8-bookworm@"
-    "sha256:9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81"
+    "docker.io/library/golang:1.27.1-bookworm@"
+    "sha256:648f440f42a0958804efb24df176f806f9d353b41f1c0627f666428e40310f6b"
 )
 
 # module, version, [(source filename, reviewed SHA-256)]
@@ -77,17 +77,17 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
     ),
     (
         "golang.org/x/image",
-        "v0.45.0",
+        "v0.46.0",
         [("LICENSE", GO_LICENSE_HASH), ("PATENTS", GO_PATENTS_HASH)],
     ),
     (
         "golang.org/x/sys",
-        "v0.47.0",
+        "v0.48.0",
         [("LICENSE", GO_LICENSE_HASH), ("PATENTS", GO_PATENTS_HASH)],
     ),
     (
         "golang.org/x/text",
-        "v0.41.0",
+        "v0.42.0",
         [("LICENSE", GO_LICENSE_HASH), ("PATENTS", GO_PATENTS_HASH)],
     ),
     (
@@ -135,31 +135,31 @@ GO_MODULES: list[tuple[str, str, list[tuple[str, str]]]] = [
 NPM_COMPONENTS: list[tuple[str, str, str, list[tuple[str, str]]]] = [
     (
         "react",
-        "19.2.8",
+        "19.3.0",
         "browser-runtime",
         [("LICENSE", "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93")],
     ),
     (
         "react-dom",
-        "19.2.8",
+        "19.3.0",
         "browser-runtime",
         [("LICENSE", "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93")],
     ),
     (
         "scheduler",
-        "0.27.0",
+        "0.28.0",
         "browser-runtime",
         [("LICENSE", "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93")],
     ),
     (
         "vite",
-        "8.2.2",
+        "8.3.0",
         "browser-injected-runtime",
         [("LICENSE.md", "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c")],
     ),
     (
         "rolldown",
-        "1.2.4",
+        "1.2.9",
         "browser-injected-modulepreload-runtime",
         [
             ("LICENSE", "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734"),
@@ -309,7 +309,7 @@ def lock_package(lock: dict[str, Any], name: str, version: str) -> dict[str, Any
 def generate() -> None:
     go_mod_path = REPO / "go.mod"
     go_mod = go_mod_path.read_bytes()
-    if not re.search(rb"(?m)^go 1\.26\.8\r?$", go_mod):
+    if not re.search(rb"(?m)^go 1\.27\.1\r?$", go_mod):
         raise RuntimeError("go.mod no longer pins the reviewed Go version")
     if re.search(rb"(?m)^\s*replace(?:\s|\()", go_mod):
         raise RuntimeError("go.mod replace directives require a new provenance review")
@@ -353,7 +353,7 @@ def generate() -> None:
         '"${TARGETARCH}" != "amd64"',
         '"${TARGETPLATFORM}" != "linux/amd64"',
         'go env GOVERSION',
-        '"go1.26.8"',
+        '"go1.27.1"',
     ):
         if marker not in dockerfile:
             raise RuntimeError(f"Dockerfile no longer matches the no-base runtime profile: {marker}")
@@ -523,13 +523,13 @@ def generate() -> None:
                 "packageLock": "web-v2/package-lock.json",
                 "packageLockSha256": sha256(lock_path.read_bytes()),
                 "productionPackages": [
-                    {"name": "react", "version": "19.2.8"},
-                    {"name": "react-dom", "version": "19.2.8"},
-                    {"name": "scheduler", "version": "0.27.0"},
+                    {"name": "react", "version": "19.3.0"},
+                    {"name": "react-dom", "version": "19.3.0"},
+                    {"name": "scheduler", "version": "0.28.0"},
                 ],
                 "injectedBuildRuntime": [
-                    {"name": "vite", "version": "8.2.2"},
-                    {"name": "rolldown", "version": "1.2.4"},
+                    {"name": "vite", "version": "8.3.0"},
+                    {"name": "rolldown", "version": "1.2.9"},
                 ],
                 "typeOnlyPackages": [
                     {"name": "@types/node", "version": "24.13.4"},

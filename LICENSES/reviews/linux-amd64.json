@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "artifactProfileSha256": "9b240051ee8bcf08ecb8fe605ede277c497fc605b2a26108eece510b9c9b4faa",
+  "artifactProfileSha256": "525245f146e4214481ad9d30f9860215307f0fef8914cc5481a8db9f9c32d60d",
   "reviewedBy": "OpenAI Codex technical license review (AI; maintainer-delegated public maintenance and publication; not legal advice)",
-  "reviewedAt": "2026-09-12T07:35:38Z",
+  "reviewedAt": "2026-09-18T13:01:43Z",
   "components": [
     {
       "id": "go-module:github.com/dustin/go-humanize@v1.0.1",
@@ -49,7 +49,7 @@
       ]
     },
     {
-      "id": "go-module:golang.org/x/image@v0.45.0",
+      "id": "go-module:golang.org/x/image@v0.46.0",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
       "obligations": [
@@ -59,17 +59,17 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/golang.org/x/image@v0.45.0/LICENSE",
+          "path": "LICENSES/go/golang.org/x/image@v0.46.0/LICENSE",
           "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
         },
         {
-          "path": "LICENSES/go/golang.org/x/image@v0.45.0/PATENTS",
+          "path": "LICENSES/go/golang.org/x/image@v0.46.0/PATENTS",
           "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
         }
       ]
     },
     {
-      "id": "go-module:golang.org/x/sys@v0.47.0",
+      "id": "go-module:golang.org/x/sys@v0.48.0",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
       "obligations": [
@@ -79,17 +79,17 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/golang.org/x/sys@v0.47.0/LICENSE",
+          "path": "LICENSES/go/golang.org/x/sys@v0.48.0/LICENSE",
           "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
         },
         {
-          "path": "LICENSES/go/golang.org/x/sys@v0.47.0/PATENTS",
+          "path": "LICENSES/go/golang.org/x/sys@v0.48.0/PATENTS",
           "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
         }
       ]
     },
     {
-      "id": "go-module:golang.org/x/text@v0.41.0",
+      "id": "go-module:golang.org/x/text@v0.42.0",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
       "obligations": [
@@ -99,11 +99,11 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/golang.org/x/text@v0.41.0/LICENSE",
+          "path": "LICENSES/go/golang.org/x/text@v0.42.0/LICENSE",
           "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
         },
         {
-          "path": "LICENSES/go/golang.org/x/text@v0.41.0/PATENTS",
+          "path": "LICENSES/go/golang.org/x/text@v0.42.0/PATENTS",
           "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
         }
       ]
@@ -188,7 +188,7 @@
       ]
     },
     {
-      "id": "go-toolchain-1.26.8",
+      "id": "go-toolchain-1.27.1",
       "decision": "approved",
       "licenseConclusion": "BSD-3-Clause with Go Additional IP Rights Grant",
       "obligations": [
@@ -198,17 +198,17 @@
       ],
       "files": [
         {
-          "path": "LICENSES/go/toolchain-go1.26.8/LICENSE",
+          "path": "LICENSES/go/toolchain-go1.27.1/LICENSE",
           "sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
         },
         {
-          "path": "LICENSES/go/toolchain-go1.26.8/PATENTS",
+          "path": "LICENSES/go/toolchain-go1.27.1/PATENTS",
           "sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc"
         }
       ]
     },
     {
-      "id": "npm:react-dom@19.2.8",
+      "id": "npm:react-dom@19.3.0",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -216,13 +216,13 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/react-dom@19.2.8/LICENSE",
+          "path": "LICENSES/npm/react-dom@19.3.0/LICENSE",
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
         }
       ]
     },
     {
-      "id": "npm:react@19.2.8",
+      "id": "npm:react@19.3.0",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -230,13 +230,13 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/react@19.2.8/LICENSE",
+          "path": "LICENSES/npm/react@19.3.0/LICENSE",
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
         }
       ]
     },
     {
-      "id": "npm:rolldown@1.2.4",
+      "id": "npm:rolldown@1.2.9",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -244,17 +244,17 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/rolldown@1.2.4/LICENSE",
+          "path": "LICENSES/npm/rolldown@1.2.9/LICENSE",
           "sha256": "23ecfff35a5a2e80d92142f75228912c3b1abc4b5a8337a821ff4397e2f9f734"
         },
         {
-          "path": "LICENSES/npm/rolldown@1.2.4/THIRD-PARTY-LICENSE",
+          "path": "LICENSES/npm/rolldown@1.2.9/THIRD-PARTY-LICENSE",
           "sha256": "a877291d800ed43692f3f9ae09d8e01cc6f7293ad39d43896059c188ffbb8b7c"
         }
       ]
     },
     {
-      "id": "npm:scheduler@0.27.0",
+      "id": "npm:scheduler@0.28.0",
       "decision": "approved",
       "licenseConclusion": "MIT",
       "obligations": [
@@ -262,13 +262,13 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/scheduler@0.27.0/LICENSE",
+          "path": "LICENSES/npm/scheduler@0.28.0/LICENSE",
           "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
         }
       ]
     },
     {
-      "id": "npm:vite@8.2.2",
+      "id": "npm:vite@8.3.0",
       "decision": "approved",
       "licenseConclusion": "MIT AND Apache-2.0 AND BSD-2-Clause AND ISC AND CC0-1.0",
       "obligations": [
@@ -278,7 +278,7 @@
       ],
       "files": [
         {
-          "path": "LICENSES/npm/vite@8.2.2/LICENSE.md",
+          "path": "LICENSES/npm/vite@8.3.0/LICENSE.md",
           "sha256": "387dd7baa307083401a27c58c362c30832f5ba1dba84f10cc22c33401523f45c"
         }
       ]

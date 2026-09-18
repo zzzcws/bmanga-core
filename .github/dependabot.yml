@@ -10,6 +10,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # React and its renderer must move together to satisfy runtime peers;
+    # keep their types in the same review and license-inventory refresh.
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
     # Types must track the reviewed Node 24 builder. Revisit this only together
     # with a Node runtime/profile upgrade; keep 24.x updates enabled.
     ignore:

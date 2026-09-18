@@ -130,7 +130,7 @@ channel described in [`SECURITY.md`](SECURITY.md).
 
 ## Build from a clean checkout
 
-Source builds require Go 1.26.8 or later and Node.js 24 or later. CI and the
+Source builds require Go 1.27.1 or later and Node.js 24 or later. CI and the
 container build currently use the reviewed Node.js 24.19.0 toolchain exactly.
 
 ```sh

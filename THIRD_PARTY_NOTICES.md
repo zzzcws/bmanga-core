@@ -26,15 +26,15 @@ external modules:
 - `github.com/dustin/go-humanize` 1.0.1
 - `github.com/google/uuid` 1.6.0
 - `github.com/remyoudompheng/bigfft` 24d4a6f8daec
-- `golang.org/x/image` 0.45.0
-- `golang.org/x/sys` 0.47.0
-- `golang.org/x/text` 0.41.0
+- `golang.org/x/image` 0.46.0
+- `golang.org/x/sys` 0.48.0
+- `golang.org/x/text` 0.42.0
 - `modernc.org/libc` 1.75.6
 - `modernc.org/mathutil` 1.7.1
 - `modernc.org/memory` 1.12.1
 - `modernc.org/sqlite` 1.58.0
 
-The bundle also preserves Go 1.26.8 `LICENSE` and `PATENTS`, the `PATENTS`
+The bundle also preserves Go 1.27.1 `LICENSE` and `PATENTS`, the `PATENTS`
 files for the `golang.org/x/*` modules, and applicable modernc supplemental
 files including `LICENSE-3RD-PARTY.md`, `LICENSE-GO`, `LICENSE-MMAP-GO`, and
 `LICENSE-SQLITE`.
@@ -54,10 +54,10 @@ non-shipped component into this artifact's license bundle. The structured
 evidence is recorded in
 `LICENSES/reviews/sqlite-v1.58.0-linux-amd64-technical.json`.
 
-The browser production tree contains React 19.2.8, React DOM 19.2.8, and
-Scheduler 0.27.0. The built bundle additionally contains Vite 8.2.2 injected
-runtime code and Rolldown 1.2.4's module-preload polyfill, so their complete
-published license files are included. Rolldown 1.2.4's npm archive includes
+The browser production tree contains React 19.3.0, React DOM 19.3.0, and
+Scheduler 0.28.0. The built bundle additionally contains Vite 8.3.0 injected
+runtime code and Rolldown 1.2.9's module-preload polyfill, so their complete
+published license files are included. Rolldown 1.2.9's npm archive includes
 both `LICENSE` and `THIRD-PARTY-LICENSE`; the inventory copies both files from
 the exact locked installation and verifies their source metadata and hashes.
 

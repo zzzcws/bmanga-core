@@ -6,6 +6,22 @@ Semantic Versioning; alpha releases may still change compatibility boundaries.
 
 ## Unreleased
 
+## [0.1.0-alpha.8] - 2026-09-18
+
+### Changed
+
+- Migrate the exact Go build profile to 1.27.1, including the immutable builder,
+  version guards, CI, three-language build instructions and license inventory.
+- Update `golang.org/x/image`, `x/text` and `x/sys` together to 0.46.0, 0.42.0
+  and 0.48.0; keep the SQLite/libc/memory versions and database schema unchanged.
+- Upgrade React and React DOM together to 19.3.0, their matching types, Scheduler
+  0.28.0, Vite 8.3.0 and its locked Rolldown 1.2.9 dependency.
+- Group React, its renderer and type definitions in Dependabot so future
+  proposals do not split peer-compatible updates across separate pull requests.
+- Regenerate the exact runtime component inventory and technical-review records.
+  All mapped original license texts remain byte-identical; release checks,
+  platform restrictions and the read-only source-library boundary stay intact.
+
 ## [0.1.0-alpha.7] - 2026-09-12
 
 ### Fixed
