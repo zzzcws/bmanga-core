@@ -20,7 +20,7 @@ COPY web-v2 ./web-v2
 COPY tools/build-web-assets.mjs ./tools/build-web-assets.mjs
 RUN node tools/build-web-assets.mjs
 
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.27.1-bookworm@sha256:648f440f42a0958804efb24df176f806f9d353b41f1c0627f666428e40310f6b AS go-build
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea AS go-build
 ARG TARGETPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
